@@ -707,13 +707,6 @@
       border-left: 4px solid var(--orange);
     }
 
-    .setup-steps {
-      margin: 9px 0 0;
-      padding-left: 21px;
-      color: var(--secondary);
-      font-size: 0.86rem;
-      line-height: 1.55;
-    }
 
     @media (max-width: 1120px) {
       .cards { grid-template-columns: repeat(3, 1fr); }
@@ -741,6 +734,250 @@
       .dialog-foot button { flex: 1; }
       .drive-meta { grid-template-columns: 1fr; }
     }
+
+
+    /* Borderless visual system and user-controlled appearance */
+    :root {
+      --control: #e8e8ed;
+      --control-hover: #dedee4;
+      --field: #f0f0f3;
+      --field-focus: #ffffff;
+      --table-alt: rgba(118, 118, 128, 0.055);
+      --app-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      --base-font-size: 16px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --control: #3a3a3c;
+        --control-hover: #48484a;
+        --field: #2c2c2e;
+        --field-focus: #353537;
+        --table-alt: rgba(235, 235, 245, 0.045);
+      }
+    }
+
+    html[data-theme="light"] {
+      color-scheme: light;
+      --page: #f5f5f7;
+      --glass: rgba(255, 255, 255, 0.82);
+      --surface: #ffffff;
+      --surface-2: #f2f2f6;
+      --surface-3: #e7e7ec;
+      --text: #1d1d1f;
+      --secondary: #6e6e73;
+      --tertiary: #8e8e93;
+      --blue: #0071e3;
+      --blue-hover: #0077ed;
+      --green: #1f8a4c;
+      --red: #d92d20;
+      --orange: #b65f00;
+      --shadow: 0 12px 38px rgba(0, 0, 0, 0.07);
+      --small-shadow: 0 2px 10px rgba(0, 0, 0, 0.055);
+      --control: #e8e8ed;
+      --control-hover: #dedee4;
+      --field: #f0f0f3;
+      --field-focus: #ffffff;
+      --table-alt: rgba(118, 118, 128, 0.055);
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --page: #000000;
+      --glass: rgba(28, 28, 30, 0.84);
+      --surface: #1c1c1e;
+      --surface-2: #2c2c2e;
+      --surface-3: #3a3a3c;
+      --text: #f5f5f7;
+      --secondary: #aeaeb2;
+      --tertiary: #8e8e93;
+      --blue: #0a84ff;
+      --blue-hover: #409cff;
+      --green: #30d158;
+      --red: #ff453a;
+      --orange: #ff9f0a;
+      --shadow: 0 16px 44px rgba(0, 0, 0, 0.35);
+      --small-shadow: 0 3px 13px rgba(0, 0, 0, 0.25);
+      --control: #3a3a3c;
+      --control-hover: #48484a;
+      --field: #2c2c2e;
+      --field-focus: #353537;
+      --table-alt: rgba(235, 235, 245, 0.045);
+    }
+
+
+    html[data-text-size="small"] { --base-font-size: 14px; }
+    html[data-text-size="standard"] { --base-font-size: 16px; }
+    html[data-text-size="large"] { --base-font-size: 18px; }
+    html[data-text-size="xlarge"] { --base-font-size: 20px; }
+
+    html { font-size: var(--base-font-size); }
+    body { font-family: var(--app-font); }
+
+    /* Remove persistent outline lines; use fill, spacing, and shadow for hierarchy. */
+    .app-bar,
+    .card,
+    .panel,
+    .table-wrap,
+    dialog,
+    .dialog-head,
+    .dialog-foot,
+    .range-card,
+    .toast,
+    .drive-status-card,
+    .drive-meta-item,
+    .status,
+    .check,
+    .keyboard,
+    .segmented,
+    input,
+    select,
+    textarea,
+    button.secondary,
+    .button.secondary {
+      border: 0 !important;
+    }
+
+    button.secondary,
+    .button.secondary {
+      color: var(--text);
+      background: var(--control);
+    }
+
+    button.secondary:hover,
+    .button.secondary:hover { background: var(--control-hover); }
+
+    input,
+    select,
+    textarea {
+      background: var(--field);
+      box-shadow: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      background: var(--field-focus);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 24%, transparent);
+    }
+
+    input.invalid,
+    textarea.invalid {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 28%, transparent);
+    }
+
+    .segmented { background: var(--control); }
+    .segmented button { color: var(--secondary); background: transparent; }
+    .segmented button.active { color: var(--text); background: var(--surface); }
+
+    .table-wrap { background: var(--surface-2); padding: 4px; }
+    table { border-radius: calc(var(--radius-lg) - 4px); overflow: hidden; }
+    th, td { border-bottom: 0; }
+    tbody tr:nth-child(even):not(.completed) { background: var(--table-alt); }
+    td input, td select { background: var(--field); }
+
+    .status { background: var(--surface-2); }
+    .check { background: var(--control); }
+    .keyboard { background: color-mix(in srgb, currentColor 10%, var(--surface)); }
+    .drive-conflict { border-left: 0; background: color-mix(in srgb, var(--orange) 12%, var(--surface-2)); }
+    .completion-success { color: var(--green); background: color-mix(in srgb, var(--green) 12%, var(--surface-2)); }
+
+    hr {
+      height: 14px;
+      margin: 18px 0 !important;
+      border: 0 !important;
+      background: transparent;
+    }
+
+    .settings-section {
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: var(--surface-2);
+    }
+
+    .settings-section + .settings-section { margin-top: 12px; }
+    .settings-section h3 { margin-bottom: 12px; }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 11px 12px;
+      border-radius: var(--radius-md);
+      color: var(--text);
+      background: var(--surface);
+    }
+
+    .toggle-row + .toggle-row { margin-top: 9px; }
+    .toggle-row strong { display: block; font-size: 0.92rem; }
+    .toggle-row small { display: block; margin-top: 3px; color: var(--secondary); font-weight: 500; line-height: 1.35; }
+    .toggle-row input[type="checkbox"] {
+      width: 22px;
+      min-width: 22px;
+      height: 22px;
+      min-height: 22px;
+      padding: 0;
+      accent-color: var(--blue);
+      box-shadow: none;
+    }
+
+    .settings-preview {
+      margin-top: 12px;
+      padding: 15px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+    }
+
+    .settings-preview strong { display: block; margin-bottom: 4px; }
+    .settings-preview span { color: var(--secondary); line-height: 1.5; }
+
+    html[data-density="compact"] .shell { padding-top: 18px; }
+    html[data-density="compact"] .cards { gap: 8px; }
+    html[data-density="compact"] .card { min-height: 82px; padding: 13px; }
+    html[data-density="compact"] .panel { padding: 12px; margin-bottom: 10px; }
+    html[data-density="compact"] th,
+    html[data-density="compact"] td { padding: 7px 8px; }
+    html[data-density="compact"] .app-bar-inner { min-height: 58px; }
+
+    @keyframes app-enter {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes dialog-enter {
+      from { opacity: 0; transform: translateY(16px) scale(0.975); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes backdrop-enter {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .shell {
+      animation: app-enter 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    dialog[open] {
+      animation: dialog-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    dialog[open]::backdrop {
+      animation: backdrop-enter 180ms ease-out both;
+    }
+
+    #editDialog.ui-switching { pointer-events: none; }
+
+    html[data-reduce-motion="true"] *,
+    html[data-reduce-motion="true"] *::before,
+    html[data-reduce-motion="true"] *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+
   </style>
 </head>
 <body>
@@ -757,6 +994,7 @@
         <button id="driveBtn" class="secondary">Drive: Set up</button>
         <button id="bulkBtn" class="secondary">Bulk paste</button>
         <button id="dataBtn" class="secondary">Data</button>
+        <button id="settingsBtn" class="secondary">Settings</button>
         <button id="nextBtn">Next unattempted</button>
       </div>
     </div>
@@ -766,7 +1004,7 @@
     <section class="hero">
       <div>
         <h1 id="sectionTitle">Math</h1>
-        <p id="sectionSubtitle" class="subtle">Track all 1,756 results by question number and 8-character question ID.</p>
+        <p id="sectionSubtitle" class="subtle">1,756 questions.</p>
       </div>
     </section>
 
@@ -869,7 +1107,7 @@
       </div>
 
       <div id="emptyState" class="empty hidden">
-        No question slots exist in this tab yet. Use <strong>Bulk paste</strong> or set a total in <strong>Data</strong>.
+        No questions.
       </div>
 
       <div class="pagination">
@@ -900,24 +1138,20 @@
     </div>
 
     <div class="dialog-body">
-      <div class="notice">
-        Choose the starting question number, then paste one 8-character hexadecimal ID per line. Blank lines are ignored. The ending question number updates automatically.
-      </div>
-
-      <div class="grid-2" style="margin-top:14px">
+      <div class="grid-2">
         <label>
-          Start at question number
+          Start question
           <input id="bulkStart" type="number" min="1" step="1" value="1" />
         </label>
 
         <label>
-          Domain for this group
+          Domain
           <select id="bulkDomain"></select>
         </label>
       </div>
 
       <label style="margin-top:11px">
-        Skill for this group
+        Skill
         <input id="bulkSkill" list="bulkSkillList" placeholder="Search or choose a skill" autocomplete="off" />
       </label>
       <datalist id="bulkSkillList"></datalist>
@@ -948,12 +1182,12 @@
         </div>
       </div>
 
-      <div id="bulkValidation" class="validation">Paste IDs to preview the destination range.</div>
+      <div id="bulkValidation" class="validation">Paste IDs</div>
 
       <label style="margin-top:12px">
         <span>
           <input id="autoExpandCheck" type="checkbox" checked style="width:auto;min-height:0;margin-right:7px">
-          Automatically expand this tab if the ending number exceeds its current total
+          Expand tab when needed
         </span>
       </label>
     </div>
@@ -971,7 +1205,7 @@
     </div>
 
     <div class="dialog-body">
-      <div id="completionNotice" class="notice">This question has not been completed.</div>
+      <div id="completionNotice" class="notice">Not completed</div>
 
       <div class="grid-2" style="margin-top:14px">
         <label>
@@ -999,8 +1233,8 @@
       </div>
 
       <label style="margin-top:11px">
-        Notes / mistake analysis
-        <textarea id="editNotes" placeholder="Record the mistake, correct method, or a pattern to recognize next time."></textarea>
+        Notes
+        <textarea id="editNotes" placeholder="Mistake, method, or pattern."></textarea>
       </label>
 
       <div class="result-actions">
@@ -1010,7 +1244,6 @@
       </div>
 
       <p id="attemptSummary" class="subtle"></p>
-      <p class="subtle">Submitting a result marks the question completed, saves it, confirms completion, and opens the next question in your current filtered view.</p>
     </div>
 
     <div class="dialog-foot">
@@ -1028,13 +1261,13 @@
 
     <div class="dialog-body">
       <div class="drive-status-card">
-        <strong id="driveStatusTitle">Google Drive is not configured</strong>
-        <span id="driveStatusDetail">Your data is still saved immediately in this browser.</span>
+        <strong id="driveStatusTitle">Drive not configured</strong>
+        <span id="driveStatusDetail">Saved locally.</span>
       </div>
 
       <div id="driveConflictBox" class="notice drive-conflict hidden">
-        <strong>Two different tracker copies were found.</strong>
-        <p id="driveConflictText" style="margin:6px 0 10px">Choose which copy should become the current version.</p>
+        <strong>Sync conflict</strong>
+        <p id="driveConflictText" style="margin:6px 0 10px">Choose a copy.</p>
         <div class="drive-actions">
           <button id="useDriveCopyBtn">Use Drive copy</button>
           <button id="keepDeviceCopyBtn" class="warning">Keep this device</button>
@@ -1043,18 +1276,18 @@
       </div>
 
       <label style="margin-top:14px">
-        Google OAuth client ID
+        OAuth client ID
         <input id="googleClientIdInput" autocomplete="off" spellcheck="false" placeholder="1234567890-abc.apps.googleusercontent.com" />
       </label>
 
       <div class="drive-meta">
         <div class="drive-meta-item">
-          <div class="label">Authorized JavaScript origin</div>
+          <div class="label">Site</div>
           <div class="value" id="driveOriginValue">—</div>
         </div>
         <div class="drive-meta-item">
-          <div class="label">Drive data file</div>
-          <div class="value" id="driveFileValue">Not created or located</div>
+          <div class="label">Drive file</div>
+          <div class="value" id="driveFileValue">Not connected</div>
         </div>
       </div>
 
@@ -1065,20 +1298,6 @@
         <button id="disconnectDriveBtn" class="secondary">Disconnect</button>
       </div>
 
-      <div class="notice" style="margin-top:14px">
-        <strong>GitHub Pages setup</strong>
-        <ol class="setup-steps">
-          <li>Create a Google Cloud project and enable the Google Drive API.</li>
-          <li>Configure the OAuth consent screen and add your Google account as a test user if the app remains in testing.</li>
-          <li>Create an OAuth client of type <strong>Web application</strong>.</li>
-          <li>Add the exact origin shown above under <strong>Authorized JavaScript origins</strong>. For GitHub Pages, use only <code>https://username.github.io</code>, without the repository path.</li>
-          <li>Paste the client ID above and connect. The tracker creates or locates <strong>SAT Question Bank Tracker Data.json</strong> in your Drive.</li>
-        </ol>
-      </div>
-
-      <p class="subtle" style="margin-top:12px">
-        Autosave writes locally immediately and sends changes to Drive about 1.5 seconds after editing stops. Access tokens are kept only in memory and may require reconnection after they expire.
-      </p>
     </div>
 
     <div class="dialog-foot">
@@ -1086,9 +1305,85 @@
     </div>
   </dialog>
 
+  <dialog id="settingsDialog">
+    <div class="dialog-head">
+      <h2>Settings</h2>
+      <button class="secondary" data-close="settingsDialog">Close</button>
+    </div>
+
+    <div class="dialog-body">
+      <section class="settings-section">
+        <h3>Appearance</h3>
+        <div class="grid-2">
+          <label>
+            Color mode
+            <select id="themeSetting">
+              <option value="system">Follow device</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+
+
+          <label>
+            Text size
+            <select id="textSizeSetting">
+              <option value="small">Small</option>
+              <option value="standard">Standard</option>
+              <option value="large">Large</option>
+              <option value="xlarge">Extra large</option>
+            </select>
+          </label>
+
+          <label>
+            Layout density
+            <select id="densitySetting">
+              <option value="comfortable">Comfortable</option>
+              <option value="compact">Compact</option>
+            </select>
+          </label>
+        </div>
+
+      </section>
+
+      <section class="settings-section">
+        <h3>Drive and motion</h3>
+
+        <label class="toggle-row">
+          <span>
+            <strong>Auto-connect Drive</strong>
+          </span>
+          <input id="autoConnectSetting" type="checkbox" />
+        </label>
+
+        <label class="toggle-row">
+          <span>
+            <strong>Reduce motion</strong>
+          </span>
+          <input id="reduceMotionSetting" type="checkbox" />
+        </label>
+
+        <label style="margin-top:12px">
+          Drive autosave delay
+          <select id="autosaveDelaySetting">
+            <option value="750">Fast — 0.75 seconds</option>
+            <option value="1500">Balanced — 1.5 seconds</option>
+            <option value="3000">Fewer uploads — 3 seconds</option>
+          </select>
+        </label>
+
+      </section>
+    </div>
+
+    <div class="dialog-foot">
+      <button id="resetSettingsBtn" class="secondary">Reset settings</button>
+      <button data-close="settingsDialog">Done</button>
+    </div>
+  </dialog>
+
   <dialog id="dataDialog">
     <div class="dialog-head">
-      <h2>Data and section size</h2>
+      <h2>Data</h2>
       <button class="secondary" data-close="dataDialog">Close</button>
     </div>
 
@@ -1105,9 +1400,6 @@
           <input id="rwTotalInput" type="number" min="0" max="10000" step="1" />
         </label>
       </div>
-      <p class="subtle" style="margin-top:8px">
-        Math starts at 1,756. Reading & Writing starts at zero because no total was specified; bulk imports can expand it automatically.
-      </p>
       <button id="applyTotalsBtn" style="margin-top:10px">Apply totals</button>
 
       <hr style="margin:22px 0;border:0;border-top:1px solid var(--line)">
@@ -1144,6 +1436,41 @@
     const DRIVE_APP_PROPERTY_VALUE = "v1";
     const DEFAULT_GOOGLE_CLIENT_ID = ""; // Optional: paste your Web OAuth client ID here before publishing.
 
+    const SETTINGS_KEY = "satQuestionBankTracker.settings.v1";
+    const DEFAULT_SETTINGS = Object.freeze({
+      theme: "system",
+      textSize: "standard",
+      density: "comfortable",
+      autoConnect: true,
+      reduceMotion: false,
+      autosaveDelay: 1500
+    });
+
+    function loadAppSettings() {
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch (_) {}
+
+      const allowed = {
+        theme: ["system", "light", "dark"],
+        textSize: ["small", "standard", "large", "xlarge"],
+        density: ["comfortable", "compact"],
+        autosaveDelay: [750, 1500, 3000]
+      };
+
+      return {
+        theme: allowed.theme.includes(saved.theme) ? saved.theme : DEFAULT_SETTINGS.theme,
+        textSize: allowed.textSize.includes(saved.textSize) ? saved.textSize : DEFAULT_SETTINGS.textSize,
+        density: allowed.density.includes(saved.density) ? saved.density : DEFAULT_SETTINGS.density,
+        autoConnect: saved.autoConnect === undefined ? DEFAULT_SETTINGS.autoConnect : Boolean(saved.autoConnect),
+        reduceMotion: saved.reduceMotion === undefined ? DEFAULT_SETTINGS.reduceMotion : Boolean(saved.reduceMotion),
+        autosaveDelay: allowed.autosaveDelay.includes(Number(saved.autosaveDelay))
+          ? Number(saved.autosaveDelay)
+          : DEFAULT_SETTINGS.autosaveDelay
+      };
+    }
+
+    let appSettings = loadAppSettings();
+
     function randomId() {
       if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
       return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
@@ -1174,6 +1501,10 @@
       applyingRemote: false,
       autosaveTimer: null,
       retryTimer: null,
+      refreshTimer: null,
+      autoConnectInProgress: false,
+      lastAutoAttemptAt: 0,
+      needsInteraction: false,
       lastError: "",
       conflict: null
     };
@@ -1255,6 +1586,52 @@
     };
 
     const $ = id => document.getElementById(id);
+
+
+    function applyAppSettings() {
+      const root = document.documentElement;
+      root.dataset.theme = appSettings.theme;
+      delete root.dataset.font;
+      root.dataset.textSize = appSettings.textSize;
+      root.dataset.density = appSettings.density;
+      root.dataset.reduceMotion = appSettings.reduceMotion ? "true" : "false";
+    }
+
+    function persistAppSettings() {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
+      applyAppSettings();
+    }
+
+    function populateSettingsUi() {
+      if (!$('themeSetting')) return;
+      $('themeSetting').value = appSettings.theme;
+      $('textSizeSetting').value = appSettings.textSize;
+      $('densitySetting').value = appSettings.density;
+      $('autoConnectSetting').checked = appSettings.autoConnect;
+      $('reduceMotionSetting').checked = appSettings.reduceMotion;
+      $('autosaveDelaySetting').value = String(appSettings.autosaveDelay);
+    }
+
+    function updateSettingsFromUi() {
+      appSettings = {
+        theme: $('themeSetting').value,
+        textSize: $('textSizeSetting').value,
+        density: $('densitySetting').value,
+        autoConnect: $('autoConnectSetting').checked,
+        reduceMotion: $('reduceMotionSetting').checked,
+        autosaveDelay: Number($('autosaveDelaySetting').value) || DEFAULT_SETTINGS.autosaveDelay
+      };
+
+      persistAppSettings();
+      scheduleDriveAutosave(appSettings.autosaveDelay);
+
+      if (appSettings.autoConnect) {
+        attemptAutomaticDriveConnection({ reason: "settings" });
+      } else {
+        clearTimeout(driveSync.refreshTimer);
+        driveSync.refreshTimer = null;
+      }
+    }
 
     function blankQuestion(number) {
       return {
@@ -1488,7 +1865,7 @@
     }
 
     function currentOriginLabel() {
-      if (location.protocol === "file:") return "Local file — host on GitHub Pages or localhost";
+      if (location.protocol === "file:") return "Local file";
       return location.origin;
     }
 
@@ -1499,49 +1876,59 @@
       button.classList.remove("drive-connected", "drive-pending", "drive-error");
 
       let buttonText = "Drive: Set up";
-      let title = "Google Drive is not configured";
-      let detail = "Your data is still saved immediately in this browser.";
+      let title = "Drive not configured";
+      let detail = "Saved locally";
 
       if (location.protocol === "file:") {
-        buttonText = driveSync.clientId ? "Drive: Hosting needed" : "Drive: Set up";
-        title = "Host this tracker before connecting";
-        detail = "Google authorization requires an HTTPS web origin such as GitHub Pages, or localhost for testing.";
+        buttonText = "Drive: Hosting needed";
+        title = "Hosting required";
+        detail = "Use HTTPS or localhost";
         button.classList.add("drive-error");
+      } else if (driveSync.autoConnectInProgress) {
+        buttonText = "Drive: Connecting…";
+        title = "Connecting";
+        detail = "Loading Drive file";
+        button.classList.add("drive-pending");
       } else if (driveSync.conflict) {
         buttonText = "Drive: Conflict";
-        title = "A sync conflict needs your decision";
-        detail = "The Drive file and this device contain different changes. Nothing will be overwritten automatically.";
+        title = "Sync conflict";
+        detail = "Choose a copy";
         button.classList.add("drive-error");
       } else if (driveSync.syncing) {
         buttonText = "Drive: Saving…";
-        title = "Saving to Google Drive";
-        detail = "The local copy is already safe while the Drive upload finishes.";
+        title = "Saving";
+        detail = "Saved locally";
         button.classList.add("drive-pending");
       } else if (driveSync.connected && isDriveTokenValid() && driveSync.dirty) {
         buttonText = "Drive: Pending";
-        title = "Changes are waiting to sync";
-        detail = navigator.onLine ? "Autosave will upload them shortly." : "You are offline. Changes remain saved locally until the connection returns.";
+        title = "Sync pending";
+        detail = navigator.onLine ? "Waiting to save" : "Offline";
         button.classList.add("drive-pending");
       } else if (driveSync.connected && isDriveTokenValid()) {
         buttonText = "Drive: Synced";
-        title = "Connected to Google Drive";
+        title = "Drive connected";
         detail = driveSync.lastSyncedAt
-          ? `Last synced ${new Date(driveSync.lastSyncedAt).toLocaleString()}.`
-          : "The Drive file is connected and autosave is active.";
+          ? `Synced ${new Date(driveSync.lastSyncedAt).toLocaleString()}`
+          : "Autosave active";
         button.classList.add("drive-connected");
+      } else if (driveSync.needsInteraction && driveSync.clientId) {
+        buttonText = "Drive: Sign in";
+        title = "Sign in required";
+        detail = "Click Connect";
+        button.classList.add("drive-pending");
       } else if (driveSync.fileId && driveSync.dirty) {
         buttonText = "Drive: Reconnect";
-        title = "Reconnect to upload pending changes";
-        detail = "Your edits are saved locally. Google access tokens expire and are never stored on disk.";
+        title = "Reconnect required";
+        detail = "Changes saved locally";
         button.classList.add("drive-pending");
       } else if (driveSync.fileId) {
         buttonText = "Drive: Connect";
         title = "Drive file remembered";
-        detail = "Reconnect Google Drive to check for updates and resume autosave.";
+        detail = "Click Connect";
       } else if (driveSync.clientId) {
         buttonText = "Drive: Connect";
-        title = "OAuth client ID saved";
-        detail = "Connect Google Drive to create or locate the tracker data file.";
+        title = "Client ID saved";
+        detail = "Click Connect";
       }
 
       if (driveSync.lastError) {
@@ -1575,7 +1962,7 @@
           ? new Date(driveSync.conflict.remotePayload.savedAt).toLocaleString()
           : "an unknown time";
         $("driveConflictText").textContent =
-          `Drive revision ${driveSync.conflict.remoteRevision} was saved ${remoteDate}. Choose the Drive copy or overwrite it with this device's locally saved copy.`;
+          `Revision ${driveSync.conflict.remoteRevision} · ${remoteDate}`;
       }
     }
 
@@ -1623,28 +2010,111 @@
       return response;
     }
 
-    function requestDriveAccessToken(clientId) {
+    function requestDriveAccessToken(clientId, { interactive = true } = {}) {
       return new Promise((resolve, reject) => {
         if (!globalThis.google?.accounts?.oauth2) {
           reject(new Error("Google's authorization library has not loaded. Check your internet connection and try again."));
           return;
         }
 
+        const rejectOAuth = (message, code = "") => {
+          const error = new Error(message || "Google authorization could not be completed.");
+          error.code = code;
+          reject(error);
+        };
+
         const client = google.accounts.oauth2.initTokenClient({
           client_id: clientId,
           scope: DRIVE_SCOPE,
+          include_granted_scopes: true,
           callback: response => {
             if (response?.error) {
-              reject(new Error(response.error_description || response.error));
+              rejectOAuth(response.error_description || response.error, response.error);
               return;
             }
             resolve(response);
           },
-          error_callback: error => reject(new Error(error?.message || error?.type || "Google sign-in was closed or blocked."))
+          error_callback: error => rejectOAuth(
+            error?.message || error?.type || "Google sign-in was closed or blocked.",
+            error?.type || ""
+          )
         });
 
-        client.requestAccessToken({ prompt: driveSync.accessToken ? "" : "consent" });
+        client.requestAccessToken({ prompt: interactive ? "select_account" : "" });
       });
+    }
+
+    function isSilentAuthorizationFailure(error) {
+      const code = String(error?.code || "").toLowerCase();
+      const message = String(error?.message || "").toLowerCase();
+      return [
+        "interaction_required",
+        "login_required",
+        "consent_required",
+        "popup_failed_to_open",
+        "popup_closed",
+        "access_denied"
+      ].some(value => code.includes(value) || message.includes(value));
+    }
+
+    function waitForGoogleIdentity(timeout = 12000) {
+      if (globalThis.google?.accounts?.oauth2) return Promise.resolve(true);
+
+      return new Promise(resolve => {
+        const started = Date.now();
+        const timer = setInterval(() => {
+          if (globalThis.google?.accounts?.oauth2) {
+            clearInterval(timer);
+            resolve(true);
+          } else if (Date.now() - started >= timeout) {
+            clearInterval(timer);
+            resolve(false);
+          }
+        }, 120);
+      });
+    }
+
+    function scheduleDriveTokenRefresh() {
+      clearTimeout(driveSync.refreshTimer);
+      driveSync.refreshTimer = null;
+      if (!appSettings.autoConnect || !driveSync.tokenExpiresAt) return;
+
+      const delay = Math.max(30000, driveSync.tokenExpiresAt - Date.now() - 5 * 60 * 1000);
+      driveSync.refreshTimer = setTimeout(() => {
+        attemptAutomaticDriveConnection({ force: true, reason: "token-refresh" });
+      }, delay);
+    }
+
+    async function attemptAutomaticDriveConnection({ force = false, reason = "startup" } = {}) {
+      if (!appSettings.autoConnect || location.protocol === "file:" || !navigator.onLine) return false;
+      if (!driveSync.clientId || driveSync.autoConnectInProgress) return false;
+      if (!force && isDriveTokenValid()) return true;
+      if (!force && Date.now() - driveSync.lastAutoAttemptAt < 30000) return false;
+
+      driveSync.lastAutoAttemptAt = Date.now();
+      driveSync.autoConnectInProgress = true;
+      driveSync.needsInteraction = false;
+      driveSync.lastError = "";
+      updateDriveUi();
+
+      try {
+        const loaded = await waitForGoogleIdentity();
+        if (!loaded) throw new Error("Google's authorization library did not load.");
+        await connectAndInitializeDrive({ interactive: false, announce: false });
+        return true;
+      } catch (error) {
+        driveSync.connected = false;
+        if (isSilentAuthorizationFailure(error)) {
+          driveSync.needsInteraction = true;
+          driveSync.lastError = "";
+        } else {
+          driveSync.lastError = error.message || `Automatic Drive connection failed during ${reason}.`;
+        }
+        return false;
+      } finally {
+        driveSync.autoConnectInProgress = false;
+        updateDriveUi();
+      }
     }
 
     async function listDriveTrackerFiles() {
@@ -1753,12 +2223,12 @@
       if (!$("driveDialog").open) $("driveDialog").showModal();
     }
 
-    async function connectAndInitializeDrive() {
+    async function connectAndInitializeDrive({ interactive = true, announce = interactive } = {}) {
       if (location.protocol === "file:") {
         throw new Error("Google Drive sign-in cannot run from a file:// page. Publish the tracker on GitHub Pages or run it through localhost.");
       }
 
-      const clientId = $("googleClientIdInput").value.trim();
+      const clientId = ($("googleClientIdInput").value || driveSync.clientId).trim();
       if (!/\.apps\.googleusercontent\.com$/.test(clientId)) {
         throw new Error("Enter a valid Google Web OAuth client ID ending in .apps.googleusercontent.com.");
       }
@@ -1768,11 +2238,13 @@
       driveSync.lastError = "";
       updateDriveUi();
 
-      const token = await requestDriveAccessToken(clientId);
+      const token = await requestDriveAccessToken(clientId, { interactive });
       driveSync.accessToken = token.access_token;
       driveSync.tokenExpiresAt = Date.now() + Math.max(60, Number(token.expires_in) || 3600) * 1000;
       driveSync.connected = true;
+      driveSync.needsInteraction = false;
       driveSync.lastError = "";
+      scheduleDriveTokenRefresh();
       updateDriveUi();
 
       let remotePayload = null;
@@ -1803,7 +2275,7 @@
 
       if (!remotePayload) {
         await createDriveFile();
-        showToast("Google Drive connected", "A new Drive data file was created from this device's tracker data.");
+        if (announce) showToast("Google Drive connected", "A new Drive data file was created from this device's tracker data.");
         return;
       }
 
@@ -1822,7 +2294,7 @@
         driveSync.conflict = null;
         persistDriveConfig();
         updateDriveUi();
-        showToast("Google Drive connected", "The local and Drive copies already match.");
+        if (announce) showToast("Google Drive connected", "The local and Drive copies already match.");
         return;
       }
 
@@ -1835,7 +2307,7 @@
         driveSync.conflict = null;
         persistDriveConfig();
         updateDriveUi();
-        showToast("Drive data loaded", "This device was blank, so the Google Drive copy was restored automatically.");
+        if (announce) showToast("Drive data loaded", "This device was blank, so the Google Drive copy was restored automatically.");
         return;
       }
 
@@ -1844,7 +2316,7 @@
         driveSync.conflict = null;
         updateDriveUi();
         scheduleDriveAutosave(100);
-        showToast("Google Drive reconnected", "Locally saved offline changes are being uploaded.");
+        if (announce) showToast("Google Drive reconnected", "Locally saved offline changes are being uploaded.");
         return;
       }
 
@@ -1934,6 +2406,9 @@
           driveSync.accessToken = "";
           driveSync.tokenExpiresAt = 0;
           driveSync.connected = false;
+          if (appSettings.autoConnect) {
+            setTimeout(() => attemptAutomaticDriveConnection({ force: true, reason: "expired-token" }), 500);
+          }
         } else if (!driveSync.conflict && navigator.onLine) {
           clearTimeout(driveSync.retryTimer);
           driveSync.retryTimer = setTimeout(() => syncToDrive(), 30000);
@@ -1946,7 +2421,7 @@
       }
     }
 
-    function scheduleDriveAutosave(delay = 1500) {
+    function scheduleDriveAutosave(delay = appSettings.autosaveDelay) {
       clearTimeout(driveSync.autosaveTimer);
       driveSync.autosaveTimer = null;
       updateDriveUi();
@@ -1961,6 +2436,9 @@
       driveSync.tokenExpiresAt = 0;
       driveSync.connected = false;
       driveSync.syncing = false;
+      driveSync.needsInteraction = false;
+      clearTimeout(driveSync.refreshTimer);
+      driveSync.refreshTimer = null;
       clearTimeout(driveSync.autosaveTimer);
       driveSync.autosaveTimer = null;
 
@@ -1968,8 +2446,11 @@
         try { google.accounts.oauth2.revoke(token, () => {}); } catch (_) {}
       }
 
+      appSettings.autoConnect = false;
+      persistAppSettings();
+      populateSettingsUi();
       updateDriveUi();
-      showToast("Google Drive disconnected", "The file association was kept. Local saving remains active.");
+      showToast("Google Drive disconnected", "The file association was kept, local saving remains active, and automatic reconnect was turned off.");
     }
 
     function currentSection() {
@@ -2061,11 +2542,7 @@
       $("rwTab").classList.toggle("active", state.activeSection === "rw");
       $("sectionTitle").textContent = taxonomy.label;
 
-      $("sectionSubtitle").textContent = state.activeSection === "math"
-        ? `Track all ${total.toLocaleString()} results by question number and 8-character question ID.`
-        : total
-          ? `Track ${total.toLocaleString()} Reading & Writing questions separately from Math.`
-          : "A separate Reading & Writing tracker. Bulk paste IDs to create question slots.";
+      $("sectionSubtitle").textContent = `${total.toLocaleString()} questions.`;
     }
 
     function renderStats() {
@@ -2275,9 +2752,9 @@
       }
     }
 
-    function openEditor(number) {
+    function populateEditor(number) {
       const q = getQuestion(number);
-      if (!q) return;
+      if (!q) return null;
 
       state.activeNumber = number;
       populateDomainSelect($("editDomain"), state.activeSection);
@@ -2290,14 +2767,65 @@
       $("editId").classList.remove("invalid");
       $("editSkill").value = q.skill;
       $("editNotes").value = q.notes;
-
       updateEditorStatus();
-      $("editDialog").showModal();
+      return q;
+    }
 
+    function focusEditor(q, delay = 30) {
       setTimeout(() => {
+        if (!q || !$('editDialog').open) return;
         if (!q.questionId) $("editId").focus();
         else $("editSkill").focus();
-      }, 30);
+      }, delay);
+    }
+
+    function openEditor(number) {
+      const q = populateEditor(number);
+      if (!q) return;
+
+      if (!$("editDialog").open) $("editDialog").showModal();
+      focusEditor(q, 180);
+    }
+
+    async function switchEditorQuestion(number) {
+      const dialog = $("editDialog");
+      if (!dialog.open || appSettings.reduceMotion || typeof dialog.animate !== "function") {
+        openEditor(number);
+        return;
+      }
+
+      dialog.classList.add("ui-switching");
+      const parts = [...dialog.children];
+
+      try {
+        await Promise.all(parts.map(part =>
+          part.animate(
+            [
+              { opacity: 1, transform: "translateX(0)" },
+              { opacity: 0, transform: "translateX(-22px)" }
+            ],
+            { duration: 140, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" }
+          ).finished.catch(() => {})
+        ));
+
+        const q = populateEditor(number);
+        if (!q) return;
+
+        parts.forEach(part => {
+          part.getAnimations().forEach(animation => animation.cancel());
+          part.animate(
+            [
+              { opacity: 0, transform: "translateX(22px)" },
+              { opacity: 1, transform: "translateX(0)" }
+            ],
+            { duration: 190, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+          );
+        });
+
+        focusEditor(q, 190);
+      } finally {
+        setTimeout(() => dialog.classList.remove("ui-switching"), 200);
+      }
     }
 
     function updateEditorStatus() {
@@ -2306,16 +2834,71 @@
 
       const complete = q.status !== "unattempted";
       $("completionNotice").textContent = complete
-        ? `Completed — current result: ${q.status}.`
-        : "This question has not been completed.";
+        ? `Completed · ${q.status}`
+        : "Not completed";
 
-      $("completionNotice").style.borderLeft = complete ? `4px solid var(--green)` : "";
+      $("completionNotice").classList.toggle("completion-success", complete);
       $("attemptSummary").textContent =
         `${q.attempts} attempt${q.attempts === 1 ? "" : "s"} · ` +
         `${q.correctAttempts} correct · ${q.incorrectAttempts} incorrect · ${q.skippedAttempts} skipped`;
     }
 
+    let editorDraftTimer = null;
+
+    function scheduleEditorDraftAutosave() {
+      clearTimeout(editorDraftTimer);
+      editorDraftTimer = setTimeout(saveEditorDraft, 400);
+    }
+
+    function saveEditorDraft() {
+      clearTimeout(editorDraftTimer);
+      editorDraftTimer = null;
+
+      const q = getQuestion(state.activeNumber);
+      if (!q || !$('editDialog').open) return;
+
+      const id = $('editId').value.trim().toLowerCase();
+      const domain = $('editDomain').value;
+      const skill = $('editSkill').value.trim();
+      const notes = $('editNotes').value;
+      let changed = false;
+
+      if (!id || isValidId(id)) {
+        const duplicate = id && currentSection().questions.find(
+          other => other.number !== q.number && other.questionId === id
+        );
+        if (!duplicate && q.questionId !== id) {
+          q.questionId = id;
+          changed = true;
+        }
+      }
+
+      if (q.domain !== domain) {
+        q.domain = domain;
+        changed = true;
+      }
+
+      if (validateSkill(state.activeSection, domain, skill) && q.skill !== skill) {
+        q.skill = skill;
+        changed = true;
+      }
+
+      if (q.notes !== notes) {
+        q.notes = notes;
+        changed = true;
+      }
+
+      if (!changed) return;
+      q.updatedAt = new Date().toISOString();
+      save(true);
+      renderStats();
+      renderTable();
+      updateEditorStatus();
+    }
+
     function commitEditor() {
+      clearTimeout(editorDraftTimer);
+      editorDraftTimer = null;
       const q = getQuestion(state.activeNumber);
       if (!q) return false;
 
@@ -2374,17 +2957,17 @@
     function moveToNext(currentNumber, completionMessage = "") {
       const nextNumber = nextNumberAfter(currentNumber);
 
-      $("editDialog").close();
-      state.activeNumber = null;
-
       if (completionMessage) {
-        showToast(
-          `Question ${currentNumber} completed`,
-          nextNumber ? `${completionMessage} Opening question ${nextNumber}.` : `${completionMessage} End of the current filtered list.`
-        );
+        showToast(`Question ${currentNumber} completed`, completionMessage);
       }
 
-      if (nextNumber) openEditor(nextNumber);
+      if (nextNumber) {
+        switchEditorQuestion(nextNumber);
+      } else {
+        $("editDialog").close();
+        state.activeNumber = null;
+        showToast("End of list", "No next question.");
+      }
     }
 
     function submitResult(status) {
@@ -2402,7 +2985,7 @@
       save(true);
       renderAll();
 
-      const label = status.charAt(0).toUpperCase() + status.slice(1) + ".";
+      const label = status.charAt(0).toUpperCase() + status.slice(1);
       moveToNext(number, label);
     }
 
@@ -2475,41 +3058,36 @@
 
       if (!parsed.lines.length) {
         $("bulkValidation").className = "validation";
-        $("bulkValidation").textContent = "Paste IDs to preview the destination range.";
+        $("bulkValidation").textContent = "Paste IDs";
         return;
       }
 
-      const targetRange = end ? `Questions ${start.toLocaleString()}–${end.toLocaleString()}` : "";
+      const targetRange = end ? `${start.toLocaleString()}–${end.toLocaleString()}` : "—";
       const replacements = end
         ? currentSection().questions.slice(start - 1, Math.min(end, total)).filter(q => q?.questionId).length
         : 0;
 
       const details = [
-        `${targetRange} will receive the valid IDs in order.`,
-        `${parsed.valid.length} valid unique ID${parsed.valid.length === 1 ? "" : "s"}.`,
-        `${replacements} existing populated slot${replacements === 1 ? "" : "s"} in that range will be replaced.`
+        `Range ${targetRange}`,
+        `${parsed.valid.length} valid`,
+        `${replacements} replaced`
       ];
 
-      if (parsed.invalid.length) {
-        details.push(`${parsed.invalid.length} invalid line${parsed.invalid.length === 1 ? "" : "s"} will be ignored.`);
-      }
-
-      if (parsed.duplicates.length) {
-        details.push(`${parsed.duplicates.length} duplicate line${parsed.duplicates.length === 1 ? "" : "s"} in the paste will be ignored.`);
-      }
+      if (parsed.invalid.length) details.push(`${parsed.invalid.length} invalid`);
+      if (parsed.duplicates.length) details.push(`${parsed.duplicates.length} duplicates`);
 
       if (end && end > total) {
         details.push(
           $("autoExpandCheck").checked
-            ? `The tab will expand from ${total.toLocaleString()} to ${end.toLocaleString()} questions.`
-            : `The ending number exceeds the current total of ${total.toLocaleString()}. Enable automatic expansion or lower the range.`
+            ? `Expand to ${end.toLocaleString()}`
+            : `Limit ${total.toLocaleString()}`
         );
       }
 
       const hasBlockingRange = Boolean(end && end > total && !$("autoExpandCheck").checked);
       $("bulkValidation").className = "validation " +
         (parsed.invalid.length || hasBlockingRange ? "bad" : "good");
-      $("bulkValidation").textContent = details.join(" ");
+      $("bulkValidation").textContent = details.join(" · ");
     }
 
     function importBulk() {
@@ -2753,7 +3331,8 @@
       updateDriveUi();
 
       try {
-        await connectAndInitializeDrive();
+        driveSync.needsInteraction = false;
+        await connectAndInitializeDrive({ interactive: true, announce: true });
       } catch (error) {
         driveSync.lastError = error.message || "Google Drive connection failed.";
         updateDriveUi();
@@ -2823,18 +3402,55 @@
     window.addEventListener("online", () => {
       driveSync.lastError = "";
       updateDriveUi();
-      scheduleDriveAutosave(250);
+      if (isDriveTokenValid()) {
+        scheduleDriveAutosave(250);
+      } else {
+        attemptAutomaticDriveConnection({ force: true, reason: "online" });
+      }
     });
 
     window.addEventListener("offline", updateDriveUi);
 
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && appSettings.autoConnect && !isDriveTokenValid()) {
+        attemptAutomaticDriveConnection({ reason: "page-visible" });
+      }
+    });
+
+    window.addEventListener("focus", () => {
+      if (appSettings.autoConnect && !isDriveTokenValid()) {
+        attemptAutomaticDriveConnection({ reason: "window-focus" });
+      }
+    });
+
     setInterval(() => {
       if (driveSync.dirty && !driveSync.syncing && !driveSync.conflict && navigator.onLine && isDriveTokenValid()) {
         syncToDrive();
+      } else if (appSettings.autoConnect && navigator.onLine && !isDriveTokenValid()) {
+        attemptAutomaticDriveConnection({ reason: "periodic" });
       } else {
         updateDriveUi();
       }
     }, 60000);
+
+    $('settingsBtn').addEventListener('click', () => {
+      populateSettingsUi();
+      $('settingsDialog').showModal();
+    });
+
+    ['themeSetting', 'textSizeSetting', 'densitySetting', 'autoConnectSetting', 'reduceMotionSetting', 'autosaveDelaySetting']
+      .forEach(id => {
+        $(id).addEventListener('change', updateSettingsFromUi);
+      });
+
+    $('resetSettingsBtn').addEventListener('click', () => {
+      appSettings = { ...DEFAULT_SETTINGS };
+      persistAppSettings();
+      populateSettingsUi();
+      scheduleDriveAutosave(appSettings.autosaveDelay);
+      attemptAutomaticDriveConnection({ reason: 'settings-reset' });
+      showToast('Settings reset', 'Defaults restored.');
+    });
 
     $("mathTab").addEventListener("click", () => switchSection("math"));
     $("rwTab").addEventListener("click", () => switchSection("rw"));
@@ -2865,7 +3481,10 @@
       if (openButton) openEditor(Number(openButton.dataset.openNumber));
 
       const closeButton = event.target.closest("[data-close]");
-      if (closeButton) $(closeButton.dataset.close).close();
+      if (closeButton) {
+        if (closeButton.dataset.close === "editDialog") saveEditorDraft();
+        $(closeButton.dataset.close).close();
+      }
     });
 
     $("questionRows").addEventListener("change", event => {
@@ -2923,14 +3542,23 @@
     $("autoExpandCheck").addEventListener("change", updateBulkPreview);
     $("importBulkBtn").addEventListener("click", importBulk);
 
-    $("editDomain").addEventListener("change", populateEditorSkills);
+    $("editDomain").addEventListener("change", () => {
+      populateEditorSkills();
+      scheduleEditorDraftAutosave();
+    });
 
     $("editId").addEventListener("input", event => {
       event.target.value = event.target.value.toLowerCase().replace(/[^0-9a-f]/g, "").slice(0, 8);
       event.target.classList.toggle("invalid", Boolean(event.target.value) && !isValidId(event.target.value));
     });
 
-    $("editSkill").addEventListener("input", event => event.target.classList.remove("invalid"));
+    $("editSkill").addEventListener("input", event => {
+      event.target.classList.remove("invalid");
+      scheduleEditorDraftAutosave();
+    });
+    $("editNotes").addEventListener("input", scheduleEditorDraftAutosave);
+    $("editId").addEventListener("input", scheduleEditorDraftAutosave);
+    $("editDialog").addEventListener("close", saveEditorDraft);
     $("bulkSkill").addEventListener("input", event => event.target.classList.remove("invalid"));
 
     $("correctBtn").addEventListener("click", () => submitResult("correct"));
@@ -3005,6 +3633,8 @@
       showToast("Tracker reset", "Math was reset to 1,756 slots and Reading & Writing to zero.");
     });
 
+    applyAppSettings();
+    populateSettingsUi();
     load();
     state.pageSize = Number($("pageSize").value);
     renderAll();
@@ -3013,6 +3643,7 @@
     }
     persistDriveConfig();
     updateDriveUi();
+    attemptAutomaticDriveConnection({ force: true, reason: "startup" });
   </script>
 </body>
 </html>
