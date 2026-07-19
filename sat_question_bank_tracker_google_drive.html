@@ -1,0 +1,3018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+  <title>SAT Question Bank Tracker</title>
+  <style>
+    :root {
+      --page: #f5f5f7;
+      --glass: rgba(255, 255, 255, 0.78);
+      --surface: #ffffff;
+      --surface-2: #f5f5f7;
+      --surface-3: #ececf0;
+      --text: #1d1d1f;
+      --secondary: #6e6e73;
+      --tertiary: #8e8e93;
+      --line: rgba(60, 60, 67, 0.16);
+      --blue: #0071e3;
+      --blue-hover: #0077ed;
+      --green: #1f8a4c;
+      --red: #d92d20;
+      --orange: #b65f00;
+      --shadow: 0 12px 38px rgba(0, 0, 0, 0.07);
+      --small-shadow: 0 2px 10px rgba(0, 0, 0, 0.055);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 13px;
+      --radius-sm: 10px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page: #000000;
+        --glass: rgba(28, 28, 30, 0.78);
+        --surface: #1c1c1e;
+        --surface-2: #2c2c2e;
+        --surface-3: #3a3a3c;
+        --text: #f5f5f7;
+        --secondary: #aeaeb2;
+        --tertiary: #8e8e93;
+        --line: rgba(235, 235, 245, 0.18);
+        --blue: #0a84ff;
+        --blue-hover: #409cff;
+        --green: #30d158;
+        --red: #ff453a;
+        --orange: #ff9f0a;
+        --shadow: 0 16px 44px rgba(0, 0, 0, 0.35);
+        --small-shadow: 0 3px 13px rgba(0, 0, 0, 0.25);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--page);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+        "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button, .button {
+      min-height: 38px;
+      padding: 8px 15px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--blue);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+      transition: transform 120ms ease, background 120ms ease, opacity 120ms ease;
+    }
+
+    button:hover, .button:hover { background: var(--blue-hover); }
+    button:active, .button:active { transform: scale(0.98); }
+    button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+    button.secondary {
+      color: var(--text);
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+    }
+
+    button.secondary:hover { background: var(--surface-3); }
+
+    button.danger {
+      color: #fff;
+      background: var(--red);
+    }
+
+    button.success {
+      color: #fff;
+      background: var(--green);
+    }
+
+    button.warning {
+      color: #fff;
+      background: var(--orange);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 40px;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      outline: none;
+      background: var(--surface);
+      color: var(--text);
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 20%, transparent);
+    }
+
+    input.invalid, textarea.invalid {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 16%, transparent);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--secondary);
+      font-size: 0.84rem;
+      font-weight: 650;
+    }
+
+    .app-bar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--line);
+      background: var(--glass);
+      backdrop-filter: saturate(180%) blur(22px);
+      -webkit-backdrop-filter: saturate(180%) blur(22px);
+    }
+
+    .app-bar-inner {
+      width: min(1480px, 100%);
+      min-height: 66px;
+      margin: 0 auto;
+      padding: 10px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .brand {
+      min-width: max-content;
+      font-size: 1.05rem;
+      font-weight: 750;
+      letter-spacing: -0.025em;
+    }
+
+    .segmented {
+      display: inline-grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface-2);
+    }
+
+    .segmented button {
+      min-height: 34px;
+      padding: 6px 17px;
+      color: var(--secondary);
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .segmented button:hover { background: transparent; }
+
+    .segmented button.active {
+      color: var(--text);
+      background: var(--surface);
+      box-shadow: var(--small-shadow);
+    }
+
+    .top-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .shell {
+      width: min(1480px, 100%);
+      margin: 0 auto;
+      padding: 28px 22px 50px;
+    }
+
+    .hero {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 7px;
+      font-size: clamp(2rem, 5vw, 3.35rem);
+      line-height: 1.03;
+      letter-spacing: -0.055em;
+    }
+
+    h2, h3 {
+      margin-top: 0;
+      letter-spacing: -0.025em;
+    }
+
+    p { line-height: 1.5; }
+
+    .subtle {
+      margin: 0;
+      color: var(--secondary);
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .card, .panel {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .card {
+      min-height: 98px;
+      padding: 17px;
+      border-radius: var(--radius-lg);
+    }
+
+    .card-value {
+      font-size: 1.72rem;
+      font-weight: 760;
+      letter-spacing: -0.045em;
+    }
+
+    .card-label {
+      margin-top: 3px;
+      color: var(--secondary);
+      font-size: 0.8rem;
+      font-weight: 650;
+    }
+
+    .panel {
+      padding: 16px;
+      border-radius: var(--radius-xl);
+      margin-bottom: 14px;
+    }
+
+    .progress-track {
+      height: 11px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--surface-2);
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--blue);
+      transition: width 180ms ease;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+      color: var(--secondary);
+      font-size: 0.82rem;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 2.2fr repeat(4, minmax(135px, 1fr)) auto;
+      gap: 9px;
+      align-items: end;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+    }
+
+    table {
+      width: 100%;
+      min-width: 1260px;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--surface);
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      color: var(--secondary);
+      background: var(--surface-2);
+      font-size: 0.72rem;
+      font-weight: 750;
+      letter-spacing: 0.035em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    tbody tr {
+      transition: background 120ms ease;
+    }
+
+    tbody tr:hover { background: var(--surface-2); }
+
+    tbody tr.completed {
+      background: color-mix(in srgb, var(--green) 7%, var(--surface));
+    }
+
+    tbody tr.completed:hover {
+      background: color-mix(in srgb, var(--green) 11%, var(--surface));
+    }
+
+    td input, td select {
+      min-width: 145px;
+      min-height: 36px;
+      padding: 7px 9px;
+      background: transparent;
+    }
+
+    .id-input {
+      width: 110px;
+      min-width: 110px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      text-transform: lowercase;
+    }
+
+    .skill-input {
+      width: 285px;
+      min-width: 285px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 27px;
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 720;
+      white-space: nowrap;
+    }
+
+    .status.correct { color: var(--green); }
+    .status.incorrect { color: var(--red); }
+    .status.skipped { color: var(--orange); }
+    .status.unattempted { color: var(--secondary); }
+
+    .completion {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--secondary);
+      font-size: 0.78rem;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .completion.done { color: var(--green); }
+
+    .check {
+      display: inline-grid;
+      width: 21px;
+      height: 21px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      font-size: 0.72rem;
+    }
+
+    .completion.done .check {
+      color: #fff;
+      border-color: var(--green);
+      background: var(--green);
+    }
+
+    .notes-preview {
+      max-width: 250px;
+      color: var(--secondary);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .page-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .page-controls label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .page-controls select { width: auto; }
+
+    dialog {
+      width: min(790px, calc(100% - 24px));
+      max-height: calc(100vh - 26px);
+      overflow: auto;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      color: var(--text);
+      background: var(--surface);
+      box-shadow: 0 28px 100px rgba(0, 0, 0, 0.34);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(4px);
+    }
+
+    .dialog-head, .dialog-body, .dialog-foot { padding: 18px 20px; }
+
+    .dialog-head {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      backdrop-filter: blur(18px);
+    }
+
+    .dialog-head h2 { margin: 0; }
+
+    .dialog-foot {
+      position: sticky;
+      bottom: 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--line);
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      backdrop-filter: blur(18px);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 11px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 11px;
+    }
+
+    .result-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+      margin: 16px 0;
+    }
+
+    .notice {
+      padding: 12px 13px;
+      border-radius: var(--radius-md);
+      color: var(--secondary);
+      background: var(--surface-2);
+      font-size: 0.87rem;
+      line-height: 1.45;
+    }
+
+    .import-area {
+      min-height: 250px;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      line-height: 1.55;
+    }
+
+    .range-preview {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+      margin-top: 13px;
+    }
+
+    .range-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+    }
+
+    .range-card .value {
+      font-size: 1.25rem;
+      font-weight: 750;
+      letter-spacing: -0.03em;
+    }
+
+    .range-card .label {
+      margin-top: 2px;
+      color: var(--secondary);
+      font-size: 0.75rem;
+      font-weight: 650;
+    }
+
+    .validation {
+      margin-top: 10px;
+      color: var(--secondary);
+      font-size: 0.84rem;
+      line-height: 1.4;
+    }
+
+    .validation.good { color: var(--green); }
+    .validation.bad { color: var(--red); }
+
+    .keyboard {
+      display: inline-block;
+      padding: 1px 6px;
+      border: 1px solid var(--line);
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      color: var(--secondary);
+      background: var(--surface-2);
+      font-size: 0.72rem;
+      font-weight: 650;
+    }
+
+    .empty {
+      padding: 38px 16px;
+      color: var(--secondary);
+      text-align: center;
+    }
+
+    .toast-region {
+      position: fixed;
+      z-index: 100;
+      right: 18px;
+      bottom: 18px;
+      display: grid;
+      gap: 9px;
+      width: min(390px, calc(100% - 36px));
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 13px 15px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      color: var(--text);
+      background: var(--glass);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(22px);
+      animation: toast-in 180ms ease;
+    }
+
+    .toast strong {
+      display: block;
+      margin-bottom: 2px;
+      letter-spacing: -0.015em;
+    }
+
+    .toast span {
+      color: var(--secondary);
+      font-size: 0.84rem;
+    }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateY(8px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .hidden { display: none !important; }
+
+    #driveBtn.drive-connected {
+      color: var(--green);
+      border-color: color-mix(in srgb, var(--green) 40%, var(--line));
+    }
+
+    #driveBtn.drive-pending {
+      color: var(--orange);
+      border-color: color-mix(in srgb, var(--orange) 42%, var(--line));
+    }
+
+    #driveBtn.drive-error {
+      color: var(--red);
+      border-color: color-mix(in srgb, var(--red) 42%, var(--line));
+    }
+
+    .drive-status-card {
+      display: grid;
+      gap: 4px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--surface-2);
+    }
+
+    .drive-status-card strong {
+      font-size: 1rem;
+      letter-spacing: -0.015em;
+    }
+
+    .drive-status-card span {
+      color: var(--secondary);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .drive-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .drive-meta-item {
+      min-width: 0;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+    }
+
+    .drive-meta-item .label {
+      margin-bottom: 4px;
+      color: var(--secondary);
+      font-size: 0.73rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.035em;
+    }
+
+    .drive-meta-item .value {
+      overflow-wrap: anywhere;
+      font-size: 0.85rem;
+    }
+
+    .drive-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .drive-conflict {
+      margin-top: 13px;
+      border-left: 4px solid var(--orange);
+    }
+
+    .setup-steps {
+      margin: 9px 0 0;
+      padding-left: 21px;
+      color: var(--secondary);
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 1120px) {
+      .cards { grid-template-columns: repeat(3, 1fr); }
+      .toolbar { grid-template-columns: repeat(2, 1fr); }
+      .toolbar .search-field { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 760px) {
+      .app-bar-inner {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 10px 14px;
+      }
+
+      .brand { text-align: center; }
+      .segmented { width: 100%; }
+      .top-actions { justify-content: center; }
+
+      .shell { padding: 22px 13px 40px; }
+      .hero { flex-direction: column; }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .toolbar, .grid-2, .grid-3, .result-actions, .range-preview { grid-template-columns: 1fr; }
+      .toolbar .search-field { grid-column: auto; }
+      .pagination { align-items: flex-start; flex-direction: column; }
+      .dialog-foot button { flex: 1; }
+      .drive-meta { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="app-bar">
+    <div class="app-bar-inner">
+      <div class="brand">SAT Question Bank Tracker</div>
+
+      <div class="segmented" aria-label="Section">
+        <button id="mathTab" class="active" data-section="math">Math</button>
+        <button id="rwTab" data-section="rw">Reading & Writing</button>
+      </div>
+
+      <div class="top-actions">
+        <button id="driveBtn" class="secondary">Drive: Set up</button>
+        <button id="bulkBtn" class="secondary">Bulk paste</button>
+        <button id="dataBtn" class="secondary">Data</button>
+        <button id="nextBtn">Next unattempted</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <h1 id="sectionTitle">Math</h1>
+        <p id="sectionSubtitle" class="subtle">Track all 1,756 results by question number and 8-character question ID.</p>
+      </div>
+    </section>
+
+    <section class="cards">
+      <div class="card">
+        <div class="card-value" id="totalStat">1,756</div>
+        <div class="card-label">Total questions</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="idsStat">0</div>
+        <div class="card-label">IDs recorded</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="completeStat">0</div>
+        <div class="card-label">Completed</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="correctStat">0</div>
+        <div class="card-label">Correct</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="remainingStat">1,756</div>
+        <div class="card-label">Remaining</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="accuracyStat">—</div>
+        <div class="card-label">Accuracy</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="progress-meta">
+        <span id="progressText">0 of 1,756 completed</span>
+        <span id="saveState">Saved locally</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <label class="search-field">
+          Search
+          <input id="searchInput" type="search" placeholder="Question ID, number, domain, skill, or notes" />
+        </label>
+
+        <label>
+          Completion
+          <select id="completionFilter">
+            <option value="">All questions</option>
+            <option value="complete">Completed</option>
+            <option value="incomplete">Not completed</option>
+          </select>
+        </label>
+
+        <label>
+          Result
+          <select id="statusFilter">
+            <option value="">All results</option>
+            <option value="unattempted">Unattempted</option>
+            <option value="correct">Correct</option>
+            <option value="incorrect">Incorrect</option>
+            <option value="skipped">Skipped</option>
+          </select>
+        </label>
+
+        <label>
+          Domain
+          <select id="domainFilter"></select>
+        </label>
+
+        <label>
+          Skill
+          <select id="skillFilter"></select>
+        </label>
+
+        <div class="toolbar-actions">
+          <button id="clearFiltersBtn" class="secondary">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>ID</th>
+              <th>Domain</th>
+              <th>Skill</th>
+              <th>Result</th>
+              <th>Completion</th>
+              <th>Attempts</th>
+              <th>Notes</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="questionRows"></tbody>
+        </table>
+      </div>
+
+      <div id="emptyState" class="empty hidden">
+        No question slots exist in this tab yet. Use <strong>Bulk paste</strong> or set a total in <strong>Data</strong>.
+      </div>
+
+      <div class="pagination">
+        <span id="resultCount" class="subtle"></span>
+
+        <div class="page-controls">
+          <label>
+            Rows
+            <select id="pageSize">
+              <option>25</option>
+              <option selected>50</option>
+              <option>100</option>
+              <option>200</option>
+            </select>
+          </label>
+          <button id="previousBtn" class="secondary">Previous</button>
+          <span id="pageLabel">Page 1 of 1</span>
+          <button id="nextPageBtn" class="secondary">Next</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="bulkDialog">
+    <div class="dialog-head">
+      <h2 id="bulkTitle">Bulk paste into Math</h2>
+      <button class="secondary" data-close="bulkDialog">Close</button>
+    </div>
+
+    <div class="dialog-body">
+      <div class="notice">
+        Choose the starting question number, then paste one 8-character hexadecimal ID per line. Blank lines are ignored. The ending question number updates automatically.
+      </div>
+
+      <div class="grid-2" style="margin-top:14px">
+        <label>
+          Start at question number
+          <input id="bulkStart" type="number" min="1" step="1" value="1" />
+        </label>
+
+        <label>
+          Domain for this group
+          <select id="bulkDomain"></select>
+        </label>
+      </div>
+
+      <label style="margin-top:11px">
+        Skill for this group
+        <input id="bulkSkill" list="bulkSkillList" placeholder="Search or choose a skill" autocomplete="off" />
+      </label>
+      <datalist id="bulkSkillList"></datalist>
+
+      <label style="margin-top:11px">
+        Question IDs
+        <textarea id="bulkText" class="import-area" spellcheck="false" placeholder="ac472881
+
+3f5a3602
+
+3d1070c9
+
+002dba45"></textarea>
+      </label>
+
+      <div class="range-preview">
+        <div class="range-card">
+          <div class="value" id="bulkValidCount">0</div>
+          <div class="label">Valid unique IDs</div>
+        </div>
+        <div class="range-card">
+          <div class="value" id="bulkStartPreview">1</div>
+          <div class="label">Starts at</div>
+        </div>
+        <div class="range-card">
+          <div class="value" id="bulkEndPreview">—</div>
+          <div class="label">Ends at</div>
+        </div>
+      </div>
+
+      <div id="bulkValidation" class="validation">Paste IDs to preview the destination range.</div>
+
+      <label style="margin-top:12px">
+        <span>
+          <input id="autoExpandCheck" type="checkbox" checked style="width:auto;min-height:0;margin-right:7px">
+          Automatically expand this tab if the ending number exceeds its current total
+        </span>
+      </label>
+    </div>
+
+    <div class="dialog-foot">
+      <button class="secondary" data-close="bulkDialog">Cancel</button>
+      <button id="importBulkBtn">Import IDs</button>
+    </div>
+  </dialog>
+
+  <dialog id="editDialog">
+    <div class="dialog-head">
+      <h2 id="editTitle">Question 1</h2>
+      <button class="secondary" data-close="editDialog">Close</button>
+    </div>
+
+    <div class="dialog-body">
+      <div id="completionNotice" class="notice">This question has not been completed.</div>
+
+      <div class="grid-2" style="margin-top:14px">
+        <label>
+          Question number
+          <input id="editNumber" readonly />
+        </label>
+
+        <label>
+          Question ID
+          <input id="editId" maxlength="8" spellcheck="false" autocomplete="off" placeholder="ac472881" />
+        </label>
+      </div>
+
+      <div class="grid-2" style="margin-top:11px">
+        <label>
+          Domain
+          <select id="editDomain"></select>
+        </label>
+
+        <label>
+          Skill
+          <input id="editSkill" list="editSkillList" placeholder="Search or choose a skill" autocomplete="off" />
+        </label>
+        <datalist id="editSkillList"></datalist>
+      </div>
+
+      <label style="margin-top:11px">
+        Notes / mistake analysis
+        <textarea id="editNotes" placeholder="Record the mistake, correct method, or a pattern to recognize next time."></textarea>
+      </label>
+
+      <div class="result-actions">
+        <button id="correctBtn" class="success">Correct <span class="keyboard">C</span></button>
+        <button id="incorrectBtn" class="danger">Incorrect <span class="keyboard">I</span></button>
+        <button id="skippedBtn" class="warning">Skipped <span class="keyboard">S</span></button>
+      </div>
+
+      <p id="attemptSummary" class="subtle"></p>
+      <p class="subtle">Submitting a result marks the question completed, saves it, confirms completion, and opens the next question in your current filtered view.</p>
+    </div>
+
+    <div class="dialog-foot">
+      <button id="clearQuestionBtn" class="secondary">Clear slot</button>
+      <button id="saveOnlyBtn" class="secondary">Save only</button>
+      <button id="saveNextBtn">Save and next <span class="keyboard">Ctrl Enter</span></button>
+    </div>
+  </dialog>
+
+  <dialog id="driveDialog">
+    <div class="dialog-head">
+      <h2>Google Drive sync</h2>
+      <button class="secondary" data-close="driveDialog">Close</button>
+    </div>
+
+    <div class="dialog-body">
+      <div class="drive-status-card">
+        <strong id="driveStatusTitle">Google Drive is not configured</strong>
+        <span id="driveStatusDetail">Your data is still saved immediately in this browser.</span>
+      </div>
+
+      <div id="driveConflictBox" class="notice drive-conflict hidden">
+        <strong>Two different tracker copies were found.</strong>
+        <p id="driveConflictText" style="margin:6px 0 10px">Choose which copy should become the current version.</p>
+        <div class="drive-actions">
+          <button id="useDriveCopyBtn">Use Drive copy</button>
+          <button id="keepDeviceCopyBtn" class="warning">Keep this device</button>
+          <button id="downloadBothCopiesBtn" class="secondary">Download both backups</button>
+        </div>
+      </div>
+
+      <label style="margin-top:14px">
+        Google OAuth client ID
+        <input id="googleClientIdInput" autocomplete="off" spellcheck="false" placeholder="1234567890-abc.apps.googleusercontent.com" />
+      </label>
+
+      <div class="drive-meta">
+        <div class="drive-meta-item">
+          <div class="label">Authorized JavaScript origin</div>
+          <div class="value" id="driveOriginValue">—</div>
+        </div>
+        <div class="drive-meta-item">
+          <div class="label">Drive data file</div>
+          <div class="value" id="driveFileValue">Not created or located</div>
+        </div>
+      </div>
+
+      <div class="drive-actions">
+        <button id="connectDriveBtn">Connect Google Drive</button>
+        <button id="saveDriveNowBtn" class="secondary">Save now</button>
+        <button id="openDriveFileBtn" class="secondary">Open Drive file</button>
+        <button id="disconnectDriveBtn" class="secondary">Disconnect</button>
+      </div>
+
+      <div class="notice" style="margin-top:14px">
+        <strong>GitHub Pages setup</strong>
+        <ol class="setup-steps">
+          <li>Create a Google Cloud project and enable the Google Drive API.</li>
+          <li>Configure the OAuth consent screen and add your Google account as a test user if the app remains in testing.</li>
+          <li>Create an OAuth client of type <strong>Web application</strong>.</li>
+          <li>Add the exact origin shown above under <strong>Authorized JavaScript origins</strong>. For GitHub Pages, use only <code>https://username.github.io</code>, without the repository path.</li>
+          <li>Paste the client ID above and connect. The tracker creates or locates <strong>SAT Question Bank Tracker Data.json</strong> in your Drive.</li>
+        </ol>
+      </div>
+
+      <p class="subtle" style="margin-top:12px">
+        Autosave writes locally immediately and sends changes to Drive about 1.5 seconds after editing stops. Access tokens are kept only in memory and may require reconnection after they expire.
+      </p>
+    </div>
+
+    <div class="dialog-foot">
+      <button class="secondary" data-close="driveDialog">Done</button>
+    </div>
+  </dialog>
+
+  <dialog id="dataDialog">
+    <div class="dialog-head">
+      <h2>Data and section size</h2>
+      <button class="secondary" data-close="dataDialog">Close</button>
+    </div>
+
+    <div class="dialog-body">
+      <h3>Question totals</h3>
+      <div class="grid-2">
+        <label>
+          Math total
+          <input id="mathTotalInput" type="number" min="0" max="10000" step="1" />
+        </label>
+
+        <label>
+          Reading & Writing total
+          <input id="rwTotalInput" type="number" min="0" max="10000" step="1" />
+        </label>
+      </div>
+      <p class="subtle" style="margin-top:8px">
+        Math starts at 1,756. Reading & Writing starts at zero because no total was specified; bulk imports can expand it automatically.
+      </p>
+      <button id="applyTotalsBtn" style="margin-top:10px">Apply totals</button>
+
+      <hr style="margin:22px 0;border:0;border-top:1px solid var(--line)">
+
+      <h3>Export and restore</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button id="exportCsvBtn" class="secondary">Export current tab CSV</button>
+        <button id="exportJsonBtn" class="secondary">Backup all data as JSON</button>
+        <label class="button secondary" style="cursor:pointer">
+          Restore backup
+          <input id="restoreInput" class="hidden" type="file" accept=".json,.csv,application/json,text/csv" />
+        </label>
+      </div>
+
+      <hr style="margin:22px 0;border:0;border-top:1px solid var(--line)">
+
+      <h3>Reset</h3>
+      <button id="resetBtn" class="danger">Erase all tracker data</button>
+    </div>
+  </dialog>
+
+  <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    "use strict";
+
+    const STORAGE_KEY = "satQuestionBankTracker.v4";
+    const OLD_MATH_KEY = "satMathQuestionTracker.v3";
+    const DRIVE_CONFIG_KEY = "satQuestionBankTracker.drive.v1";
+    const DRIVE_FILE_NAME = "SAT Question Bank Tracker Data.json";
+    const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+    const DRIVE_APP_PROPERTY_KEY = "satQuestionBankTracker";
+    const DRIVE_APP_PROPERTY_VALUE = "v1";
+    const DEFAULT_GOOGLE_CLIENT_ID = ""; // Optional: paste your Web OAuth client ID here before publishing.
+
+    function randomId() {
+      if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+      return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+    }
+
+    function loadDriveConfig() {
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem(DRIVE_CONFIG_KEY)) || {}; } catch (_) {}
+      return {
+        clientId: String(saved.clientId || DEFAULT_GOOGLE_CLIENT_ID || ""),
+        fileId: String(saved.fileId || ""),
+        fileName: String(saved.fileName || DRIVE_FILE_NAME),
+        lastRemoteRevision: Math.max(0, Number(saved.lastRemoteRevision) || 0),
+        lastRemoteHash: String(saved.lastRemoteHash || ""),
+        lastSyncedAt: String(saved.lastSyncedAt || ""),
+        deviceId: String(saved.deviceId || randomId())
+      };
+    }
+
+    const driveSync = {
+      ...loadDriveConfig(),
+      writerId: randomId(),
+      accessToken: "",
+      tokenExpiresAt: 0,
+      connected: false,
+      syncing: false,
+      dirty: false,
+      applyingRemote: false,
+      autosaveTimer: null,
+      retryTimer: null,
+      lastError: "",
+      conflict: null
+    };
+
+    const TAXONOMY = {
+      math: {
+        label: "Math",
+        defaultTotal: 1756,
+        domains: {
+          "Algebra": [
+            "Linear equations in one variable",
+            "Linear functions",
+            "Linear equations in two variables",
+            "Systems of two linear equations in two variables",
+            "Linear inequalities in one or two variables"
+          ],
+          "Advanced Math": [
+            "Equivalent expressions",
+            "Nonlinear equations in one variable",
+            "Nonlinear functions",
+            "Systems of equations in two variables"
+          ],
+          "Problem-Solving and Data Analysis": [
+            "Ratios, rates, proportional relationships, and units",
+            "Percentages",
+            "One-variable data: Distributions and measures of center and spread",
+            "Two-variable data: Models and scatterplots",
+            "Probability and conditional probability",
+            "Inference from sample statistics and margin of error",
+            "Evaluating statistical claims: Observational studies and experiments"
+          ],
+          "Geometry and Trigonometry": [
+            "Area and volume",
+            "Lines, angles, and triangles",
+            "Right triangles and trigonometry",
+            "Circles"
+          ],
+          "Unknown": ["Unknown", "Other"]
+        }
+      },
+
+      rw: {
+        label: "Reading & Writing",
+        defaultTotal: 0,
+        domains: {
+          "Information and Ideas": [
+            "Central Ideas and Details",
+            "Inferences",
+            "Command of Evidence: Textual",
+            "Command of Evidence: Quantitative"
+          ],
+          "Craft and Structure": [
+            "Words in Context",
+            "Text Structure and Purpose",
+            "Cross-Text Connections"
+          ],
+          "Expression of Ideas": [
+            "Rhetorical Synthesis",
+            "Transitions"
+          ],
+          "Standard English Conventions": [
+            "Boundaries",
+            "Form, Structure, and Sense"
+          ],
+          "Unknown": ["Unknown", "Other"]
+        }
+      }
+    };
+
+    const state = {
+      activeSection: "math",
+      page: 1,
+      pageSize: 50,
+      activeNumber: null,
+      sections: {
+        math: { targetCount: 1756, questions: [] },
+        rw: { targetCount: 0, questions: [] }
+      }
+    };
+
+    const $ = id => document.getElementById(id);
+
+    function blankQuestion(number) {
+      return {
+        number,
+        questionId: "",
+        domain: "Unknown",
+        skill: "Unknown",
+        status: "unattempted",
+        attempts: 0,
+        correctAttempts: 0,
+        incorrectAttempts: 0,
+        skippedAttempts: 0,
+        notes: "",
+        updatedAt: ""
+      };
+    }
+
+    function isValidId(value) {
+      return /^[0-9a-f]{8}$/i.test(String(value || "").trim());
+    }
+
+    function validDomains(sectionKey) {
+      return Object.keys(TAXONOMY[sectionKey].domains);
+    }
+
+    function skillsFor(sectionKey, domain) {
+      const base = TAXONOMY[sectionKey].domains[domain] || [];
+      return [...new Set([...base, "Other", "Unknown"])];
+    }
+
+    function allSkills(sectionKey) {
+      return [...new Set(
+        Object.values(TAXONOMY[sectionKey].domains)
+          .flat()
+          .concat(["Other", "Unknown"])
+      )];
+    }
+
+    function normalizeQuestion(raw, number, sectionKey) {
+      const domains = validDomains(sectionKey);
+      const domain = domains.includes(raw?.domain) ? raw.domain : "Unknown";
+      const allowedSkills = skillsFor(sectionKey, domain);
+      const rawSkill = String(raw?.skill || "Unknown");
+      const skill = allowedSkills.includes(rawSkill) ? rawSkill : "Other";
+      const allowedStatus = ["unattempted", "correct", "incorrect", "skipped"];
+      const status = allowedStatus.includes(raw?.status) ? raw.status : "unattempted";
+
+      return {
+        number,
+        questionId: isValidId(raw?.questionId) ? String(raw.questionId).toLowerCase() : "",
+        domain,
+        skill,
+        status,
+        attempts: Math.max(0, Number(raw?.attempts) || 0),
+        correctAttempts: Math.max(0, Number(raw?.correctAttempts) || 0),
+        incorrectAttempts: Math.max(0, Number(raw?.incorrectAttempts ?? raw?.wrongAttempts) || 0),
+        skippedAttempts: Math.max(0, Number(raw?.skippedAttempts) || 0),
+        notes: String(raw?.notes || ""),
+        updatedAt: String(raw?.updatedAt || raw?.lastAttempt || "")
+      };
+    }
+
+    function ensureQuestionCount(sectionKey, count) {
+      count = Math.max(0, Math.min(10000, Math.floor(Number(count) || 0)));
+      const section = state.sections[sectionKey];
+
+      while (section.questions.length < count) {
+        section.questions.push(blankQuestion(section.questions.length + 1));
+      }
+
+      if (section.questions.length > count) {
+        section.questions = section.questions.slice(0, count);
+      }
+
+      section.questions.forEach((q, index) => q.number = index + 1);
+      section.targetCount = count;
+    }
+
+    function freshState() {
+      state.activeSection = "math";
+      state.page = 1;
+      state.pageSize = 50;
+      state.activeNumber = null;
+      state.sections = {
+        math: { targetCount: 1756, questions: [] },
+        rw: { targetCount: 0, questions: [] }
+      };
+      ensureQuestionCount("math", 1756);
+      ensureQuestionCount("rw", 0);
+    }
+
+    function migrateOldMath() {
+      try {
+        const old = JSON.parse(localStorage.getItem(OLD_MATH_KEY));
+        if (!old?.questions?.length) return false;
+
+        ensureQuestionCount("math", 1756);
+        old.questions.slice(0, 1756).forEach((raw, index) => {
+          state.sections.math.questions[index] = normalizeQuestion(raw, index + 1, "math");
+        });
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function load() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (saved?.sections?.math && saved?.sections?.rw) {
+          state.activeSection = saved.activeSection === "rw" ? "rw" : "math";
+          state.sections.math.targetCount = Math.max(0, Number(saved.sections.math.targetCount) || 0);
+          state.sections.rw.targetCount = Math.max(0, Number(saved.sections.rw.targetCount) || 0);
+
+          state.sections.math.questions = Array.from(
+            { length: state.sections.math.targetCount },
+            (_, index) => normalizeQuestion(saved.sections.math.questions?.[index], index + 1, "math")
+          );
+
+          state.sections.rw.questions = Array.from(
+            { length: state.sections.rw.targetCount },
+            (_, index) => normalizeQuestion(saved.sections.rw.questions?.[index], index + 1, "rw")
+          );
+          return;
+        }
+      } catch (_) {}
+
+      freshState();
+      migrateOldMath();
+      save(false);
+    }
+
+    function persistDriveConfig() {
+      localStorage.setItem(DRIVE_CONFIG_KEY, JSON.stringify({
+        clientId: driveSync.clientId,
+        fileId: driveSync.fileId,
+        fileName: driveSync.fileName,
+        lastRemoteRevision: driveSync.lastRemoteRevision,
+        lastRemoteHash: driveSync.lastRemoteHash,
+        lastSyncedAt: driveSync.lastSyncedAt,
+        deviceId: driveSync.deviceId
+      }));
+    }
+
+    function save(dataChanged = false) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 4,
+        activeSection: state.activeSection,
+        sections: state.sections
+      }));
+
+      $("saveState").textContent = "Saved locally " + new Date().toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit"
+      });
+
+      if (dataChanged && !driveSync.applyingRemote) {
+        driveSync.dirty = true;
+        driveSync.lastError = "";
+        scheduleDriveAutosave();
+      }
+
+      updateDriveUi();
+    }
+
+    function trackerSnapshot() {
+      return {
+        version: 4,
+        activeSection: state.activeSection,
+        sections: state.sections
+      };
+    }
+
+    function trackerDataForHash(tracker = trackerSnapshot()) {
+      return JSON.stringify({ sections: tracker.sections });
+    }
+
+    function hashString(value) {
+      let hash = 2166136261;
+      for (let index = 0; index < value.length; index++) {
+        hash ^= value.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+      }
+      return (hash >>> 0).toString(16).padStart(8, "0");
+    }
+
+    function trackerHash(tracker = trackerSnapshot()) {
+      return hashString(trackerDataForHash(tracker));
+    }
+
+    function extractTrackerPayload(payload) {
+      return payload?.tracker?.sections ? payload.tracker : payload;
+    }
+
+    function remoteRevision(payload) {
+      return Math.max(0, Number(payload?.sync?.revision) || 0);
+    }
+
+    function buildDrivePayload(revision) {
+      return {
+        app: "SAT Question Bank Tracker",
+        schemaVersion: 1,
+        savedAt: new Date().toISOString(),
+        sync: {
+          revision,
+          writerId: driveSync.writerId,
+          deviceId: driveSync.deviceId
+        },
+        tracker: trackerSnapshot()
+      };
+    }
+
+    function hasMeaningfulLocalData() {
+      if (state.sections.math.targetCount !== TAXONOMY.math.defaultTotal) return true;
+      if (state.sections.rw.targetCount !== TAXONOMY.rw.defaultTotal) return true;
+
+      return ["math", "rw"].some(sectionKey =>
+        state.sections[sectionKey].questions.some(q =>
+          q.questionId
+          || q.status !== "unattempted"
+          || q.notes
+          || q.domain !== "Unknown"
+          || q.skill !== "Unknown"
+          || q.attempts > 0
+        )
+      );
+    }
+
+    function isDriveTokenValid() {
+      return Boolean(driveSync.accessToken) && Date.now() < driveSync.tokenExpiresAt - 30000;
+    }
+
+    function currentOriginLabel() {
+      if (location.protocol === "file:") return "Local file — host on GitHub Pages or localhost";
+      return location.origin;
+    }
+
+    function updateDriveUi() {
+      const button = $("driveBtn");
+      if (!button) return;
+
+      button.classList.remove("drive-connected", "drive-pending", "drive-error");
+
+      let buttonText = "Drive: Set up";
+      let title = "Google Drive is not configured";
+      let detail = "Your data is still saved immediately in this browser.";
+
+      if (location.protocol === "file:") {
+        buttonText = driveSync.clientId ? "Drive: Hosting needed" : "Drive: Set up";
+        title = "Host this tracker before connecting";
+        detail = "Google authorization requires an HTTPS web origin such as GitHub Pages, or localhost for testing.";
+        button.classList.add("drive-error");
+      } else if (driveSync.conflict) {
+        buttonText = "Drive: Conflict";
+        title = "A sync conflict needs your decision";
+        detail = "The Drive file and this device contain different changes. Nothing will be overwritten automatically.";
+        button.classList.add("drive-error");
+      } else if (driveSync.syncing) {
+        buttonText = "Drive: Saving…";
+        title = "Saving to Google Drive";
+        detail = "The local copy is already safe while the Drive upload finishes.";
+        button.classList.add("drive-pending");
+      } else if (driveSync.connected && isDriveTokenValid() && driveSync.dirty) {
+        buttonText = "Drive: Pending";
+        title = "Changes are waiting to sync";
+        detail = navigator.onLine ? "Autosave will upload them shortly." : "You are offline. Changes remain saved locally until the connection returns.";
+        button.classList.add("drive-pending");
+      } else if (driveSync.connected && isDriveTokenValid()) {
+        buttonText = "Drive: Synced";
+        title = "Connected to Google Drive";
+        detail = driveSync.lastSyncedAt
+          ? `Last synced ${new Date(driveSync.lastSyncedAt).toLocaleString()}.`
+          : "The Drive file is connected and autosave is active.";
+        button.classList.add("drive-connected");
+      } else if (driveSync.fileId && driveSync.dirty) {
+        buttonText = "Drive: Reconnect";
+        title = "Reconnect to upload pending changes";
+        detail = "Your edits are saved locally. Google access tokens expire and are never stored on disk.";
+        button.classList.add("drive-pending");
+      } else if (driveSync.fileId) {
+        buttonText = "Drive: Connect";
+        title = "Drive file remembered";
+        detail = "Reconnect Google Drive to check for updates and resume autosave.";
+      } else if (driveSync.clientId) {
+        buttonText = "Drive: Connect";
+        title = "OAuth client ID saved";
+        detail = "Connect Google Drive to create or locate the tracker data file.";
+      }
+
+      if (driveSync.lastError) {
+        title = "Google Drive sync error";
+        detail = driveSync.lastError;
+        button.classList.add("drive-error");
+      }
+
+      button.textContent = buttonText;
+      $("driveStatusTitle").textContent = title;
+      $("driveStatusDetail").textContent = detail;
+      $("driveOriginValue").textContent = currentOriginLabel();
+      $("driveFileValue").textContent = driveSync.fileId
+        ? `${driveSync.fileName || DRIVE_FILE_NAME} · revision ${driveSync.lastRemoteRevision || "unknown"}`
+        : "Not created or located";
+
+      if (document.activeElement !== $("googleClientIdInput")) {
+        $("googleClientIdInput").value = driveSync.clientId;
+      }
+
+      $("connectDriveBtn").textContent = driveSync.connected && isDriveTokenValid()
+        ? "Reconnect Google Drive"
+        : "Connect Google Drive";
+      $("saveDriveNowBtn").disabled = !driveSync.fileId || !isDriveTokenValid() || driveSync.syncing || Boolean(driveSync.conflict);
+      $("openDriveFileBtn").disabled = !driveSync.fileId;
+      $("disconnectDriveBtn").disabled = !driveSync.accessToken;
+      $("driveConflictBox").classList.toggle("hidden", !driveSync.conflict);
+
+      if (driveSync.conflict) {
+        const remoteDate = driveSync.conflict.remotePayload?.savedAt
+          ? new Date(driveSync.conflict.remotePayload.savedAt).toLocaleString()
+          : "an unknown time";
+        $("driveConflictText").textContent =
+          `Drive revision ${driveSync.conflict.remoteRevision} was saved ${remoteDate}. Choose the Drive copy or overwrite it with this device's locally saved copy.`;
+      }
+    }
+
+    class DriveApiError extends Error {
+      constructor(message, status = 0) {
+        super(message);
+        this.name = "DriveApiError";
+        this.status = status;
+      }
+    }
+
+    async function driveFetch(url, options = {}) {
+      if (!isDriveTokenValid()) throw new DriveApiError("Google Drive authorization expired. Reconnect to continue syncing.", 401);
+
+      const headers = new Headers(options.headers || {});
+      headers.set("Authorization", `Bearer ${driveSync.accessToken}`);
+
+      let response;
+      try {
+        response = await fetch(url, { ...options, headers });
+      } catch (_) {
+        throw new DriveApiError("Google Drive could not be reached. Your changes remain saved locally.");
+      }
+
+      if (!response.ok) {
+        let message = "";
+        try {
+          const body = await response.json();
+          message = body?.error?.message || "";
+        } catch (_) {
+          try { message = await response.text(); } catch (_) {}
+        }
+
+        if (response.status === 401) {
+          message = "Google Drive authorization expired. Reconnect to continue syncing.";
+        } else if (response.status === 403) {
+          message = message || "Google Drive rejected the request. Confirm that the Drive API is enabled and the OAuth client has the correct origin.";
+        } else if (response.status === 404) {
+          message = message || "The Google Drive data file could not be found.";
+        }
+
+        throw new DriveApiError(message || `Google Drive request failed (${response.status}).`, response.status);
+      }
+
+      return response;
+    }
+
+    function requestDriveAccessToken(clientId) {
+      return new Promise((resolve, reject) => {
+        if (!globalThis.google?.accounts?.oauth2) {
+          reject(new Error("Google's authorization library has not loaded. Check your internet connection and try again."));
+          return;
+        }
+
+        const client = google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: DRIVE_SCOPE,
+          callback: response => {
+            if (response?.error) {
+              reject(new Error(response.error_description || response.error));
+              return;
+            }
+            resolve(response);
+          },
+          error_callback: error => reject(new Error(error?.message || error?.type || "Google sign-in was closed or blocked."))
+        });
+
+        client.requestAccessToken({ prompt: driveSync.accessToken ? "" : "consent" });
+      });
+    }
+
+    async function listDriveTrackerFiles() {
+      const query = `appProperties has { key='${DRIVE_APP_PROPERTY_KEY}' and value='${DRIVE_APP_PROPERTY_VALUE}' } and trashed=false`;
+      const url = new URL("https://www.googleapis.com/drive/v3/files");
+      url.searchParams.set("q", query);
+      url.searchParams.set("spaces", "drive");
+      url.searchParams.set("pageSize", "10");
+      url.searchParams.set("orderBy", "modifiedTime desc");
+      url.searchParams.set("fields", "files(id,name,modifiedTime,version)");
+      const response = await driveFetch(url.toString());
+      return (await response.json()).files || [];
+    }
+
+    async function readDrivePayload(fileId) {
+      const response = await driveFetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media`);
+      const payload = await response.json();
+      const tracker = extractTrackerPayload(payload);
+      if (!tracker?.sections?.math || !tracker?.sections?.rw) {
+        throw new DriveApiError("The Drive file does not contain recognizable SAT tracker data.");
+      }
+      return payload;
+    }
+
+    async function createDriveFile() {
+      const revision = 1;
+      const payload = buildDrivePayload(revision);
+      const boundary = "sat_tracker_" + Math.random().toString(36).slice(2);
+      const metadata = {
+        name: DRIVE_FILE_NAME,
+        mimeType: "application/json",
+        appProperties: {
+          [DRIVE_APP_PROPERTY_KEY]: DRIVE_APP_PROPERTY_VALUE
+        }
+      };
+
+      const body = [
+        `--${boundary}`,
+        "Content-Type: application/json; charset=UTF-8",
+        "",
+        JSON.stringify(metadata),
+        `--${boundary}`,
+        "Content-Type: application/json; charset=UTF-8",
+        "",
+        JSON.stringify(payload, null, 2),
+        `--${boundary}--`,
+        ""
+      ].join("\r\n");
+
+      const response = await driveFetch(
+        "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,modifiedTime,version",
+        {
+          method: "POST",
+          headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
+          body
+        }
+      );
+
+      const file = await response.json();
+      driveSync.fileId = file.id;
+      driveSync.fileName = file.name || DRIVE_FILE_NAME;
+      driveSync.lastRemoteRevision = revision;
+      driveSync.lastRemoteHash = trackerHash();
+      driveSync.lastSyncedAt = payload.savedAt;
+      driveSync.dirty = false;
+      driveSync.conflict = null;
+      persistDriveConfig();
+      updateDriveUi();
+      return file;
+    }
+
+    function applyRemoteTracker(payload) {
+      const tracker = extractTrackerPayload(payload);
+      driveSync.applyingRemote = true;
+
+      try {
+        for (const sectionKey of ["math", "rw"]) {
+          const targetCount = Math.max(0, Math.min(10000, Number(tracker.sections[sectionKey].targetCount) || 0));
+          state.sections[sectionKey] = {
+            targetCount,
+            questions: Array.from(
+              { length: targetCount },
+              (_, index) => normalizeQuestion(tracker.sections[sectionKey].questions?.[index], index + 1, sectionKey)
+            )
+          };
+        }
+
+        state.activeSection = tracker.activeSection === "rw" ? "rw" : "math";
+        state.page = 1;
+        state.activeNumber = null;
+        save(false);
+        renderAll();
+      } finally {
+        driveSync.applyingRemote = false;
+      }
+    }
+
+    function setDriveConflict(remotePayload) {
+      driveSync.conflict = {
+        remotePayload,
+        remoteRevision: remoteRevision(remotePayload)
+      };
+      driveSync.dirty = true;
+      driveSync.lastError = "";
+      updateDriveUi();
+      if (!$("driveDialog").open) $("driveDialog").showModal();
+    }
+
+    async function connectAndInitializeDrive() {
+      if (location.protocol === "file:") {
+        throw new Error("Google Drive sign-in cannot run from a file:// page. Publish the tracker on GitHub Pages or run it through localhost.");
+      }
+
+      const clientId = $("googleClientIdInput").value.trim();
+      if (!/\.apps\.googleusercontent\.com$/.test(clientId)) {
+        throw new Error("Enter a valid Google Web OAuth client ID ending in .apps.googleusercontent.com.");
+      }
+
+      driveSync.clientId = clientId;
+      persistDriveConfig();
+      driveSync.lastError = "";
+      updateDriveUi();
+
+      const token = await requestDriveAccessToken(clientId);
+      driveSync.accessToken = token.access_token;
+      driveSync.tokenExpiresAt = Date.now() + Math.max(60, Number(token.expires_in) || 3600) * 1000;
+      driveSync.connected = true;
+      driveSync.lastError = "";
+      updateDriveUi();
+
+      let remotePayload = null;
+      let rememberedFileWorked = false;
+
+      if (driveSync.fileId) {
+        try {
+          remotePayload = await readDrivePayload(driveSync.fileId);
+          rememberedFileWorked = true;
+        } catch (error) {
+          if (!(error instanceof DriveApiError) || error.status !== 404) throw error;
+          driveSync.fileId = "";
+          driveSync.lastRemoteRevision = 0;
+          driveSync.lastRemoteHash = "";
+          persistDriveConfig();
+        }
+      }
+
+      if (!remotePayload) {
+        const files = await listDriveTrackerFiles();
+        if (files.length) {
+          driveSync.fileId = files[0].id;
+          driveSync.fileName = files[0].name || DRIVE_FILE_NAME;
+          persistDriveConfig();
+          remotePayload = await readDrivePayload(driveSync.fileId);
+        }
+      }
+
+      if (!remotePayload) {
+        await createDriveFile();
+        showToast("Google Drive connected", "A new Drive data file was created from this device's tracker data.");
+        return;
+      }
+
+      const tracker = extractTrackerPayload(remotePayload);
+      const remoteHash = trackerHash(tracker);
+      const localHash = trackerHash();
+      const revision = remoteRevision(remotePayload);
+
+      driveSync.fileName = driveSync.fileName || DRIVE_FILE_NAME;
+
+      if (remoteHash === localHash) {
+        driveSync.lastRemoteRevision = revision;
+        driveSync.lastRemoteHash = remoteHash;
+        driveSync.lastSyncedAt = remotePayload.savedAt || new Date().toISOString();
+        driveSync.dirty = false;
+        driveSync.conflict = null;
+        persistDriveConfig();
+        updateDriveUi();
+        showToast("Google Drive connected", "The local and Drive copies already match.");
+        return;
+      }
+
+      if (!hasMeaningfulLocalData()) {
+        applyRemoteTracker(remotePayload);
+        driveSync.lastRemoteRevision = revision;
+        driveSync.lastRemoteHash = remoteHash;
+        driveSync.lastSyncedAt = remotePayload.savedAt || new Date().toISOString();
+        driveSync.dirty = false;
+        driveSync.conflict = null;
+        persistDriveConfig();
+        updateDriveUi();
+        showToast("Drive data loaded", "This device was blank, so the Google Drive copy was restored automatically.");
+        return;
+      }
+
+      if (rememberedFileWorked && driveSync.lastRemoteRevision === revision) {
+        driveSync.dirty = true;
+        driveSync.conflict = null;
+        updateDriveUi();
+        scheduleDriveAutosave(100);
+        showToast("Google Drive reconnected", "Locally saved offline changes are being uploaded.");
+        return;
+      }
+
+      setDriveConflict(remotePayload);
+    }
+
+    async function syncToDrive({ force = false, manual = false } = {}) {
+      clearTimeout(driveSync.autosaveTimer);
+      driveSync.autosaveTimer = null;
+
+      if (!driveSync.fileId) {
+        if (manual) showToast("Drive file unavailable", "Connect Google Drive first.");
+        return;
+      }
+
+      if (!isDriveTokenValid()) {
+        driveSync.connected = false;
+        driveSync.lastError = "";
+        updateDriveUi();
+        if (manual) showToast("Reconnect Google Drive", "Your changes remain saved locally until you reconnect.");
+        return;
+      }
+
+      if (driveSync.conflict && !force) {
+        updateDriveUi();
+        if (manual && !$("driveDialog").open) $("driveDialog").showModal();
+        return;
+      }
+
+      if (!driveSync.dirty && !manual) return;
+
+      driveSync.syncing = true;
+      driveSync.lastError = "";
+      updateDriveUi();
+
+      try {
+        let knownRemoteRevision = driveSync.lastRemoteRevision;
+
+        if (!force) {
+          const remotePayload = await readDrivePayload(driveSync.fileId);
+          const revision = remoteRevision(remotePayload);
+          const remoteHash = trackerHash(extractTrackerPayload(remotePayload));
+
+          if (revision !== driveSync.lastRemoteRevision) {
+            if (remoteHash === trackerHash()) {
+              driveSync.lastRemoteRevision = revision;
+              driveSync.lastRemoteHash = remoteHash;
+              driveSync.lastSyncedAt = remotePayload.savedAt || new Date().toISOString();
+              driveSync.dirty = false;
+              persistDriveConfig();
+              return;
+            }
+
+            setDriveConflict(remotePayload);
+            return;
+          }
+
+          knownRemoteRevision = revision;
+        }
+
+        const nextRevision = Math.max(knownRemoteRevision, driveSync.lastRemoteRevision) + 1;
+        const payload = buildDrivePayload(nextRevision);
+        const response = await driveFetch(
+          `https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(driveSync.fileId)}?uploadType=media&fields=id,name,modifiedTime,version`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json; charset=UTF-8" },
+            body: JSON.stringify(payload, null, 2)
+          }
+        );
+
+        const metadata = await response.json();
+        driveSync.fileName = metadata.name || driveSync.fileName || DRIVE_FILE_NAME;
+        driveSync.lastRemoteRevision = nextRevision;
+        driveSync.lastRemoteHash = trackerHash();
+        driveSync.lastSyncedAt = payload.savedAt;
+        driveSync.dirty = false;
+        driveSync.conflict = null;
+        persistDriveConfig();
+
+        if (manual) showToast("Saved to Google Drive", `Drive revision ${nextRevision} was created.`);
+      } catch (error) {
+        driveSync.dirty = true;
+        driveSync.lastError = error.message || "Google Drive sync failed. Your changes remain saved locally.";
+
+        if (error instanceof DriveApiError && error.status === 401) {
+          driveSync.accessToken = "";
+          driveSync.tokenExpiresAt = 0;
+          driveSync.connected = false;
+        } else if (!driveSync.conflict && navigator.onLine) {
+          clearTimeout(driveSync.retryTimer);
+          driveSync.retryTimer = setTimeout(() => syncToDrive(), 30000);
+        }
+
+        if (manual) showToast("Drive save failed", driveSync.lastError);
+      } finally {
+        driveSync.syncing = false;
+        updateDriveUi();
+      }
+    }
+
+    function scheduleDriveAutosave(delay = 1500) {
+      clearTimeout(driveSync.autosaveTimer);
+      driveSync.autosaveTimer = null;
+      updateDriveUi();
+
+      if (!driveSync.dirty || driveSync.conflict || !navigator.onLine || !isDriveTokenValid() || !driveSync.fileId) return;
+      driveSync.autosaveTimer = setTimeout(() => syncToDrive(), delay);
+    }
+
+    function disconnectDrive() {
+      const token = driveSync.accessToken;
+      driveSync.accessToken = "";
+      driveSync.tokenExpiresAt = 0;
+      driveSync.connected = false;
+      driveSync.syncing = false;
+      clearTimeout(driveSync.autosaveTimer);
+      driveSync.autosaveTimer = null;
+
+      if (token && globalThis.google?.accounts?.oauth2) {
+        try { google.accounts.oauth2.revoke(token, () => {}); } catch (_) {}
+      }
+
+      updateDriveUi();
+      showToast("Google Drive disconnected", "The file association was kept. Local saving remains active.");
+    }
+
+    function currentSection() {
+      return state.sections[state.activeSection];
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showToast(title, message) {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.innerHTML = `<strong>${escapeHtml(title)}</strong><span>${escapeHtml(message)}</span>`;
+      $("toastRegion").appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(8px)";
+        setTimeout(() => toast.remove(), 180);
+      }, 3200);
+    }
+
+    function populateDomainSelect(select, sectionKey, includeAll = false) {
+      const previous = select.value;
+      const domains = validDomains(sectionKey);
+      select.innerHTML =
+        (includeAll ? '<option value="">All domains</option>' : "") +
+        domains.map(domain => `<option value="${escapeHtml(domain)}">${escapeHtml(domain)}</option>`).join("");
+
+      if ([...(includeAll ? [""] : []), ...domains].includes(previous)) {
+        select.value = previous;
+      } else {
+        select.value = includeAll ? "" : "Unknown";
+      }
+    }
+
+    function populateSkillList(listElement, sectionKey, domain) {
+      listElement.innerHTML = skillsFor(sectionKey, domain)
+        .map(skill => `<option value="${escapeHtml(skill)}"></option>`)
+        .join("");
+    }
+
+    function populateFilters() {
+      const previousDomain = $("domainFilter").value;
+      const previousSkill = $("skillFilter").value;
+      const sectionKey = state.activeSection;
+
+      populateDomainSelect($("domainFilter"), sectionKey, true);
+      $("domainFilter").value = validDomains(sectionKey).includes(previousDomain) ? previousDomain : "";
+
+      const skills = previousDomain ? skillsFor(sectionKey, previousDomain) : allSkills(sectionKey);
+      $("skillFilter").innerHTML =
+        '<option value="">All skills</option>' +
+        skills.map(skill => `<option value="${escapeHtml(skill)}">${escapeHtml(skill)}</option>`).join("");
+      $("skillFilter").value = skills.includes(previousSkill) ? previousSkill : "";
+    }
+
+    function getFilteredQuestions() {
+      const section = currentSection();
+      const search = $("searchInput").value.trim().toLowerCase();
+      const completion = $("completionFilter").value;
+      const status = $("statusFilter").value;
+      const domain = $("domainFilter").value;
+      const skill = $("skillFilter").value;
+
+      return section.questions.filter(q => {
+        const complete = q.status !== "unattempted";
+        const searchable = [q.number, q.questionId, q.domain, q.skill, q.notes].join(" ").toLowerCase();
+
+        return (!search || searchable.includes(search))
+          && (!completion || (completion === "complete" ? complete : !complete))
+          && (!status || q.status === status)
+          && (!domain || q.domain === domain)
+          && (!skill || q.skill === skill);
+      });
+    }
+
+    function renderHeader() {
+      const taxonomy = TAXONOMY[state.activeSection];
+      const total = currentSection().targetCount;
+
+      $("mathTab").classList.toggle("active", state.activeSection === "math");
+      $("rwTab").classList.toggle("active", state.activeSection === "rw");
+      $("sectionTitle").textContent = taxonomy.label;
+
+      $("sectionSubtitle").textContent = state.activeSection === "math"
+        ? `Track all ${total.toLocaleString()} results by question number and 8-character question ID.`
+        : total
+          ? `Track ${total.toLocaleString()} Reading & Writing questions separately from Math.`
+          : "A separate Reading & Writing tracker. Bulk paste IDs to create question slots.";
+    }
+
+    function renderStats() {
+      const section = currentSection();
+      const total = section.targetCount;
+      const ids = section.questions.filter(q => q.questionId).length;
+      const completed = section.questions.filter(q => q.status !== "unattempted").length;
+      const correct = section.questions.filter(q => q.status === "correct").length;
+      const incorrect = section.questions.filter(q => q.status === "incorrect").length;
+      const scored = correct + incorrect;
+      const remaining = Math.max(0, total - completed);
+      const percent = total ? completed / total * 100 : 0;
+
+      $("totalStat").textContent = total.toLocaleString();
+      $("idsStat").textContent = ids.toLocaleString();
+      $("completeStat").textContent = completed.toLocaleString();
+      $("correctStat").textContent = correct.toLocaleString();
+      $("remainingStat").textContent = remaining.toLocaleString();
+      $("accuracyStat").textContent = scored ? Math.round(correct / scored * 100) + "%" : "—";
+      $("progressBar").style.width = percent + "%";
+      $("progressText").textContent =
+        `${completed.toLocaleString()} of ${total.toLocaleString()} completed (${percent.toFixed(1)}%)`;
+    }
+
+    function skillListIdFor(sectionKey, domain) {
+      const safeDomain = domain.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      return `skills-${sectionKey}-${safeDomain}`;
+    }
+
+    function ensureTableSkillLists() {
+      document.querySelectorAll("datalist[data-table-skill-list]").forEach(node => node.remove());
+
+      for (const domain of validDomains(state.activeSection)) {
+        const list = document.createElement("datalist");
+        list.id = skillListIdFor(state.activeSection, domain);
+        list.dataset.tableSkillList = "true";
+        list.innerHTML = skillsFor(state.activeSection, domain)
+          .map(skill => `<option value="${escapeHtml(skill)}"></option>`)
+          .join("");
+        document.body.appendChild(list);
+      }
+    }
+
+    function renderTable() {
+      const filtered = getFilteredQuestions();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
+      state.page = Math.min(Math.max(1, state.page), totalPages);
+      const start = (state.page - 1) * state.pageSize;
+      const pageItems = filtered.slice(start, start + state.pageSize);
+      const domains = validDomains(state.activeSection);
+
+      $("questionRows").innerHTML = pageItems.map(q => {
+        const completed = q.status !== "unattempted";
+        const skillListId = skillListIdFor(state.activeSection, q.domain);
+
+        return `
+          <tr class="${completed ? "completed" : ""}" data-number="${q.number}">
+            <td><strong>${q.number}</strong></td>
+            <td>
+              <input
+                class="id-input"
+                data-field="questionId"
+                data-number="${q.number}"
+                maxlength="8"
+                spellcheck="false"
+                autocomplete="off"
+                value="${escapeHtml(q.questionId)}"
+                placeholder="8-char ID"
+              />
+            </td>
+            <td>
+              <select data-field="domain" data-number="${q.number}">
+                ${domains.map(domain =>
+                  `<option value="${escapeHtml(domain)}" ${domain === q.domain ? "selected" : ""}>${escapeHtml(domain)}</option>`
+                ).join("")}
+              </select>
+            </td>
+            <td>
+              <input
+                class="skill-input"
+                data-field="skill"
+                data-number="${q.number}"
+                list="${skillListId}"
+                value="${escapeHtml(q.skill)}"
+                placeholder="Search or choose"
+                autocomplete="off"
+              />
+            </td>
+            <td><span class="status ${q.status}">${escapeHtml(q.status)}</span></td>
+            <td>
+              <span class="completion ${completed ? "done" : ""}">
+                <span class="check">${completed ? "✓" : ""}</span>
+                ${completed ? "Completed" : "Not completed"}
+              </span>
+            </td>
+            <td>${q.attempts}</td>
+            <td><div class="notes-preview">${q.notes ? escapeHtml(q.notes.slice(0, 82)) + (q.notes.length > 82 ? "…" : "") : "—"}</div></td>
+            <td><button class="secondary" data-open-number="${q.number}">Open</button></td>
+          </tr>
+        `;
+      }).join("");
+
+      $("emptyState").classList.toggle("hidden", currentSection().targetCount !== 0);
+      $("resultCount").textContent = `${filtered.length.toLocaleString()} result${filtered.length === 1 ? "" : "s"}`;
+      $("pageLabel").textContent = `Page ${state.page} of ${totalPages}`;
+      $("previousBtn").disabled = state.page <= 1;
+      $("nextPageBtn").disabled = state.page >= totalPages;
+    }
+
+    function renderAll() {
+      renderHeader();
+      populateFilters();
+      ensureTableSkillLists();
+      renderStats();
+      renderTable();
+    }
+
+    function switchSection(sectionKey) {
+      if (!TAXONOMY[sectionKey]) return;
+      state.activeSection = sectionKey;
+      state.page = 1;
+      state.activeNumber = null;
+      clearFilters(false);
+      save(false);
+      renderAll();
+    }
+
+    function clearFilters(render = true) {
+      $("searchInput").value = "";
+      $("completionFilter").value = "";
+      $("statusFilter").value = "";
+      $("domainFilter").value = "";
+      $("skillFilter").value = "";
+      state.page = 1;
+      if (render) {
+        populateFilters();
+        renderTable();
+      }
+    }
+
+    function getQuestion(number) {
+      return currentSection().questions[number - 1] || null;
+    }
+
+    function validateSkill(sectionKey, domain, skill) {
+      return skillsFor(sectionKey, domain).includes(skill);
+    }
+
+    function saveInline(input) {
+      const q = getQuestion(Number(input.dataset.number));
+      if (!q) return;
+
+      const field = input.dataset.field;
+
+      if (field === "questionId") {
+        const id = input.value.trim().toLowerCase().replace(/[^0-9a-f]/g, "").slice(0, 8);
+        input.value = id;
+
+        if (id && !isValidId(id)) {
+          input.classList.add("invalid");
+          return;
+        }
+
+        const duplicate = currentSection().questions.find(
+          other => other.number !== q.number && other.questionId === id
+        );
+
+        if (id && duplicate) {
+          input.classList.add("invalid");
+          showToast("Duplicate ID", `${id} is already assigned to question ${duplicate.number}.`);
+          input.value = q.questionId;
+          return;
+        }
+
+        input.classList.remove("invalid");
+        q.questionId = id;
+      }
+
+      if (field === "domain") {
+        q.domain = input.value;
+        if (!validateSkill(state.activeSection, q.domain, q.skill)) q.skill = "Unknown";
+      }
+
+      if (field === "skill") {
+        const skill = input.value.trim();
+        if (!validateSkill(state.activeSection, q.domain, skill)) {
+          input.classList.add("invalid");
+          showToast("Choose a listed skill", "Select a matching skill, Other, or Unknown.");
+          input.value = q.skill;
+          return;
+        }
+        input.classList.remove("invalid");
+        q.skill = skill;
+      }
+
+      q.updatedAt = new Date().toISOString();
+      save(true);
+      renderAll();
+    }
+
+    function populateEditorSkills() {
+      const domain = $("editDomain").value || "Unknown";
+      populateSkillList($("editSkillList"), state.activeSection, domain);
+
+      if (!validateSkill(state.activeSection, domain, $("editSkill").value)) {
+        $("editSkill").value = "Unknown";
+      }
+    }
+
+    function openEditor(number) {
+      const q = getQuestion(number);
+      if (!q) return;
+
+      state.activeNumber = number;
+      populateDomainSelect($("editDomain"), state.activeSection);
+      $("editDomain").value = q.domain;
+      populateEditorSkills();
+
+      $("editTitle").textContent = `${TAXONOMY[state.activeSection].label} · Question ${number}`;
+      $("editNumber").value = number;
+      $("editId").value = q.questionId;
+      $("editId").classList.remove("invalid");
+      $("editSkill").value = q.skill;
+      $("editNotes").value = q.notes;
+
+      updateEditorStatus();
+      $("editDialog").showModal();
+
+      setTimeout(() => {
+        if (!q.questionId) $("editId").focus();
+        else $("editSkill").focus();
+      }, 30);
+    }
+
+    function updateEditorStatus() {
+      const q = getQuestion(state.activeNumber);
+      if (!q) return;
+
+      const complete = q.status !== "unattempted";
+      $("completionNotice").textContent = complete
+        ? `Completed — current result: ${q.status}.`
+        : "This question has not been completed.";
+
+      $("completionNotice").style.borderLeft = complete ? `4px solid var(--green)` : "";
+      $("attemptSummary").textContent =
+        `${q.attempts} attempt${q.attempts === 1 ? "" : "s"} · ` +
+        `${q.correctAttempts} correct · ${q.incorrectAttempts} incorrect · ${q.skippedAttempts} skipped`;
+    }
+
+    function commitEditor() {
+      const q = getQuestion(state.activeNumber);
+      if (!q) return false;
+
+      const id = $("editId").value.trim().toLowerCase();
+      const domain = $("editDomain").value;
+      const skill = $("editSkill").value.trim();
+
+      if (id && !isValidId(id)) {
+        $("editId").classList.add("invalid");
+        showToast("Invalid question ID", "Use exactly 8 hexadecimal characters, such as ac472881.");
+        $("editId").focus();
+        return false;
+      }
+
+      const duplicate = currentSection().questions.find(
+        other => other.number !== q.number && other.questionId === id
+      );
+
+      if (id && duplicate) {
+        $("editId").classList.add("invalid");
+        showToast("Duplicate question ID", `${id} is already assigned to question ${duplicate.number}.`);
+        $("editId").focus();
+        return false;
+      }
+
+      if (!validateSkill(state.activeSection, domain, skill)) {
+        $("editSkill").classList.add("invalid");
+        showToast("Choose a listed skill", "Select a matching skill, Other, or Unknown.");
+        $("editSkill").focus();
+        return false;
+      }
+
+      $("editId").classList.remove("invalid");
+      $("editSkill").classList.remove("invalid");
+
+      q.questionId = id;
+      q.domain = domain;
+      q.skill = skill;
+      q.notes = $("editNotes").value.trim();
+      q.updatedAt = new Date().toISOString();
+
+      save(true);
+      renderAll();
+      return true;
+    }
+
+    function nextNumberAfter(currentNumber) {
+      const filtered = getFilteredQuestions();
+      return (
+        filtered.find(q => q.number > currentNumber)
+        || filtered.find(q => q.number < currentNumber)
+        || null
+      )?.number || null;
+    }
+
+    function moveToNext(currentNumber, completionMessage = "") {
+      const nextNumber = nextNumberAfter(currentNumber);
+
+      $("editDialog").close();
+      state.activeNumber = null;
+
+      if (completionMessage) {
+        showToast(
+          `Question ${currentNumber} completed`,
+          nextNumber ? `${completionMessage} Opening question ${nextNumber}.` : `${completionMessage} End of the current filtered list.`
+        );
+      }
+
+      if (nextNumber) openEditor(nextNumber);
+    }
+
+    function submitResult(status) {
+      const number = state.activeNumber;
+      if (!commitEditor()) return;
+
+      const q = getQuestion(number);
+      q.status = status;
+      q.attempts += 1;
+      if (status === "correct") q.correctAttempts += 1;
+      if (status === "incorrect") q.incorrectAttempts += 1;
+      if (status === "skipped") q.skippedAttempts += 1;
+      q.updatedAt = new Date().toISOString();
+
+      save(true);
+      renderAll();
+
+      const label = status.charAt(0).toUpperCase() + status.slice(1) + ".";
+      moveToNext(number, label);
+    }
+
+    function saveAndNext() {
+      const number = state.activeNumber;
+      if (!commitEditor()) return;
+      moveToNext(number);
+    }
+
+    function parseBulkText(text) {
+      const lines = text
+        .split(/\r?\n/)
+        .map(line => line.trim().toLowerCase())
+        .filter(Boolean);
+
+      const valid = [];
+      const invalid = [];
+      const duplicates = [];
+      const seen = new Set();
+
+      for (const line of lines) {
+        if (!isValidId(line)) {
+          invalid.push(line);
+        } else if (seen.has(line)) {
+          duplicates.push(line);
+        } else {
+          seen.add(line);
+          valid.push(line);
+        }
+      }
+
+      return { lines, valid, invalid, duplicates };
+    }
+
+    function populateBulkSkills() {
+      const domain = $("bulkDomain").value || "Unknown";
+      populateSkillList($("bulkSkillList"), state.activeSection, domain);
+
+      if (!validateSkill(state.activeSection, domain, $("bulkSkill").value)) {
+        $("bulkSkill").value = "Unknown";
+      }
+    }
+
+    function openBulkDialog() {
+      const section = currentSection();
+      const firstBlank = section.questions.find(q => !q.questionId)?.number || section.targetCount + 1;
+
+      $("bulkTitle").textContent = `Bulk paste into ${TAXONOMY[state.activeSection].label}`;
+      $("bulkStart").value = Math.max(1, firstBlank);
+      $("bulkText").value = "";
+      populateDomainSelect($("bulkDomain"), state.activeSection);
+      $("bulkDomain").value = "Unknown";
+      $("bulkSkill").value = "Unknown";
+      populateBulkSkills();
+      updateBulkPreview();
+      $("bulkDialog").showModal();
+      setTimeout(() => $("bulkText").focus(), 30);
+    }
+
+    function updateBulkPreview() {
+      const parsed = parseBulkText($("bulkText").value);
+      const start = Math.max(1, Math.floor(Number($("bulkStart").value) || 1));
+      const end = parsed.valid.length ? start + parsed.valid.length - 1 : null;
+      const total = currentSection().targetCount;
+
+      $("bulkStart").value = start;
+      $("bulkValidCount").textContent = parsed.valid.length.toLocaleString();
+      $("bulkStartPreview").textContent = start.toLocaleString();
+      $("bulkEndPreview").textContent = end ? end.toLocaleString() : "—";
+
+      if (!parsed.lines.length) {
+        $("bulkValidation").className = "validation";
+        $("bulkValidation").textContent = "Paste IDs to preview the destination range.";
+        return;
+      }
+
+      const targetRange = end ? `Questions ${start.toLocaleString()}–${end.toLocaleString()}` : "";
+      const replacements = end
+        ? currentSection().questions.slice(start - 1, Math.min(end, total)).filter(q => q?.questionId).length
+        : 0;
+
+      const details = [
+        `${targetRange} will receive the valid IDs in order.`,
+        `${parsed.valid.length} valid unique ID${parsed.valid.length === 1 ? "" : "s"}.`,
+        `${replacements} existing populated slot${replacements === 1 ? "" : "s"} in that range will be replaced.`
+      ];
+
+      if (parsed.invalid.length) {
+        details.push(`${parsed.invalid.length} invalid line${parsed.invalid.length === 1 ? "" : "s"} will be ignored.`);
+      }
+
+      if (parsed.duplicates.length) {
+        details.push(`${parsed.duplicates.length} duplicate line${parsed.duplicates.length === 1 ? "" : "s"} in the paste will be ignored.`);
+      }
+
+      if (end && end > total) {
+        details.push(
+          $("autoExpandCheck").checked
+            ? `The tab will expand from ${total.toLocaleString()} to ${end.toLocaleString()} questions.`
+            : `The ending number exceeds the current total of ${total.toLocaleString()}. Enable automatic expansion or lower the range.`
+        );
+      }
+
+      const hasBlockingRange = Boolean(end && end > total && !$("autoExpandCheck").checked);
+      $("bulkValidation").className = "validation " +
+        (parsed.invalid.length || hasBlockingRange ? "bad" : "good");
+      $("bulkValidation").textContent = details.join(" ");
+    }
+
+    function importBulk() {
+      const parsed = parseBulkText($("bulkText").value);
+      const start = Math.max(1, Math.floor(Number($("bulkStart").value) || 1));
+      const end = parsed.valid.length ? start + parsed.valid.length - 1 : null;
+      const section = currentSection();
+      const domain = $("bulkDomain").value;
+      const skill = $("bulkSkill").value.trim();
+
+      if (!parsed.valid.length) {
+        showToast("Nothing imported", "Paste at least one valid 8-character question ID.");
+        return;
+      }
+
+      if (!validateSkill(state.activeSection, domain, skill)) {
+        $("bulkSkill").classList.add("invalid");
+        showToast("Choose a listed skill", "Select a matching skill, Other, or Unknown.");
+        return;
+      }
+
+      if (end > section.targetCount) {
+        if (!$("autoExpandCheck").checked) {
+          showToast("Range exceeds tab total", `The paste would end at question ${end}.`);
+          return;
+        }
+        ensureQuestionCount(state.activeSection, end);
+      }
+
+      let moved = 0;
+
+      parsed.valid.forEach((id, index) => {
+        const destinationNumber = start + index;
+        const destination = currentSection().questions[destinationNumber - 1];
+
+        const existingNumber = currentSection().questions.find(
+          q => q.questionId === id && q.number !== destinationNumber
+        )?.number;
+
+        if (existingNumber) {
+          const existing = currentSection().questions[existingNumber - 1];
+          const preserved = {
+            domain: existing.domain,
+            skill: existing.skill,
+            status: existing.status,
+            attempts: existing.attempts,
+            correctAttempts: existing.correctAttempts,
+            incorrectAttempts: existing.incorrectAttempts,
+            skippedAttempts: existing.skippedAttempts,
+            notes: existing.notes,
+            updatedAt: existing.updatedAt
+          };
+
+          currentSection().questions[existingNumber - 1] = blankQuestion(existingNumber);
+          Object.assign(destination, preserved);
+          moved++;
+        }
+
+        destination.questionId = id;
+        destination.domain = domain;
+        destination.skill = skill;
+        destination.updatedAt = new Date().toISOString();
+      });
+
+      save(true);
+      renderAll();
+      $("bulkDialog").close();
+
+      showToast(
+        "Bulk import completed",
+        `${parsed.valid.length} IDs saved to questions ${start}–${end}${moved ? `; ${moved} existing ID records were moved` : ""}.`
+      );
+    }
+
+    function applyTotals() {
+      const mathTotal = Math.max(0, Math.min(10000, Math.floor(Number($("mathTotalInput").value) || 0)));
+      const rwTotal = Math.max(0, Math.min(10000, Math.floor(Number($("rwTotalInput").value) || 0)));
+
+      for (const [sectionKey, newTotal] of [["math", mathTotal], ["rw", rwTotal]]) {
+        const section = state.sections[sectionKey];
+
+        if (newTotal < section.targetCount) {
+          const removed = section.questions.slice(newTotal);
+          const populated = removed.filter(q =>
+            q.questionId || q.status !== "unattempted" || q.notes || q.domain !== "Unknown" || q.skill !== "Unknown"
+          ).length;
+
+          if (populated) {
+            const confirmed = confirm(
+              `Reducing ${TAXONOMY[sectionKey].label} to ${newTotal} will delete ${populated} populated question record${populated === 1 ? "" : "s"} above that number. Continue?`
+            );
+            if (!confirmed) continue;
+          }
+        }
+
+        ensureQuestionCount(sectionKey, newTotal);
+      }
+
+      save(true);
+      renderAll();
+      $("dataDialog").close();
+      showToast("Question totals updated", "The section sizes were saved.");
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+    }
+
+    function download(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      anchor.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function exportCurrentCsv() {
+      const headers = [
+        "number", "questionId", "domain", "skill", "status", "attempts",
+        "correctAttempts", "incorrectAttempts", "skippedAttempts", "notes", "updatedAt"
+      ];
+
+      const lines = [headers.join(",")];
+      currentSection().questions.forEach(q => {
+        lines.push(headers.map(header => csvEscape(q[header])).join(","));
+      });
+
+      download(
+        `sat-${state.activeSection === "math" ? "math" : "reading-writing"}-tracker.csv`,
+        lines.join("\r\n"),
+        "text/csv;charset=utf-8"
+      );
+    }
+
+    function exportJson() {
+      download(
+        "sat-question-bank-tracker-backup.json",
+        JSON.stringify({
+          version: 4,
+          exportedAt: new Date().toISOString(),
+          activeSection: state.activeSection,
+          sections: state.sections
+        }, null, 2),
+        "application/json"
+      );
+    }
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let field = "";
+      let quoted = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const character = text[i];
+        const next = text[i + 1];
+
+        if (character === '"' && quoted && next === '"') {
+          field += '"';
+          i++;
+        } else if (character === '"') {
+          quoted = !quoted;
+        } else if (character === "," && !quoted) {
+          row.push(field);
+          field = "";
+        } else if ((character === "\n" || character === "\r") && !quoted) {
+          if (character === "\r" && next === "\n") i++;
+          row.push(field);
+          field = "";
+          if (row.some(value => value !== "")) rows.push(row);
+          row = [];
+        } else {
+          field += character;
+        }
+      }
+
+      row.push(field);
+      if (row.some(value => value !== "")) rows.push(row);
+      if (rows.length < 2) return [];
+
+      const headers = rows[0].map(header => header.trim());
+      return rows.slice(1).map(values => {
+        const object = {};
+        headers.forEach((header, index) => object[header] = values[index] ?? "");
+        return object;
+      });
+    }
+
+    async function restoreBackup(file) {
+      const text = await file.text();
+
+      if (file.name.toLowerCase().endsWith(".csv")) {
+        const imported = parseCsv(text);
+        const highestNumber = Math.max(0, ...imported.map(row => Number(row.number) || 0));
+        ensureQuestionCount(state.activeSection, Math.max(currentSection().targetCount, highestNumber));
+
+        imported.forEach((raw, index) => {
+          const number = Number(raw.number) || index + 1;
+          if (number >= 1 && number <= currentSection().targetCount) {
+            currentSection().questions[number - 1] = normalizeQuestion(raw, number, state.activeSection);
+          }
+        });
+      } else {
+        const parsed = JSON.parse(text);
+
+        if (!parsed?.sections?.math || !parsed?.sections?.rw) {
+          throw new Error("This is not a complete tracker JSON backup.");
+        }
+
+        for (const sectionKey of ["math", "rw"]) {
+          const targetCount = Math.max(0, Number(parsed.sections[sectionKey].targetCount) || 0);
+          state.sections[sectionKey] = {
+            targetCount,
+            questions: Array.from(
+              { length: targetCount },
+              (_, index) => normalizeQuestion(parsed.sections[sectionKey].questions?.[index], index + 1, sectionKey)
+            )
+          };
+        }
+
+        state.activeSection = parsed.activeSection === "rw" ? "rw" : "math";
+      }
+
+      state.page = 1;
+      save(true);
+      renderAll();
+      showToast("Backup restored", "Your tracker data was loaded successfully.");
+    }
+
+    $("driveBtn").addEventListener("click", () => {
+      updateDriveUi();
+      $("driveDialog").showModal();
+    });
+
+    $("connectDriveBtn").addEventListener("click", async () => {
+      $("connectDriveBtn").disabled = true;
+      driveSync.lastError = "";
+      updateDriveUi();
+
+      try {
+        await connectAndInitializeDrive();
+      } catch (error) {
+        driveSync.lastError = error.message || "Google Drive connection failed.";
+        updateDriveUi();
+        showToast("Google Drive connection failed", driveSync.lastError);
+      } finally {
+        $("connectDriveBtn").disabled = false;
+        updateDriveUi();
+      }
+    });
+
+    $("saveDriveNowBtn").addEventListener("click", () => {
+      driveSync.dirty = true;
+      syncToDrive({ manual: true });
+    });
+
+    $("openDriveFileBtn").addEventListener("click", () => {
+      if (!driveSync.fileId) return;
+      window.open(`https://drive.google.com/open?id=${encodeURIComponent(driveSync.fileId)}`, "_blank", "noopener,noreferrer");
+    });
+
+    $("disconnectDriveBtn").addEventListener("click", disconnectDrive);
+
+    $("useDriveCopyBtn").addEventListener("click", () => {
+      if (!driveSync.conflict) return;
+      const payload = driveSync.conflict.remotePayload;
+      applyRemoteTracker(payload);
+      driveSync.lastRemoteRevision = driveSync.conflict.remoteRevision;
+      driveSync.lastRemoteHash = trackerHash(extractTrackerPayload(payload));
+      driveSync.lastSyncedAt = payload.savedAt || new Date().toISOString();
+      driveSync.dirty = false;
+      driveSync.conflict = null;
+      persistDriveConfig();
+      updateDriveUi();
+      showToast("Drive copy restored", "This device now matches the Google Drive version.");
+    });
+
+    $("keepDeviceCopyBtn").addEventListener("click", async () => {
+      if (!driveSync.conflict) return;
+      driveSync.lastRemoteRevision = driveSync.conflict.remoteRevision;
+      driveSync.conflict = null;
+      driveSync.dirty = true;
+      persistDriveConfig();
+      updateDriveUi();
+      await syncToDrive({ force: true, manual: true });
+    });
+
+    $("downloadBothCopiesBtn").addEventListener("click", () => {
+      if (!driveSync.conflict) return;
+      download(
+        "sat-tracker-this-device-conflict-backup.json",
+        JSON.stringify(buildDrivePayload(driveSync.lastRemoteRevision), null, 2),
+        "application/json"
+      );
+      setTimeout(() => download(
+        "sat-tracker-google-drive-conflict-backup.json",
+        JSON.stringify(driveSync.conflict.remotePayload, null, 2),
+        "application/json"
+      ), 250);
+    });
+
+    $("googleClientIdInput").addEventListener("change", () => {
+      driveSync.clientId = $("googleClientIdInput").value.trim();
+      persistDriveConfig();
+      updateDriveUi();
+    });
+
+    window.addEventListener("online", () => {
+      driveSync.lastError = "";
+      updateDriveUi();
+      scheduleDriveAutosave(250);
+    });
+
+    window.addEventListener("offline", updateDriveUi);
+
+    setInterval(() => {
+      if (driveSync.dirty && !driveSync.syncing && !driveSync.conflict && navigator.onLine && isDriveTokenValid()) {
+        syncToDrive();
+      } else {
+        updateDriveUi();
+      }
+    }, 60000);
+
+    $("mathTab").addEventListener("click", () => switchSection("math"));
+    $("rwTab").addEventListener("click", () => switchSection("rw"));
+    $("bulkBtn").addEventListener("click", openBulkDialog);
+
+    $("dataBtn").addEventListener("click", () => {
+      $("mathTotalInput").value = state.sections.math.targetCount;
+      $("rwTotalInput").value = state.sections.rw.targetCount;
+      $("dataDialog").showModal();
+    });
+
+    $("nextBtn").addEventListener("click", () => {
+      const filtered = getFilteredQuestions();
+      const next =
+        filtered.find(q => q.status === "unattempted" && q.questionId)
+        || filtered.find(q => q.status === "unattempted")
+        || filtered[0];
+
+      if (next) {
+        openEditor(next.number);
+      } else {
+        showToast("No questions available", "Add question slots or clear your filters.");
+      }
+    });
+
+    document.addEventListener("click", event => {
+      const openButton = event.target.closest("[data-open-number]");
+      if (openButton) openEditor(Number(openButton.dataset.openNumber));
+
+      const closeButton = event.target.closest("[data-close]");
+      if (closeButton) $(closeButton.dataset.close).close();
+    });
+
+    $("questionRows").addEventListener("change", event => {
+      const input = event.target.closest("[data-field]");
+      if (input) saveInline(input);
+    });
+
+    $("questionRows").addEventListener("blur", event => {
+      const input = event.target.closest('input[data-field]');
+      if (input) saveInline(input);
+    }, true);
+
+    $("questionRows").addEventListener("input", event => {
+      const idInput = event.target.closest('input[data-field="questionId"]');
+      if (idInput) {
+        idInput.value = idInput.value.toLowerCase().replace(/[^0-9a-f]/g, "").slice(0, 8);
+        idInput.classList.toggle("invalid", Boolean(idInput.value) && !isValidId(idInput.value));
+      }
+    });
+
+    ["searchInput", "completionFilter", "statusFilter", "domainFilter", "skillFilter"].forEach(id => {
+      $(id).addEventListener("input", () => {
+        state.page = 1;
+        renderTable();
+      });
+
+      $(id).addEventListener("change", () => {
+        state.page = 1;
+        if (id === "domainFilter") populateFilters();
+        renderTable();
+      });
+    });
+
+    $("clearFiltersBtn").addEventListener("click", () => clearFilters(true));
+
+    $("pageSize").addEventListener("change", () => {
+      state.pageSize = Number($("pageSize").value);
+      state.page = 1;
+      renderTable();
+    });
+
+    $("previousBtn").addEventListener("click", () => {
+      state.page--;
+      renderTable();
+    });
+
+    $("nextPageBtn").addEventListener("click", () => {
+      state.page++;
+      renderTable();
+    });
+
+    $("bulkDomain").addEventListener("change", populateBulkSkills);
+    $("bulkText").addEventListener("input", updateBulkPreview);
+    $("bulkStart").addEventListener("input", updateBulkPreview);
+    $("autoExpandCheck").addEventListener("change", updateBulkPreview);
+    $("importBulkBtn").addEventListener("click", importBulk);
+
+    $("editDomain").addEventListener("change", populateEditorSkills);
+
+    $("editId").addEventListener("input", event => {
+      event.target.value = event.target.value.toLowerCase().replace(/[^0-9a-f]/g, "").slice(0, 8);
+      event.target.classList.toggle("invalid", Boolean(event.target.value) && !isValidId(event.target.value));
+    });
+
+    $("editSkill").addEventListener("input", event => event.target.classList.remove("invalid"));
+    $("bulkSkill").addEventListener("input", event => event.target.classList.remove("invalid"));
+
+    $("correctBtn").addEventListener("click", () => submitResult("correct"));
+    $("incorrectBtn").addEventListener("click", () => submitResult("incorrect"));
+    $("skippedBtn").addEventListener("click", () => submitResult("skipped"));
+    $("saveNextBtn").addEventListener("click", saveAndNext);
+
+    $("saveOnlyBtn").addEventListener("click", () => {
+      if (commitEditor()) {
+        updateEditorStatus();
+        showToast("Question saved", `Question ${state.activeNumber} was saved without changing completion.`);
+      }
+    });
+
+    $("clearQuestionBtn").addEventListener("click", () => {
+      const q = getQuestion(state.activeNumber);
+      if (!q) return;
+
+      if (!confirm(`Clear all saved information for question ${q.number}?`)) return;
+
+      currentSection().questions[q.number - 1] = blankQuestion(q.number);
+      save(true);
+      renderAll();
+      $("editDialog").close();
+      state.activeNumber = null;
+      showToast("Question cleared", `Question ${q.number} is now blank and not completed.`);
+    });
+
+    $("editDialog").addEventListener("keydown", event => {
+      if (event.ctrlKey && event.key === "Enter") {
+        event.preventDefault();
+        saveAndNext();
+        return;
+      }
+
+      const tag = document.activeElement?.tagName;
+      const typing = ["INPUT", "TEXTAREA", "SELECT"].includes(tag);
+      if (typing) return;
+
+      if (event.key.toLowerCase() === "c") submitResult("correct");
+      if (event.key.toLowerCase() === "i") submitResult("incorrect");
+      if (event.key.toLowerCase() === "s") submitResult("skipped");
+    });
+
+    $("applyTotalsBtn").addEventListener("click", applyTotals);
+    $("exportCsvBtn").addEventListener("click", exportCurrentCsv);
+    $("exportJsonBtn").addEventListener("click", exportJson);
+
+    $("restoreInput").addEventListener("change", async event => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      try {
+        await restoreBackup(file);
+        $("dataDialog").close();
+      } catch (error) {
+        showToast("Restore failed", error.message);
+      } finally {
+        event.target.value = "";
+      }
+    });
+
+    $("resetBtn").addEventListener("click", () => {
+      const typed = prompt("Type RESET to erase all Math and Reading & Writing tracker data.");
+      if (typed !== "RESET") return;
+
+      localStorage.removeItem(STORAGE_KEY);
+      freshState();
+      save(true);
+      renderAll();
+      $("dataDialog").close();
+      showToast("Tracker reset", "Math was reset to 1,756 slots and Reading & Writing to zero.");
+    });
+
+    load();
+    state.pageSize = Number($("pageSize").value);
+    renderAll();
+    if (driveSync.fileId && driveSync.lastRemoteHash && trackerHash() !== driveSync.lastRemoteHash) {
+      driveSync.dirty = true;
+    }
+    persistDriveConfig();
+    updateDriveUi();
+  </script>
+</body>
+</html>
