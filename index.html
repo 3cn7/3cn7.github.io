@@ -57,6 +57,7 @@
     body {
       margin: 0;
       min-height: 100vh;
+      overflow-x: hidden;
       background: var(--page);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
@@ -67,8 +68,13 @@
     button, input, select, textarea { font: inherit; }
 
     button, .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       min-height: 38px;
       padding: 8px 15px;
+      line-height: 1;
+      vertical-align: middle;
       border: 0;
       border-radius: 999px;
       background: var(--blue);
@@ -171,6 +177,7 @@
     }
 
     .segmented {
+      position: relative;
       display: inline-grid;
       grid-template-columns: 1fr 1fr;
       gap: 3px;
@@ -178,9 +185,31 @@
       border: 1px solid var(--line);
       border-radius: 999px;
       background: var(--surface-2);
+      isolation: isolate;
+    }
+
+    .segmented::before {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      top: 3px;
+      bottom: 3px;
+      left: 3px;
+      width: calc((100% - 9px) / 2);
+      border-radius: 999px;
+      background: var(--surface);
+      box-shadow: var(--small-shadow);
+      transform: translateX(0);
+      transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .segmented[data-active="rw"]::before {
+      transform: translateX(calc(100% + 3px));
     }
 
     .segmented button {
+      position: relative;
+      z-index: 1;
       min-height: 34px;
       padding: 6px 17px;
       color: var(--secondary);
@@ -192,8 +221,8 @@
 
     .segmented button.active {
       color: var(--text);
-      background: var(--surface);
-      box-shadow: var(--small-shadow);
+      background: transparent;
+      box-shadow: none;
     }
 
     .top-actions {
@@ -379,6 +408,12 @@
       min-width: 285px;
     }
 
+    .attempts-input {
+      width: 82px;
+      min-width: 82px;
+      text-align: center;
+    }
+
     .status {
       display: inline-flex;
       align-items: center;
@@ -457,7 +492,8 @@
     dialog {
       width: min(790px, calc(100% - 24px));
       max-height: calc(100vh - 26px);
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: clip;
       padding: 0;
       border: 1px solid var(--line);
       border-radius: 26px;
@@ -574,15 +610,135 @@
     .validation.bad { color: var(--red); }
 
     .keyboard {
-      display: inline-block;
-      padding: 1px 6px;
-      border: 1px solid var(--line);
-      border-bottom-width: 2px;
-      border-radius: 6px;
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      min-height: 22px;
+      padding: 3px 8px;
+      border: 0;
+      border-radius: 7px;
       color: var(--secondary);
       background: var(--surface-2);
-      font-size: 0.72rem;
-      font-weight: 650;
+      font-size: 0.68rem;
+      font-weight: 720;
+      line-height: 1;
+      white-space: nowrap;
+      letter-spacing: 0;
+    }
+
+    .result-actions button,
+    #saveNextBtn {
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    #saveNextBtn {
+      min-width: max-content;
+      padding-left: 17px;
+      padding-right: 17px;
+    }
+
+    .result-actions button .keyboard,
+    #saveNextBtn .keyboard {
+      color: inherit;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .skill-dropdown {
+      position: fixed;
+      inset: auto;
+      z-index: 2147483000;
+      display: grid;
+      margin: 0;
+      border: 0;
+      gap: 3px;
+      max-height: min(320px, 46dvh);
+      padding: 6px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      border-radius: 14px;
+      color: var(--text);
+      background: var(--surface);
+      background: color-mix(in srgb, var(--surface) 97%, transparent);
+      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(20px) saturate(150%);
+      -webkit-backdrop-filter: blur(20px) saturate(150%);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateY(-5px) scale(0.985);
+      transform-origin: top center;
+      transition:
+        opacity 130ms ease,
+        transform 170ms cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 170ms;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+    }
+
+    .skill-dropdown::-webkit-scrollbar {
+      display: none;
+    }
+
+    .skill-dropdown.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+      transition-delay: 0s;
+    }
+
+    .skill-option {
+      display: block;
+      width: 100%;
+      min-height: 38px;
+      padding: 9px 11px;
+      border-radius: 10px;
+      color: var(--text);
+      background: transparent;
+      font-size: 0.86rem;
+      font-weight: 620;
+      line-height: 1.3;
+      text-align: left;
+      white-space: normal;
+    }
+
+    .skill-option-label {
+      display: block;
+      width: 100%;
+      text-align: left;
+      white-space: normal;
+      overflow-wrap: break-word;
+      word-break: normal;
+    }
+
+    .skill-option:hover,
+    .skill-option.is-active {
+      color: #fff;
+      background: var(--blue);
+      transform: none;
+    }
+
+    .skill-option.is-selected:not(:hover):not(.is-active) {
+      background: var(--surface-2);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--blue) 28%, transparent);
+    }
+
+    .skill-option mark {
+      display: inline;
+      padding: 0;
+      color: inherit;
+      background: transparent;
+      font-weight: 800;
+    }
+
+    .skill-dropdown-empty {
+      padding: 12px;
+      color: var(--secondary);
+      font-size: 0.84rem;
+      text-align: center;
     }
 
     .empty {
@@ -868,7 +1024,7 @@
 
     .segmented { background: var(--control); }
     .segmented button { color: var(--secondary); background: transparent; }
-    .segmented button.active { color: var(--text); background: var(--surface); }
+    .segmented button.active { color: var(--text); background: transparent; }
 
     .table-wrap { background: var(--surface-2); padding: 4px; }
     table { border-radius: calc(var(--radius-lg) - 4px); overflow: hidden; }
@@ -897,6 +1053,17 @@
 
     .settings-section + .settings-section { margin-top: 12px; }
     .settings-section h3 { margin-bottom: 12px; }
+
+    .settings-section select,
+    .settings-section input:not([type="checkbox"]) {
+      background: var(--surface);
+      box-shadow: var(--small-shadow);
+    }
+
+    .settings-section select:focus,
+    .settings-section input:not([type="checkbox"]):focus {
+      background: var(--field-focus);
+    }
 
     .toggle-row {
       display: flex;
@@ -955,6 +1122,16 @@
       to { opacity: 1; }
     }
 
+    @keyframes dialog-exit {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(12px) scale(0.982); }
+    }
+
+    @keyframes backdrop-exit {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
     .shell {
       animation: app-enter 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
     }
@@ -967,7 +1144,71 @@
       animation: backdrop-enter 180ms ease-out both;
     }
 
-    #editDialog.ui-switching { pointer-events: none; }
+    dialog.closing {
+      pointer-events: none;
+      animation: dialog-exit 170ms cubic-bezier(0.4, 0, 1, 1) both;
+    }
+
+    dialog.closing::backdrop {
+      animation: backdrop-exit 170ms ease-in both;
+    }
+
+    #editDialog.ui-switching {
+      pointer-events: none;
+      overflow-x: clip;
+    }
+
+    .undo-button {
+      max-width: 0;
+      min-width: 0;
+      padding-left: 0;
+      padding-right: 0;
+      opacity: 0;
+      visibility: hidden;
+      overflow: hidden;
+      pointer-events: none;
+      transform: translateY(7px) scale(0.92);
+      transition:
+        max-width 220ms cubic-bezier(0.22, 1, 0.36, 1),
+        padding 220ms cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 160ms ease,
+        transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 220ms;
+    }
+
+
+    .undo-button:not(.is-visible) {
+      flex: 0 0 0 !important;
+    }
+
+    .undo-button.is-visible {
+      max-width: 110px;
+      min-width: 72px;
+      padding-left: 15px;
+      padding-right: 15px;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+      transition-delay: 0s;
+    }
+
+    html,
+    body,
+    dialog,
+    .table-wrap,
+    textarea,
+    select,
+    input {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    *::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
 
     html[data-reduce-motion="true"] *,
     html[data-reduce-motion="true"] *::before,
@@ -985,7 +1226,7 @@
     <div class="app-bar-inner">
       <div class="brand">SAT Question Bank Tracker</div>
 
-      <div class="segmented" aria-label="Section">
+      <div id="sectionToggle" class="segmented" data-active="math" aria-label="Section">
         <button id="mathTab" class="active" data-section="math">Math</button>
         <button id="rwTab" data-section="rw">Reading & Writing</button>
       </div>
@@ -995,6 +1236,7 @@
         <button id="bulkBtn" class="secondary">Bulk paste</button>
         <button id="dataBtn" class="secondary">Data</button>
         <button id="settingsBtn" class="secondary">Settings</button>
+        <button id="mainUndoBtn" class="secondary undo-button" aria-hidden="true" tabindex="-1">Undo</button>
         <button id="nextBtn">Next unattempted</button>
       </div>
     </div>
@@ -1152,7 +1394,7 @@
 
       <label style="margin-top:11px">
         Skill
-        <input id="bulkSkill" list="bulkSkillList" placeholder="Search or choose a skill" autocomplete="off" />
+        <input id="bulkSkill" class="skill-combobox-input" placeholder="Unknown" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" />
       </label>
       <datalist id="bulkSkillList"></datalist>
 
@@ -1207,7 +1449,7 @@
     <div class="dialog-body">
       <div id="completionNotice" class="notice">Not completed</div>
 
-      <div class="grid-2" style="margin-top:14px">
+      <div class="grid-3" style="margin-top:14px">
         <label>
           Question number
           <input id="editNumber" readonly />
@@ -1216,6 +1458,11 @@
         <label>
           Question ID
           <input id="editId" maxlength="8" spellcheck="false" autocomplete="off" placeholder="ac472881" />
+        </label>
+
+        <label>
+          Attempts
+          <input id="editAttempts" type="number" min="0" step="1" inputmode="numeric" />
         </label>
       </div>
 
@@ -1227,7 +1474,7 @@
 
         <label>
           Skill
-          <input id="editSkill" list="editSkillList" placeholder="Search or choose a skill" autocomplete="off" />
+          <input id="editSkill" class="skill-combobox-input" placeholder="Unknown" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" />
         </label>
         <datalist id="editSkillList"></datalist>
       </div>
@@ -1247,9 +1494,12 @@
     </div>
 
     <div class="dialog-foot">
+      <button id="backQuestionBtn" class="secondary">Back</button>
+      <button id="cardUndoBtn" class="secondary undo-button" aria-hidden="true" tabindex="-1">Undo</button>
+      <button id="addBlankBelowBtn" class="secondary">Add blank below</button>
       <button id="clearQuestionBtn" class="secondary">Clear slot</button>
       <button id="saveOnlyBtn" class="secondary">Save only</button>
-      <button id="saveNextBtn">Save and next <span class="keyboard">Ctrl Enter</span></button>
+      <button id="saveNextBtn">Save and next <span class="keyboard">Ctrl + Enter</span></button>
     </div>
   </dialog>
 
@@ -1408,7 +1658,7 @@
       <div style="display:flex;flex-wrap:wrap;gap:8px">
         <button id="exportCsvBtn" class="secondary">Export current tab CSV</button>
         <button id="exportJsonBtn" class="secondary">Backup all data as JSON</button>
-        <label class="button secondary" style="cursor:pointer">
+        <label class="button secondary file-button" style="cursor:pointer">
           Restore backup
           <input id="restoreInput" class="hidden" type="file" accept=".json,.csv,application/json,text/csv" />
         </label>
@@ -1421,6 +1671,7 @@
     </div>
   </dialog>
 
+  <div id="skillDropdown" class="skill-dropdown" role="listbox" aria-label="Skill options" popover="manual"></div>
   <div id="toastRegion" class="toast-region" aria-live="polite"></div>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1446,10 +1697,7 @@
       autosaveDelay: 1500
     });
 
-    function loadAppSettings() {
-      let saved = {};
-      try { saved = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch (_) {}
-
+    function normalizeAppSettings(saved = {}) {
       const allowed = {
         theme: ["system", "light", "dark"],
         textSize: ["small", "standard", "large", "xlarge"],
@@ -1458,15 +1706,21 @@
       };
 
       return {
-        theme: allowed.theme.includes(saved.theme) ? saved.theme : DEFAULT_SETTINGS.theme,
-        textSize: allowed.textSize.includes(saved.textSize) ? saved.textSize : DEFAULT_SETTINGS.textSize,
-        density: allowed.density.includes(saved.density) ? saved.density : DEFAULT_SETTINGS.density,
-        autoConnect: saved.autoConnect === undefined ? DEFAULT_SETTINGS.autoConnect : Boolean(saved.autoConnect),
-        reduceMotion: saved.reduceMotion === undefined ? DEFAULT_SETTINGS.reduceMotion : Boolean(saved.reduceMotion),
-        autosaveDelay: allowed.autosaveDelay.includes(Number(saved.autosaveDelay))
+        theme: allowed.theme.includes(saved?.theme) ? saved.theme : DEFAULT_SETTINGS.theme,
+        textSize: allowed.textSize.includes(saved?.textSize) ? saved.textSize : DEFAULT_SETTINGS.textSize,
+        density: allowed.density.includes(saved?.density) ? saved.density : DEFAULT_SETTINGS.density,
+        autoConnect: saved?.autoConnect === undefined ? DEFAULT_SETTINGS.autoConnect : Boolean(saved.autoConnect),
+        reduceMotion: saved?.reduceMotion === undefined ? DEFAULT_SETTINGS.reduceMotion : Boolean(saved.reduceMotion),
+        autosaveDelay: allowed.autosaveDelay.includes(Number(saved?.autosaveDelay))
           ? Number(saved.autosaveDelay)
           : DEFAULT_SETTINGS.autosaveDelay
       };
+    }
+
+    function loadAppSettings() {
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch (_) {}
+      return normalizeAppSettings(saved);
     }
 
     let appSettings = loadAppSettings();
@@ -1516,7 +1770,7 @@
         domains: {
           "Algebra": [
             "Linear equations in one variable",
-            "Linear functions",
+            "Linear functions in one variable",
             "Linear equations in two variables",
             "Systems of two linear equations in two variables",
             "Linear inequalities in one or two variables"
@@ -1524,17 +1778,18 @@
           "Advanced Math": [
             "Equivalent expressions",
             "Nonlinear equations in one variable",
-            "Nonlinear functions",
-            "Systems of equations in two variables"
+            "Systems of equations in two variables",
+            "Nonlinear equations in one variable and systems of equations in two variables",
+            "Nonlinear functions"
           ],
           "Problem-Solving and Data Analysis": [
             "Ratios, rates, proportional relationships, and units",
             "Percentages",
-            "One-variable data: Distributions and measures of center and spread",
-            "Two-variable data: Models and scatterplots",
+            "One-variable data—Distributions and measures of center and spread",
+            "Two-variable data—Models and scatterplots",
             "Probability and conditional probability",
             "Inference from sample statistics and margin of error",
-            "Evaluating statistical claims: Observational studies and experiments"
+            "Evaluating statistical claims—Observational studies and experiments"
           ],
           "Geometry and Trigonometry": [
             "Area and volume",
@@ -1553,6 +1808,7 @@
           "Information and Ideas": [
             "Central Ideas and Details",
             "Inferences",
+            "Command of Evidence",
             "Command of Evidence: Textual",
             "Command of Evidence: Quantitative"
           ],
@@ -1574,6 +1830,27 @@
       }
     };
 
+    const SKILL_ALIASES = {
+      math: {
+        "Linear functions": "Linear functions in one variable",
+        "One-variable data: Distributions and measures of center and spread": "One-variable data—Distributions and measures of center and spread",
+        "One-variable data: distributions and measures of center and spread": "One-variable data—Distributions and measures of center and spread",
+        "One-variable data - Distributions and measures of center and spread": "One-variable data—Distributions and measures of center and spread",
+        "Two-variable data: Models and scatterplots": "Two-variable data—Models and scatterplots",
+        "Two-variable data: models and scatterplots": "Two-variable data—Models and scatterplots",
+        "Two-variable data - Models and scatterplots": "Two-variable data—Models and scatterplots",
+        "Evaluating statistical claims: Observational studies and experiments": "Evaluating statistical claims—Observational studies and experiments",
+        "Evaluating statistical claims: observational studies and experiments": "Evaluating statistical claims—Observational studies and experiments",
+        "Evaluating statistical claims - Observational studies and experiments": "Evaluating statistical claims—Observational studies and experiments"
+      },
+      rw: {
+        "Command of Evidence (Textual)": "Command of Evidence: Textual",
+        "Command of Evidence (Quantitative)": "Command of Evidence: Quantitative",
+        "Text Structure in Purpose": "Text Structure and Purpose",
+        "Cross-Text Connection": "Cross-Text Connections"
+      }
+    };
+
     const state = {
       activeSection: "math",
       page: 1,
@@ -1587,6 +1864,108 @@
 
     const $ = id => document.getElementById(id);
 
+    const undoStack = [];
+    const MAX_UNDO_STEPS = 20;
+    let undoInProgress = false;
+    let editorSessionUndoCaptured = false;
+
+    function createUndoSnapshot(label) {
+      return {
+        label,
+        activeSection: state.activeSection,
+        page: state.page,
+        activeNumber: state.activeNumber,
+        serializedSections: JSON.stringify(state.sections),
+        serializedSettings: JSON.stringify(appSettings)
+      };
+    }
+
+    function updateUndoUi() {
+      const available = undoStack.length > 0;
+      const label = undoStack.at(-1)?.label || "last change";
+
+      for (const id of ["mainUndoBtn", "cardUndoBtn"]) {
+        const button = $(id);
+        if (!button) continue;
+        button.classList.toggle("is-visible", available);
+        button.disabled = !available;
+        button.setAttribute("aria-hidden", available ? "false" : "true");
+        button.tabIndex = available ? 0 : -1;
+        button.title = available ? `Undo ${label}` : "";
+      }
+    }
+
+    function captureUndo(label = "change") {
+      if (undoInProgress || driveSync.applyingRemote) return;
+      const snapshot = createUndoSnapshot(label);
+      const last = undoStack.at(-1);
+      if (last?.serializedSections === snapshot.serializedSections
+        && last?.serializedSettings === snapshot.serializedSettings) return;
+      undoStack.push(snapshot);
+      if (undoStack.length > MAX_UNDO_STEPS) undoStack.shift();
+      updateUndoUi();
+    }
+
+    function captureEditorUndo(label = "question change") {
+      if (editorSessionUndoCaptured) return;
+      captureUndo(label);
+      editorSessionUndoCaptured = true;
+    }
+
+    function performUndo() {
+      const snapshot = undoStack.pop();
+      if (!snapshot) return;
+
+      clearTimeout(editorDraftTimer);
+      editorDraftTimer = null;
+      undoInProgress = true;
+
+      try {
+        state.sections = JSON.parse(snapshot.serializedSections);
+        state.activeSection = TAXONOMY[snapshot.activeSection] ? snapshot.activeSection : "math";
+        state.page = Math.max(1, Number(snapshot.page) || 1);
+        state.activeNumber = snapshot.activeNumber;
+        appSettings = normalizeAppSettings(JSON.parse(snapshot.serializedSettings));
+        persistAppSettings(false);
+        populateSettingsUi();
+        save(true);
+        renderAll();
+
+        if ($("editDialog").open) {
+          const q = getQuestion(state.activeNumber);
+          if (q) populateEditor(q.number);
+          else closeDialogAnimated($("editDialog"));
+        }
+      } finally {
+        undoInProgress = false;
+        editorSessionUndoCaptured = false;
+        updateUndoUi();
+      }
+
+      showToast("Undone", snapshot.label);
+    }
+
+    function openDialog(dialog) {
+      if (!dialog || dialog.open) return;
+      dialog.classList.remove("closing");
+      dialog.showModal();
+    }
+
+    function closeDialogAnimated(dialog) {
+      if (!dialog?.open || dialog.classList.contains("closing")) return;
+      closeSkillDropdown({ immediate: true });
+
+      if (appSettings.reduceMotion) {
+        dialog.close();
+        return;
+      }
+
+      dialog.classList.add("closing");
+      setTimeout(() => {
+        if (dialog.open) dialog.close();
+        dialog.classList.remove("closing");
+      }, 175);
+    }
 
     function applyAppSettings() {
       const root = document.documentElement;
@@ -1597,9 +1976,16 @@
       root.dataset.reduceMotion = appSettings.reduceMotion ? "true" : "false";
     }
 
-    function persistAppSettings() {
+    function persistAppSettings(syncToDrive = false) {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
       applyAppSettings();
+
+      if (syncToDrive && !driveSync.applyingRemote) {
+        driveSync.dirty = true;
+        driveSync.lastError = "";
+        scheduleDriveAutosave(appSettings.autosaveDelay);
+        updateDriveUi();
+      }
     }
 
     function populateSettingsUi() {
@@ -1613,7 +1999,7 @@
     }
 
     function updateSettingsFromUi() {
-      appSettings = {
+      const nextSettings = {
         theme: $('themeSetting').value,
         textSize: $('textSizeSetting').value,
         density: $('densitySetting').value,
@@ -1622,8 +2008,10 @@
         autosaveDelay: Number($('autosaveDelaySetting').value) || DEFAULT_SETTINGS.autosaveDelay
       };
 
-      persistAppSettings();
-      scheduleDriveAutosave(appSettings.autosaveDelay);
+      if (JSON.stringify(nextSettings) === JSON.stringify(appSettings)) return;
+      captureUndo("settings change");
+      appSettings = nextSettings;
+      persistAppSettings(true);
 
       if (appSettings.autoConnect) {
         attemptAutomaticDriveConnection({ reason: "settings" });
@@ -1657,25 +2045,60 @@
       return Object.keys(TAXONOMY[sectionKey].domains);
     }
 
+    function officialSkills(sectionKey) {
+      return Object.entries(TAXONOMY[sectionKey].domains)
+        .filter(([domain]) => domain !== "Unknown")
+        .flatMap(([, skills]) => skills);
+    }
+
     function skillsFor(sectionKey, domain) {
-      const base = TAXONOMY[sectionKey].domains[domain] || [];
+      const domainSkills = TAXONOMY[sectionKey].domains[domain];
+      const base = domain && domain !== "Unknown" && Array.isArray(domainSkills)
+        ? domainSkills
+        : officialSkills(sectionKey);
       return [...new Set([...base, "Other", "Unknown"])];
     }
 
     function allSkills(sectionKey) {
-      return [...new Set(
-        Object.values(TAXONOMY[sectionKey].domains)
-          .flat()
-          .concat(["Other", "Unknown"])
-      )];
+      return [...new Set([...officialSkills(sectionKey), "Other", "Unknown"])];
+    }
+
+    function domainForSkill(sectionKey, rawSkill) {
+      const canonical = canonicalSkill(sectionKey, rawSkill);
+      const normalized = normalizeSkillSearch(canonical);
+      if (!normalized || canonical === "Other" || canonical === "Unknown") return "";
+
+      for (const [domain, skills] of Object.entries(TAXONOMY[sectionKey].domains)) {
+        if (domain === "Unknown") continue;
+        if (skills.some(skill => normalizeSkillSearch(skill) === normalized)) return domain;
+      }
+      return "";
+    }
+
+    function canonicalSkill(sectionKey, rawSkill) {
+      const text = String(rawSkill || "Unknown").trim() || "Unknown";
+      const normalizedText = normalizeSkillSearch(text);
+
+      const aliasEntry = Object.entries(SKILL_ALIASES[sectionKey] || {}).find(
+        ([alias]) => normalizeSkillSearch(alias) === normalizedText
+      );
+      if (aliasEntry) return aliasEntry[1];
+
+      const official = allSkills(sectionKey).find(
+        skill => normalizeSkillSearch(skill) === normalizedText
+      );
+      return official || text;
     }
 
     function normalizeQuestion(raw, number, sectionKey) {
       const domains = validDomains(sectionKey);
-      const domain = domains.includes(raw?.domain) ? raw.domain : "Unknown";
-      const allowedSkills = skillsFor(sectionKey, domain);
-      const rawSkill = String(raw?.skill || "Unknown");
-      const skill = allowedSkills.includes(rawSkill) ? rawSkill : "Other";
+      let domain = domains.includes(raw?.domain) ? raw.domain : "Unknown";
+      const rawSkill = canonicalSkill(sectionKey, raw?.skill);
+      const skill = allSkills(sectionKey).includes(rawSkill) ? rawSkill : "Other";
+      const inferredDomain = domainForSkill(sectionKey, skill);
+      if (inferredDomain && (domain === "Unknown" || !skillsFor(sectionKey, domain).includes(skill))) {
+        domain = inferredDomain;
+      }
       const allowedStatus = ["unattempted", "correct", "incorrect", "skipped"];
       const status = allowedStatus.includes(raw?.status) ? raw.status : "unattempted";
 
@@ -1801,12 +2224,16 @@
       return {
         version: 4,
         activeSection: state.activeSection,
-        sections: state.sections
+        sections: state.sections,
+        settings: { ...appSettings }
       };
     }
 
     function trackerDataForHash(tracker = trackerSnapshot()) {
-      return JSON.stringify({ sections: tracker.sections });
+      return JSON.stringify({
+        sections: tracker.sections,
+        settings: normalizeAppSettings(tracker.settings || DEFAULT_SETTINGS)
+      });
     }
 
     function hashString(value) {
@@ -1847,6 +2274,7 @@
     function hasMeaningfulLocalData() {
       if (state.sections.math.targetCount !== TAXONOMY.math.defaultTotal) return true;
       if (state.sections.rw.targetCount !== TAXONOMY.rw.defaultTotal) return true;
+      if (JSON.stringify(appSettings) !== JSON.stringify(DEFAULT_SETTINGS)) return true;
 
       return ["math", "rw"].some(sectionKey =>
         state.sections[sectionKey].questions.some(q =>
@@ -2205,6 +2633,13 @@
         state.activeSection = tracker.activeSection === "rw" ? "rw" : "math";
         state.page = 1;
         state.activeNumber = null;
+
+        if (tracker.settings) {
+          appSettings = normalizeAppSettings(tracker.settings);
+          persistAppSettings(false);
+          populateSettingsUi();
+        }
+
         save(false);
         renderAll();
       } finally {
@@ -2220,7 +2655,7 @@
       driveSync.dirty = true;
       driveSync.lastError = "";
       updateDriveUi();
-      if (!$("driveDialog").open) $("driveDialog").showModal();
+      if (!$("driveDialog").open) openDialog($("driveDialog"));
     }
 
     async function connectAndInitializeDrive({ interactive = true, announce = interactive } = {}) {
@@ -2342,7 +2777,7 @@
 
       if (driveSync.conflict && !force) {
         updateDriveUi();
-        if (manual && !$("driveDialog").open) $("driveDialog").showModal();
+        if (manual && !$("driveDialog").open) openDialog($("driveDialog"));
         return;
       }
 
@@ -2494,9 +2929,359 @@
     }
 
     function populateSkillList(listElement, sectionKey, domain) {
-      listElement.innerHTML = skillsFor(sectionKey, domain)
+      listElement.innerHTML = allSkills(sectionKey)
         .map(skill => `<option value="${escapeHtml(skill)}"></option>`)
         .join("");
+    }
+
+    const skillCombobox = {
+      input: null,
+      options: [],
+      activeIndex: -1,
+      closeTimer: null,
+      searchMode: false
+    };
+
+    function normalizeSkillSearch(value) {
+      return String(value || "")
+        .normalize("NFKD")
+        .toLowerCase()
+        .replace(/&/g, " and ")
+        .replace(/[—–−]/g, "-")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim()
+        .replace(/\s+/g, " ");
+    }
+
+    function skillContextForInput(input) {
+      if (!input) return null;
+
+      if (input.id === "editSkill") {
+        return {
+          sectionKey: state.activeSection,
+          domain: $("editDomain").value || "Unknown"
+        };
+      }
+
+      if (input.id === "bulkSkill") {
+        return {
+          sectionKey: state.activeSection,
+          domain: $("bulkDomain").value || "Unknown"
+        };
+      }
+
+      if (input.matches('input[data-field="skill"]')) {
+        const number = Number(input.dataset.number);
+        const rowDomain = input.closest("tr")?.querySelector('select[data-field="domain"]')?.value;
+        const question = getQuestion(number);
+        return {
+          sectionKey: state.activeSection,
+          domain: rowDomain || question?.domain || "Unknown"
+        };
+      }
+
+      return null;
+    }
+
+    function exactSkillForInput(input, options = null) {
+      const context = skillContextForInput(input);
+      if (!context) return "";
+      const allowed = options || allSkills(context.sectionKey);
+      const value = String(input.value || "").trim();
+      if (!value) return "";
+
+      const canonical = canonicalSkill(context.sectionKey, value);
+      const normalizedCanonical = normalizeSkillSearch(canonical);
+      return allowed.find(skill => normalizeSkillSearch(skill) === normalizedCanonical) || "";
+    }
+
+    function filteredSkillOptions(input, searchMode = false) {
+      const context = skillContextForInput(input);
+      if (!context) return [];
+
+      const options = allSkills(context.sectionKey);
+      if (!searchMode) return options;
+
+      const query = normalizeSkillSearch(input.value);
+      if (!query) return options;
+
+      const tokens = query.split(" ").filter(Boolean);
+      const scored = [];
+
+      options.forEach((skill, originalIndex) => {
+        const normalized = normalizeSkillSearch(skill);
+        if (!tokens.every(token => normalized.includes(token))) return;
+
+        let score = 2;
+        if (normalized === query) score = 0;
+        else if (normalized.startsWith(query)) score = 1;
+
+        scored.push({ skill, score, originalIndex });
+      });
+
+      scored.sort((a, b) => a.score - b.score || a.originalIndex - b.originalIndex);
+      return scored.map(item => item.skill);
+    }
+
+    function highlightSkillMatch(label, query) {
+      if (!query) return escapeHtml(label);
+      const lower = label.toLowerCase();
+      const rawQuery = String(query).trim().toLowerCase();
+      const index = lower.indexOf(rawQuery);
+      if (index < 0) return escapeHtml(label);
+      return `${escapeHtml(label.slice(0, index))}<mark>${escapeHtml(label.slice(index, index + rawQuery.length))}</mark>${escapeHtml(label.slice(index + rawQuery.length))}`;
+    }
+
+    function positionSkillDropdown() {
+      const input = skillCombobox.input;
+      const dropdown = $("skillDropdown");
+      if (!input || !dropdown.classList.contains("is-open") || !document.body.contains(input)) return;
+
+      const rect = input.getBoundingClientRect();
+      const margin = 10;
+
+      if (dropdown.dataset.positionMode === "dialog" && dropdown.parentElement?.matches("dialog")) {
+        const host = dropdown.parentElement;
+        const hostRect = host.getBoundingClientRect();
+        const availableWidth = Math.max(220, host.clientWidth - margin * 2);
+        const width = Math.min(Math.max(rect.width, 300), availableWidth);
+        const minLeft = host.scrollLeft + margin;
+        const maxLeft = host.scrollLeft + host.clientWidth - width - margin;
+        const left = Math.min(
+          Math.max(minLeft, rect.left - hostRect.left + host.scrollLeft),
+          Math.max(minLeft, maxLeft)
+        );
+
+        dropdown.style.position = "absolute";
+        dropdown.style.width = `${width}px`;
+        dropdown.style.left = `${left}px`;
+        dropdown.style.maxHeight = `${Math.max(120, Math.min(320, host.clientHeight * 0.46))}px`;
+
+        const dropdownHeight = Math.min(dropdown.scrollHeight || 260, host.clientHeight * 0.46);
+        const roomBelow = hostRect.bottom - rect.bottom - margin;
+        const roomAbove = rect.top - hostRect.top - margin;
+        const placeAbove = roomBelow < Math.min(dropdownHeight, 190) && roomAbove > roomBelow;
+
+        dropdown.style.bottom = "auto";
+        dropdown.style.top = placeAbove
+          ? `${rect.top - hostRect.top + host.scrollTop - dropdownHeight - 6}px`
+          : `${rect.bottom - hostRect.top + host.scrollTop + 6}px`;
+        dropdown.style.transformOrigin = placeAbove ? "bottom center" : "top center";
+        return;
+      }
+
+      const viewport = window.visualViewport;
+      const viewportWidth = viewport?.width || window.innerWidth;
+      const viewportHeight = viewport?.height || window.innerHeight;
+      const viewportLeft = viewport?.offsetLeft || 0;
+      const viewportTop = viewport?.offsetTop || 0;
+      const desiredWidth = Math.max(rect.width, Math.min(420, viewportWidth - margin * 2));
+      const width = Math.min(desiredWidth, viewportWidth - margin * 2);
+      const left = Math.min(
+        Math.max(viewportLeft + margin, rect.left),
+        viewportLeft + viewportWidth - width - margin
+      );
+
+      dropdown.style.position = "fixed";
+      dropdown.style.width = `${Math.max(220, width)}px`;
+      dropdown.style.left = `${left}px`;
+      dropdown.style.maxHeight = `${Math.max(120, Math.min(320, viewportHeight * 0.46))}px`;
+
+      const dropdownHeight = Math.min(dropdown.scrollHeight || 260, viewportHeight * 0.46);
+      const viewportBottom = viewportTop + viewportHeight;
+      const roomBelow = viewportBottom - rect.bottom - margin;
+      const roomAbove = rect.top - viewportTop - margin;
+      const placeAbove = roomBelow < Math.min(dropdownHeight, 190) && roomAbove > roomBelow;
+
+      if (placeAbove) {
+        dropdown.style.top = "auto";
+        dropdown.style.bottom = `${Math.max(margin, viewportBottom - rect.top + 6)}px`;
+        dropdown.style.transformOrigin = "bottom center";
+      } else {
+        dropdown.style.bottom = "auto";
+        dropdown.style.top = `${Math.min(viewportBottom - margin, rect.bottom + 6)}px`;
+        dropdown.style.transformOrigin = "top center";
+      }
+    }
+
+    function renderSkillDropdown(input, preserveActive = false, searchMode = false) {
+      const dropdown = $("skillDropdown");
+      const previousLabel = preserveActive && skillCombobox.activeIndex >= 0
+        ? skillCombobox.options[skillCombobox.activeIndex]
+        : "";
+
+      const host = input.closest("dialog") || document.body;
+      if (dropdown.parentElement !== host) {
+        if (typeof dropdown.hidePopover === "function" && dropdown.matches(":popover-open")) {
+          try { dropdown.hidePopover(); } catch (_) {}
+        }
+        host.appendChild(dropdown);
+      }
+
+      skillCombobox.input = input;
+      skillCombobox.searchMode = searchMode;
+      skillCombobox.options = filteredSkillOptions(input, searchMode);
+
+      const selectedSkill = exactSkillForInput(input);
+      skillCombobox.activeIndex = previousLabel
+        ? skillCombobox.options.indexOf(previousLabel)
+        : (!searchMode && selectedSkill ? skillCombobox.options.indexOf(selectedSkill) : -1);
+
+      const query = searchMode ? input.value.trim() : "";
+      if (!skillCombobox.options.length) {
+        dropdown.innerHTML = '<div class="skill-dropdown-empty">No matching skills</div>';
+      } else {
+        dropdown.innerHTML = skillCombobox.options.map((skill, index) => `
+          <button
+            type="button"
+            class="skill-option ${index === skillCombobox.activeIndex ? "is-active" : ""} ${skill === selectedSkill ? "is-selected" : ""}"
+            role="option"
+            aria-selected="${index === skillCombobox.activeIndex ? "true" : "false"}"
+            data-skill-index="${index}"
+          ><span class="skill-option-label">${highlightSkillMatch(skill, query)}</span></button>
+        `).join("");
+      }
+
+      let openedAsPopover = false;
+      dropdown.dataset.positionMode = "fixed";
+      if (typeof dropdown.showPopover === "function" && !dropdown.matches(":popover-open")) {
+        try {
+          dropdown.showPopover();
+          openedAsPopover = dropdown.matches(":popover-open");
+        } catch (_) {
+          dropdown.removeAttribute("popover");
+        }
+      } else if (typeof dropdown.showPopover === "function") {
+        openedAsPopover = dropdown.matches(":popover-open");
+      }
+
+      if (!openedAsPopover && host.matches("dialog")) {
+        dropdown.dataset.positionMode = "dialog";
+      }
+
+      dropdown.classList.add("is-open");
+      input.setAttribute("aria-expanded", "true");
+      input.setAttribute("aria-controls", "skillDropdown");
+      requestAnimationFrame(positionSkillDropdown);
+    }
+
+    function openSkillDropdown(input) {
+      clearTimeout(skillCombobox.closeTimer);
+      if (!skillContextForInput(input)) return;
+      renderSkillDropdown(input, false, false);
+    }
+
+    function focusSkillDropdown(input) {
+      openSkillDropdown(input);
+      if (!exactSkillForInput(input)) return;
+      requestAnimationFrame(() => {
+        if (document.activeElement === input && typeof input.select === "function") input.select();
+      });
+    }
+
+    function closeSkillDropdown({ immediate = false } = {}) {
+      clearTimeout(skillCombobox.closeTimer);
+      const dropdown = $("skillDropdown");
+      const input = skillCombobox.input;
+      if (input) input.setAttribute("aria-expanded", "false");
+      dropdown.classList.remove("is-open");
+
+      const finish = () => {
+        if (dropdown.classList.contains("is-open")) return;
+        dropdown.innerHTML = "";
+        dropdown.style.removeProperty("top");
+        dropdown.style.removeProperty("bottom");
+        dropdown.style.removeProperty("left");
+        dropdown.style.removeProperty("width");
+        dropdown.style.removeProperty("max-height");
+        dropdown.style.removeProperty("position");
+        delete dropdown.dataset.positionMode;
+        skillCombobox.input = null;
+        skillCombobox.options = [];
+        skillCombobox.activeIndex = -1;
+        skillCombobox.searchMode = false;
+      };
+
+      const hidePopover = () => {
+        if (typeof dropdown.hidePopover === "function" && dropdown.matches(":popover-open")) {
+          try { dropdown.hidePopover(); } catch (_) {}
+        }
+      };
+
+      if (immediate || appSettings.reduceMotion) {
+        hidePopover();
+        finish();
+      } else {
+        skillCombobox.closeTimer = setTimeout(() => {
+          hidePopover();
+          finish();
+        }, 180);
+      }
+    }
+
+    function setActiveSkillOption(index) {
+      if (!skillCombobox.options.length) return;
+      skillCombobox.activeIndex = Math.max(0, Math.min(index, skillCombobox.options.length - 1));
+      const options = $("skillDropdown").querySelectorAll(".skill-option");
+      options.forEach((option, optionIndex) => {
+        const active = optionIndex === skillCombobox.activeIndex;
+        option.classList.toggle("is-active", active);
+        option.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      options[skillCombobox.activeIndex]?.scrollIntoView({ block: "nearest" });
+    }
+
+    function chooseSkillOption(index, { blur = false } = {}) {
+      const input = skillCombobox.input;
+      const skill = skillCombobox.options[index];
+      if (!input || !skill) return false;
+
+      input.value = skill === "Unknown" ? "" : skill;
+      input.classList.remove("invalid");
+      closeSkillDropdown({ immediate: true });
+      if (blur) input.blur();
+      return true;
+    }
+
+    function handleSkillComboboxKeydown(event, input, commit) {
+      const open = $("skillDropdown").classList.contains("is-open") && skillCombobox.input === input;
+
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        if (!open) openSkillDropdown(input);
+        const direction = event.key === "ArrowDown" ? 1 : -1;
+        const start = skillCombobox.activeIndex < 0
+          ? (direction > 0 ? -1 : skillCombobox.options.length)
+          : skillCombobox.activeIndex;
+        setActiveSkillOption(start + direction);
+        return true;
+      }
+
+      if (event.key === "Escape" && open) {
+        event.preventDefault();
+        closeSkillDropdown();
+        return true;
+      }
+
+      if (event.key === "Enter") {
+        event.preventDefault();
+        if (open && skillCombobox.activeIndex >= 0) {
+          chooseSkillOption(skillCombobox.activeIndex);
+        }
+        commit?.();
+        if (!input.classList.contains("invalid")) {
+          closeSkillDropdown({ immediate: true });
+          input.blur();
+        }
+        return true;
+      }
+
+      if (event.key === "Tab" && open) {
+        if (skillCombobox.activeIndex >= 0) chooseSkillOption(skillCombobox.activeIndex);
+        closeSkillDropdown({ immediate: true });
+      }
+
+      return false;
     }
 
     function populateFilters() {
@@ -2540,6 +3325,7 @@
 
       $("mathTab").classList.toggle("active", state.activeSection === "math");
       $("rwTab").classList.toggle("active", state.activeSection === "rw");
+      $("sectionToggle").dataset.active = state.activeSection;
       $("sectionTitle").textContent = taxonomy.label;
 
       $("sectionSubtitle").textContent = `${total.toLocaleString()} questions.`;
@@ -2579,7 +3365,7 @@
         const list = document.createElement("datalist");
         list.id = skillListIdFor(state.activeSection, domain);
         list.dataset.tableSkillList = "true";
-        list.innerHTML = skillsFor(state.activeSection, domain)
+        list.innerHTML = allSkills(state.activeSection)
           .map(skill => `<option value="${escapeHtml(skill)}"></option>`)
           .join("");
         document.body.appendChild(list);
@@ -2587,6 +3373,9 @@
     }
 
     function renderTable() {
+      if (skillCombobox.input?.matches('input[data-field="skill"]')) {
+        closeSkillDropdown({ immediate: true });
+      }
       const filtered = getFilteredQuestions();
       const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
       state.page = Math.min(Math.max(1, state.page), totalPages);
@@ -2622,13 +3411,15 @@
             </td>
             <td>
               <input
-                class="skill-input"
+                class="skill-input skill-combobox-input"
                 data-field="skill"
                 data-number="${q.number}"
-                list="${skillListId}"
-                value="${escapeHtml(q.skill)}"
-                placeholder="Search or choose"
+                value="${escapeHtml(q.skill === "Unknown" ? "" : q.skill)}"
+                placeholder="Unknown"
                 autocomplete="off"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded="false"
               />
             </td>
             <td><span class="status ${q.status}">${escapeHtml(q.status)}</span></td>
@@ -2638,7 +3429,18 @@
                 ${completed ? "Completed" : "Not completed"}
               </span>
             </td>
-            <td>${q.attempts}</td>
+            <td>
+              <input
+                class="attempts-input"
+                data-field="attempts"
+                data-number="${q.number}"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                value="${q.attempts}"
+              />
+            </td>
             <td><div class="notes-preview">${q.notes ? escapeHtml(q.notes.slice(0, 82)) + (q.notes.length > 82 ? "…" : "") : "—"}</div></td>
             <td><button class="secondary" data-open-number="${q.number}">Open</button></td>
           </tr>
@@ -2658,6 +3460,7 @@
       ensureTableSkillLists();
       renderStats();
       renderTable();
+      updateUndoUi();
     }
 
     function switchSection(sectionKey) {
@@ -2688,7 +3491,7 @@
     }
 
     function validateSkill(sectionKey, domain, skill) {
-      return skillsFor(sectionKey, domain).includes(skill);
+      return allSkills(sectionKey).includes(canonicalSkill(sectionKey, skill));
     }
 
     function saveInline(input) {
@@ -2696,6 +3499,7 @@
       if (!q) return;
 
       const field = input.dataset.field;
+      let changed = false;
 
       if (field === "questionId") {
         const id = input.value.trim().toLowerCase().replace(/[^0-9a-f]/g, "").slice(0, 8);
@@ -2718,26 +3522,59 @@
         }
 
         input.classList.remove("invalid");
-        q.questionId = id;
+        if (q.questionId !== id) {
+          captureUndo("question ID change");
+          q.questionId = id;
+          changed = true;
+        }
       }
 
       if (field === "domain") {
-        q.domain = input.value;
-        if (!validateSkill(state.activeSection, q.domain, q.skill)) q.skill = "Unknown";
+        const domain = input.value;
+        if (q.domain !== domain) {
+          captureUndo("domain change");
+          q.domain = domain;
+          if (!validateSkill(state.activeSection, q.domain, q.skill)) q.skill = "Unknown";
+          changed = true;
+        }
       }
 
       if (field === "skill") {
-        const skill = input.value.trim();
+        const skill = canonicalSkill(state.activeSection, input.value.trim() || "Unknown");
         if (!validateSkill(state.activeSection, q.domain, skill)) {
           input.classList.add("invalid");
           showToast("Choose a listed skill", "Select a matching skill, Other, or Unknown.");
-          input.value = q.skill;
+          input.value = q.skill === "Unknown" ? "" : q.skill;
           return;
         }
         input.classList.remove("invalid");
-        q.skill = skill;
+        input.value = skill === "Unknown" ? "" : skill;
+
+        const inferredDomain = domainForSkill(state.activeSection, skill);
+        if (inferredDomain && q.domain !== inferredDomain) {
+          if (!changed) captureUndo("skill change");
+          q.domain = inferredDomain;
+          changed = true;
+        }
+
+        if (q.skill !== skill) {
+          if (!changed) captureUndo("skill change");
+          q.skill = skill;
+          changed = true;
+        }
       }
 
+      if (field === "attempts") {
+        const attempts = Math.max(0, Math.floor(Number(input.value) || 0));
+        input.value = attempts;
+        if (q.attempts !== attempts) {
+          captureUndo("attempt count change");
+          q.attempts = attempts;
+          changed = true;
+        }
+      }
+
+      if (!changed) return;
       q.updatedAt = new Date().toISOString();
       save(true);
       renderAll();
@@ -2747,8 +3584,9 @@
       const domain = $("editDomain").value || "Unknown";
       populateSkillList($("editSkillList"), state.activeSection, domain);
 
-      if (!validateSkill(state.activeSection, domain, $("editSkill").value)) {
-        $("editSkill").value = "Unknown";
+      const skill = $("editSkill").value.trim();
+      if (skill && !validateSkill(state.activeSection, domain, skill)) {
+        $("editSkill").value = "";
       }
     }
 
@@ -2759,14 +3597,17 @@
       state.activeNumber = number;
       populateDomainSelect($("editDomain"), state.activeSection);
       $("editDomain").value = q.domain;
+      $("editSkill").value = q.skill === "Unknown" ? "" : q.skill;
       populateEditorSkills();
 
       $("editTitle").textContent = `${TAXONOMY[state.activeSection].label} · Question ${number}`;
       $("editNumber").value = number;
       $("editId").value = q.questionId;
       $("editId").classList.remove("invalid");
-      $("editSkill").value = q.skill;
+      $("editSkill").classList.remove("invalid");
+      $("editAttempts").value = q.attempts;
       $("editNotes").value = q.notes;
+      editorSessionUndoCaptured = false;
       updateEditorStatus();
       return q;
     }
@@ -2783,11 +3624,12 @@
       const q = populateEditor(number);
       if (!q) return;
 
-      if (!$("editDialog").open) $("editDialog").showModal();
+      if (!$("editDialog").open) openDialog($("editDialog"));
       focusEditor(q, 180);
     }
 
-    async function switchEditorQuestion(number) {
+    async function switchEditorQuestion(number, direction = 1) {
+      closeSkillDropdown({ immediate: true });
       const dialog = $("editDialog");
       if (!dialog.open || appSettings.reduceMotion || typeof dialog.animate !== "function") {
         openEditor(number);
@@ -2802,7 +3644,7 @@
           part.animate(
             [
               { opacity: 1, transform: "translateX(0)" },
-              { opacity: 0, transform: "translateX(-22px)" }
+              { opacity: 0, transform: `translateX(${-22 * direction}px)` }
             ],
             { duration: 140, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" }
           ).finished.catch(() => {})
@@ -2815,7 +3657,7 @@
           part.getAnimations().forEach(animation => animation.cancel());
           part.animate(
             [
-              { opacity: 0, transform: "translateX(22px)" },
+              { opacity: 0, transform: `translateX(${22 * direction}px)` },
               { opacity: 1, transform: "translateX(0)" }
             ],
             { duration: 190, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
@@ -2841,6 +3683,9 @@
       $("attemptSummary").textContent =
         `${q.attempts} attempt${q.attempts === 1 ? "" : "s"} · ` +
         `${q.correctAttempts} correct · ${q.incorrectAttempts} incorrect · ${q.skippedAttempts} skipped`;
+
+      $("backQuestionBtn").disabled = !previousNumberBefore(q.number);
+      updateUndoUi();
     }
 
     let editorDraftTimer = null;
@@ -2855,40 +3700,46 @@
       editorDraftTimer = null;
 
       const q = getQuestion(state.activeNumber);
-      if (!q || !$('editDialog').open) return;
+      if (!q || !$("editDialog").open) return;
 
-      const id = $('editId').value.trim().toLowerCase();
-      const domain = $('editDomain').value;
-      const skill = $('editSkill').value.trim();
-      const notes = $('editNotes').value;
+      const id = $("editId").value.trim().toLowerCase();
+      let domain = $("editDomain").value;
+      const skill = canonicalSkill(state.activeSection, $("editSkill").value.trim() || "Unknown");
+      const inferredDomain = domainForSkill(state.activeSection, skill);
+      if (inferredDomain) {
+        domain = inferredDomain;
+        $("editDomain").value = domain;
+      }
+      const attempts = Math.max(0, Math.floor(Number($("editAttempts").value) || 0));
+      const notes = $("editNotes").value;
       let changed = false;
 
       if (!id || isValidId(id)) {
         const duplicate = id && currentSection().questions.find(
           other => other.number !== q.number && other.questionId === id
         );
-        if (!duplicate && q.questionId !== id) {
-          q.questionId = id;
-          changed = true;
-        }
+        if (!duplicate && q.questionId !== id) changed = true;
       }
 
-      if (q.domain !== domain) {
-        q.domain = domain;
-        changed = true;
-      }
-
-      if (validateSkill(state.activeSection, domain, skill) && q.skill !== skill) {
-        q.skill = skill;
-        changed = true;
-      }
-
-      if (q.notes !== notes) {
-        q.notes = notes;
-        changed = true;
-      }
-
+      if (q.domain !== domain) changed = true;
+      if (validateSkill(state.activeSection, domain, skill) && q.skill !== skill) changed = true;
+      if (q.attempts !== attempts) changed = true;
+      if (q.notes !== notes) changed = true;
       if (!changed) return;
+
+      captureEditorUndo("question edit");
+
+      if (!id || isValidId(id)) {
+        const duplicate = id && currentSection().questions.find(
+          other => other.number !== q.number && other.questionId === id
+        );
+        if (!duplicate) q.questionId = id;
+      }
+
+      q.domain = domain;
+      if (validateSkill(state.activeSection, domain, skill)) q.skill = skill;
+      q.attempts = attempts;
+      q.notes = notes;
       q.updatedAt = new Date().toISOString();
       save(true);
       renderStats();
@@ -2903,8 +3754,15 @@
       if (!q) return false;
 
       const id = $("editId").value.trim().toLowerCase();
-      const domain = $("editDomain").value;
-      const skill = $("editSkill").value.trim();
+      let domain = $("editDomain").value;
+      const skill = canonicalSkill(state.activeSection, $("editSkill").value.trim() || "Unknown");
+      const inferredDomain = domainForSkill(state.activeSection, skill);
+      if (inferredDomain) {
+        domain = inferredDomain;
+        $("editDomain").value = domain;
+      }
+      const attempts = Math.max(0, Math.floor(Number($("editAttempts").value) || 0));
+      const notes = $("editNotes").value.trim();
 
       if (id && !isValidId(id)) {
         $("editId").classList.add("invalid");
@@ -2933,11 +3791,23 @@
 
       $("editId").classList.remove("invalid");
       $("editSkill").classList.remove("invalid");
+      $("editSkill").value = skill === "Unknown" ? "" : skill;
+      $("editAttempts").value = attempts;
+
+      const changed = q.questionId !== id
+        || q.domain !== domain
+        || q.skill !== skill
+        || q.attempts !== attempts
+        || q.notes !== notes;
+
+      if (!changed) return true;
+      captureEditorUndo("question edit");
 
       q.questionId = id;
       q.domain = domain;
       q.skill = skill;
-      q.notes = $("editNotes").value.trim();
+      q.attempts = attempts;
+      q.notes = notes;
       q.updatedAt = new Date().toISOString();
 
       save(true);
@@ -2946,12 +3816,11 @@
     }
 
     function nextNumberAfter(currentNumber) {
-      const filtered = getFilteredQuestions();
-      return (
-        filtered.find(q => q.number > currentNumber)
-        || filtered.find(q => q.number < currentNumber)
-        || null
-      )?.number || null;
+      return getFilteredQuestions().find(q => q.number > currentNumber)?.number || null;
+    }
+
+    function previousNumberBefore(currentNumber) {
+      return [...getFilteredQuestions()].reverse().find(q => q.number < currentNumber)?.number || null;
     }
 
     function moveToNext(currentNumber, completionMessage = "") {
@@ -2962,12 +3831,20 @@
       }
 
       if (nextNumber) {
-        switchEditorQuestion(nextNumber);
+        switchEditorQuestion(nextNumber, 1);
       } else {
-        $("editDialog").close();
+        closeDialogAnimated($("editDialog"));
         state.activeNumber = null;
         showToast("End of list", "No next question.");
       }
+    }
+
+    function moveToPrevious() {
+      const currentNumber = state.activeNumber;
+      if (!commitEditor()) return;
+      const previousNumber = previousNumberBefore(currentNumber);
+      if (!previousNumber) return;
+      switchEditorQuestion(previousNumber, -1);
     }
 
     function submitResult(status) {
@@ -2975,6 +3852,7 @@
       if (!commitEditor()) return;
 
       const q = getQuestion(number);
+      captureEditorUndo("question result");
       q.status = status;
       q.attempts += 1;
       if (status === "correct") q.correctAttempts += 1;
@@ -2993,6 +3871,22 @@
       const number = state.activeNumber;
       if (!commitEditor()) return;
       moveToNext(number);
+    }
+
+    function addBlankQuestionBelow() {
+      const currentNumber = state.activeNumber;
+      if (!commitEditor()) return;
+
+      const section = currentSection();
+      captureEditorUndo("blank question added");
+      section.questions.splice(currentNumber, 0, blankQuestion(currentNumber + 1));
+      section.targetCount = section.questions.length;
+      section.questions.forEach((q, index) => q.number = index + 1);
+
+      save(true);
+      renderAll();
+      showToast("Blank question added", `Question ${currentNumber + 1}`);
+      switchEditorQuestion(currentNumber + 1, 1);
     }
 
     function parseBulkText(text) {
@@ -3024,8 +3918,9 @@
       const domain = $("bulkDomain").value || "Unknown";
       populateSkillList($("bulkSkillList"), state.activeSection, domain);
 
-      if (!validateSkill(state.activeSection, domain, $("bulkSkill").value)) {
-        $("bulkSkill").value = "Unknown";
+      const skill = $("bulkSkill").value.trim();
+      if (skill && !validateSkill(state.activeSection, domain, skill)) {
+        $("bulkSkill").value = "";
       }
     }
 
@@ -3038,10 +3933,10 @@
       $("bulkText").value = "";
       populateDomainSelect($("bulkDomain"), state.activeSection);
       $("bulkDomain").value = "Unknown";
-      $("bulkSkill").value = "Unknown";
+      $("bulkSkill").value = "";
       populateBulkSkills();
       updateBulkPreview();
-      $("bulkDialog").showModal();
+      openDialog($("bulkDialog"));
       setTimeout(() => $("bulkText").focus(), 30);
     }
 
@@ -3095,8 +3990,13 @@
       const start = Math.max(1, Math.floor(Number($("bulkStart").value) || 1));
       const end = parsed.valid.length ? start + parsed.valid.length - 1 : null;
       const section = currentSection();
-      const domain = $("bulkDomain").value;
-      const skill = $("bulkSkill").value.trim();
+      let domain = $("bulkDomain").value;
+      const skill = canonicalSkill(state.activeSection, $("bulkSkill").value.trim() || "Unknown");
+      const inferredDomain = domainForSkill(state.activeSection, skill);
+      if (inferredDomain) {
+        domain = inferredDomain;
+        $("bulkDomain").value = domain;
+      }
 
       if (!parsed.valid.length) {
         showToast("Nothing imported", "Paste at least one valid 8-character question ID.");
@@ -3108,6 +4008,8 @@
         showToast("Choose a listed skill", "Select a matching skill, Other, or Unknown.");
         return;
       }
+
+      captureUndo("bulk import");
 
       if (end > section.targetCount) {
         if (!$("autoExpandCheck").checked) {
@@ -3154,7 +4056,7 @@
 
       save(true);
       renderAll();
-      $("bulkDialog").close();
+      closeDialogAnimated($("bulkDialog"));
 
       showToast(
         "Bulk import completed",
@@ -3165,6 +4067,8 @@
     function applyTotals() {
       const mathTotal = Math.max(0, Math.min(10000, Math.floor(Number($("mathTotalInput").value) || 0)));
       const rwTotal = Math.max(0, Math.min(10000, Math.floor(Number($("rwTotalInput").value) || 0)));
+      let captured = false;
+      let changed = false;
 
       for (const [sectionKey, newTotal] of [["math", mathTotal], ["rw", rwTotal]]) {
         const section = state.sections[sectionKey];
@@ -3183,12 +4087,21 @@
           }
         }
 
-        ensureQuestionCount(sectionKey, newTotal);
+        if (newTotal !== section.targetCount) {
+          if (!captured) {
+            captureUndo("question totals change");
+            captured = true;
+          }
+          ensureQuestionCount(sectionKey, newTotal);
+          changed = true;
+        }
       }
 
-      save(true);
-      renderAll();
-      $("dataDialog").close();
+      if (changed) {
+        save(true);
+        renderAll();
+      }
+      closeDialogAnimated($("dataDialog"));
       showToast("Question totals updated", "The section sizes were saved.");
     }
 
@@ -3232,7 +4145,8 @@
           version: 4,
           exportedAt: new Date().toISOString(),
           activeSection: state.activeSection,
-          sections: state.sections
+          sections: state.sections,
+          settings: { ...appSettings }
         }, null, 2),
         "application/json"
       );
@@ -3284,6 +4198,7 @@
 
       if (file.name.toLowerCase().endsWith(".csv")) {
         const imported = parseCsv(text);
+        captureUndo("CSV restore");
         const highestNumber = Math.max(0, ...imported.map(row => Number(row.number) || 0));
         ensureQuestionCount(state.activeSection, Math.max(currentSection().targetCount, highestNumber));
 
@@ -3300,6 +4215,8 @@
           throw new Error("This is not a complete tracker JSON backup.");
         }
 
+        captureUndo("backup restore");
+
         for (const sectionKey of ["math", "rw"]) {
           const targetCount = Math.max(0, Number(parsed.sections[sectionKey].targetCount) || 0);
           state.sections[sectionKey] = {
@@ -3312,17 +4229,22 @@
         }
 
         state.activeSection = parsed.activeSection === "rw" ? "rw" : "math";
+        if (parsed.settings) {
+          appSettings = normalizeAppSettings(parsed.settings);
+          persistAppSettings(true);
+          populateSettingsUi();
+        }
       }
 
       state.page = 1;
       save(true);
       renderAll();
-      showToast("Backup restored", "Your tracker data was loaded successfully.");
+      showToast("Backup restored", "Data loaded.");
     }
 
     $("driveBtn").addEventListener("click", () => {
       updateDriveUi();
-      $("driveDialog").showModal();
+      openDialog($("driveDialog"));
     });
 
     $("connectDriveBtn").addEventListener("click", async () => {
@@ -3435,7 +4357,7 @@
 
     $('settingsBtn').addEventListener('click', () => {
       populateSettingsUi();
-      $('settingsDialog').showModal();
+      openDialog($('settingsDialog'));
     });
 
     ['themeSetting', 'textSizeSetting', 'densitySetting', 'autoConnectSetting', 'reduceMotionSetting', 'autosaveDelaySetting']
@@ -3444,10 +4366,10 @@
       });
 
     $('resetSettingsBtn').addEventListener('click', () => {
+      if (JSON.stringify(appSettings) !== JSON.stringify(DEFAULT_SETTINGS)) captureUndo('settings reset');
       appSettings = { ...DEFAULT_SETTINGS };
-      persistAppSettings();
+      persistAppSettings(true);
       populateSettingsUi();
-      scheduleDriveAutosave(appSettings.autosaveDelay);
       attemptAutomaticDriveConnection({ reason: 'settings-reset' });
       showToast('Settings reset', 'Defaults restored.');
     });
@@ -3459,7 +4381,7 @@
     $("dataBtn").addEventListener("click", () => {
       $("mathTotalInput").value = state.sections.math.targetCount;
       $("rwTotalInput").value = state.sections.rw.targetCount;
-      $("dataDialog").showModal();
+      openDialog($("dataDialog"));
     });
 
     $("nextBtn").addEventListener("click", () => {
@@ -3483,7 +4405,7 @@
       const closeButton = event.target.closest("[data-close]");
       if (closeButton) {
         if (closeButton.dataset.close === "editDialog") saveEditorDraft();
-        $(closeButton.dataset.close).close();
+        closeDialogAnimated($(closeButton.dataset.close));
       }
     });
 
@@ -3503,6 +4425,23 @@
         idInput.value = idInput.value.toLowerCase().replace(/[^0-9a-f]/g, "").slice(0, 8);
         idInput.classList.toggle("invalid", Boolean(idInput.value) && !isValidId(idInput.value));
       }
+
+      const skillInput = event.target.closest('input[data-field="skill"]');
+      if (skillInput) {
+        skillInput.classList.remove("invalid");
+        renderSkillDropdown(skillInput, true, true);
+      }
+    });
+
+    $("questionRows").addEventListener("focusin", event => {
+      const skillInput = event.target.closest('input[data-field="skill"]');
+      if (skillInput) focusSkillDropdown(skillInput);
+    });
+
+    $("questionRows").addEventListener("keydown", event => {
+      const skillInput = event.target.closest('input[data-field="skill"]');
+      if (!skillInput) return;
+      handleSkillComboboxKeydown(event, skillInput, () => saveInline(skillInput));
     });
 
     ["searchInput", "completionFilter", "statusFilter", "domainFilter", "skillFilter"].forEach(id => {
@@ -3536,7 +4475,10 @@
       renderTable();
     });
 
-    $("bulkDomain").addEventListener("change", populateBulkSkills);
+    $("bulkDomain").addEventListener("change", () => {
+      populateBulkSkills();
+      if (document.activeElement === $("bulkSkill")) renderSkillDropdown($("bulkSkill"), false, false);
+    });
     $("bulkText").addEventListener("input", updateBulkPreview);
     $("bulkStart").addEventListener("input", updateBulkPreview);
     $("autoExpandCheck").addEventListener("change", updateBulkPreview);
@@ -3544,6 +4486,7 @@
 
     $("editDomain").addEventListener("change", () => {
       populateEditorSkills();
+      if (document.activeElement === $("editSkill")) renderSkillDropdown($("editSkill"), false, false);
       scheduleEditorDraftAutosave();
     });
 
@@ -3552,24 +4495,84 @@
       event.target.classList.toggle("invalid", Boolean(event.target.value) && !isValidId(event.target.value));
     });
 
+    $("editSkill").addEventListener("focus", event => focusSkillDropdown(event.target));
     $("editSkill").addEventListener("input", event => {
       event.target.classList.remove("invalid");
+      renderSkillDropdown(event.target, true, true);
       scheduleEditorDraftAutosave();
+    });
+    $("editSkill").addEventListener("keydown", event => {
+      handleSkillComboboxKeydown(event, event.target, () => {
+        const skill = event.target.value.trim() || "Unknown";
+        if (!validateSkill(state.activeSection, $("editDomain").value, skill)) {
+          event.target.classList.add("invalid");
+          return;
+        }
+        event.target.classList.remove("invalid");
+        event.target.value = skill === "Unknown" ? "" : skill;
+        saveEditorDraft();
+      });
     });
     $("editNotes").addEventListener("input", scheduleEditorDraftAutosave);
     $("editId").addEventListener("input", scheduleEditorDraftAutosave);
+    $("editAttempts").addEventListener("input", event => {
+      event.target.value = String(Math.max(0, Math.floor(Number(event.target.value) || 0)));
+      scheduleEditorDraftAutosave();
+    });
     $("editDialog").addEventListener("close", saveEditorDraft);
-    $("bulkSkill").addEventListener("input", event => event.target.classList.remove("invalid"));
+    $("bulkSkill").addEventListener("focus", event => focusSkillDropdown(event.target));
+    $("bulkSkill").addEventListener("input", event => {
+      event.target.classList.remove("invalid");
+      renderSkillDropdown(event.target, true, true);
+    });
+    $("bulkSkill").addEventListener("keydown", event => {
+      handleSkillComboboxKeydown(event, event.target, () => {
+        const skill = event.target.value.trim() || "Unknown";
+        event.target.classList.toggle("invalid", !validateSkill(state.activeSection, $("bulkDomain").value, skill));
+      });
+    });
+
+    $("skillDropdown").addEventListener("pointerdown", event => {
+      const option = event.target.closest("[data-skill-index]");
+      if (option) event.preventDefault();
+    });
+
+    $("skillDropdown").addEventListener("click", event => {
+      const option = event.target.closest("[data-skill-index]");
+      if (!option) return;
+      const input = skillCombobox.input;
+      const index = Number(option.dataset.skillIndex);
+      if (!chooseSkillOption(index)) return;
+
+      if (input?.matches('input[data-field="skill"]')) saveInline(input);
+      else if (input?.id === "editSkill") saveEditorDraft();
+      else if (input?.id === "bulkSkill") input.blur();
+    });
+
+    document.addEventListener("pointerdown", event => {
+      if (event.target.closest("#skillDropdown") || event.target.closest(".skill-combobox-input")) return;
+      closeSkillDropdown();
+    });
+
+    window.addEventListener("resize", positionSkillDropdown);
+    window.visualViewport?.addEventListener("resize", positionSkillDropdown);
+    window.visualViewport?.addEventListener("scroll", positionSkillDropdown);
+    document.addEventListener("scroll", positionSkillDropdown, true);
 
     $("correctBtn").addEventListener("click", () => submitResult("correct"));
     $("incorrectBtn").addEventListener("click", () => submitResult("incorrect"));
     $("skippedBtn").addEventListener("click", () => submitResult("skipped"));
     $("saveNextBtn").addEventListener("click", saveAndNext);
+    $("backQuestionBtn").addEventListener("click", moveToPrevious);
+    $("addBlankBelowBtn").addEventListener("click", addBlankQuestionBelow);
+    $("mainUndoBtn").addEventListener("click", performUndo);
+    $("cardUndoBtn").addEventListener("click", performUndo);
 
     $("saveOnlyBtn").addEventListener("click", () => {
       if (commitEditor()) {
         updateEditorStatus();
-        showToast("Question saved", `Question ${state.activeNumber} was saved without changing completion.`);
+        editorSessionUndoCaptured = false;
+        showToast("Question saved", `Question ${state.activeNumber} saved.`);
       }
     });
 
@@ -3579,10 +4582,11 @@
 
       if (!confirm(`Clear all saved information for question ${q.number}?`)) return;
 
+      captureEditorUndo("question cleared");
       currentSection().questions[q.number - 1] = blankQuestion(q.number);
       save(true);
       renderAll();
-      $("editDialog").close();
+      closeDialogAnimated($("editDialog"));
       state.activeNumber = null;
       showToast("Question cleared", `Question ${q.number} is now blank and not completed.`);
     });
@@ -3613,7 +4617,7 @@
 
       try {
         await restoreBackup(file);
-        $("dataDialog").close();
+        closeDialogAnimated($("dataDialog"));
       } catch (error) {
         showToast("Restore failed", error.message);
       } finally {
@@ -3625,12 +4629,22 @@
       const typed = prompt("Type RESET to erase all Math and Reading & Writing tracker data.");
       if (typed !== "RESET") return;
 
+      captureUndo("tracker reset");
       localStorage.removeItem(STORAGE_KEY);
       freshState();
       save(true);
       renderAll();
-      $("dataDialog").close();
+      closeDialogAnimated($("dataDialog"));
       showToast("Tracker reset", "Math was reset to 1,756 slots and Reading & Writing to zero.");
+    });
+
+    document.querySelectorAll("dialog").forEach(dialog => {
+      dialog.addEventListener("cancel", event => {
+        event.preventDefault();
+        if (dialog.id === "editDialog") saveEditorDraft();
+        closeDialogAnimated(dialog);
+      });
+      dialog.addEventListener("close", () => dialog.classList.remove("closing"));
     });
 
     applyAppSettings();
