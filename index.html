@@ -1738,6 +1738,7 @@
         fileId: String(saved.fileId || ""),
         fileName: String(saved.fileName || DRIVE_FILE_NAME),
         lastRemoteRevision: Math.max(0, Number(saved.lastRemoteRevision) || 0),
+        lastRemoteDriveVersion: String(saved.lastRemoteDriveVersion || ""),
         lastRemoteHash: String(saved.lastRemoteHash || ""),
         lastSyncedAt: String(saved.lastSyncedAt || ""),
         deviceId: String(saved.deviceId || randomId())
@@ -1760,7 +1761,9 @@
       lastAutoAttemptAt: 0,
       needsInteraction: false,
       lastError: "",
-      conflict: null
+      conflict: null,
+      syncLoopPromise: null,
+      queuedSyncOptions: null
     };
 
     const TAXONOMY = {
@@ -2193,6 +2196,7 @@
         fileId: driveSync.fileId,
         fileName: driveSync.fileName,
         lastRemoteRevision: driveSync.lastRemoteRevision,
+        lastRemoteDriveVersion: driveSync.lastRemoteDriveVersion,
         lastRemoteHash: driveSync.lastRemoteHash,
         lastSyncedAt: driveSync.lastSyncedAt,
         deviceId: driveSync.deviceId
@@ -2408,9 +2412,17 @@
       const headers = new Headers(options.headers || {});
       headers.set("Authorization", `Bearer ${driveSync.accessToken}`);
 
+      const method = String(options.method || "GET").toUpperCase();
+      const requestOptions = { ...options, headers };
+      if (method === "GET") {
+        requestOptions.cache = "no-store";
+        headers.set("Cache-Control", "no-cache");
+        headers.set("Pragma", "no-cache");
+      }
+
       let response;
       try {
-        response = await fetch(url, { ...options, headers });
+        response = await fetch(url, requestOptions);
       } catch (_) {
         throw new DriveApiError("Google Drive could not be reached. Your changes remain saved locally.");
       }
@@ -2557,14 +2569,29 @@
       return (await response.json()).files || [];
     }
 
+    async function getDriveFileMetadata(fileId) {
+      const url = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`);
+      url.searchParams.set("fields", "id,name,modifiedTime,version");
+      const response = await driveFetch(url.toString());
+      return response.json();
+    }
+
     async function readDrivePayload(fileId) {
-      const response = await driveFetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media`);
+      const url = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`);
+      url.searchParams.set("alt", "media");
+      const response = await driveFetch(url.toString());
       const payload = await response.json();
       const tracker = extractTrackerPayload(payload);
       if (!tracker?.sections?.math || !tracker?.sections?.rw) {
         throw new DriveApiError("The Drive file does not contain recognizable SAT tracker data.");
       }
       return payload;
+    }
+
+    async function readDriveFileState(fileId, knownMetadata = null) {
+      const metadata = knownMetadata || await getDriveFileMetadata(fileId);
+      const payload = await readDrivePayload(fileId);
+      return { metadata, payload };
     }
 
     async function createDriveFile() {
@@ -2602,15 +2629,18 @@
       );
 
       const file = await response.json();
+      const uploadedHash = trackerHash(payload.tracker);
       driveSync.fileId = file.id;
       driveSync.fileName = file.name || DRIVE_FILE_NAME;
       driveSync.lastRemoteRevision = revision;
-      driveSync.lastRemoteHash = trackerHash();
+      driveSync.lastRemoteDriveVersion = String(file.version || "");
+      driveSync.lastRemoteHash = uploadedHash;
       driveSync.lastSyncedAt = payload.savedAt;
-      driveSync.dirty = false;
+      driveSync.dirty = trackerHash() !== uploadedHash;
       driveSync.conflict = null;
       persistDriveConfig();
       updateDriveUi();
+      if (driveSync.dirty) scheduleDriveAutosave(100);
       return file;
     }
 
@@ -2647,10 +2677,11 @@
       }
     }
 
-    function setDriveConflict(remotePayload) {
+    function setDriveConflict(remotePayload, remoteMetadata = null) {
       driveSync.conflict = {
         remotePayload,
-        remoteRevision: remoteRevision(remotePayload)
+        remoteRevision: remoteRevision(remotePayload),
+        remoteDriveVersion: String(remoteMetadata?.version || "")
       };
       driveSync.dirty = true;
       driveSync.lastError = "";
@@ -2683,16 +2714,18 @@
       updateDriveUi();
 
       let remotePayload = null;
-      let rememberedFileWorked = false;
+      let remoteMetadata = null;
 
       if (driveSync.fileId) {
         try {
-          remotePayload = await readDrivePayload(driveSync.fileId);
-          rememberedFileWorked = true;
+          const remoteState = await readDriveFileState(driveSync.fileId);
+          remotePayload = remoteState.payload;
+          remoteMetadata = remoteState.metadata;
         } catch (error) {
           if (!(error instanceof DriveApiError) || error.status !== 404) throw error;
           driveSync.fileId = "";
           driveSync.lastRemoteRevision = 0;
+          driveSync.lastRemoteDriveVersion = "";
           driveSync.lastRemoteHash = "";
           persistDriveConfig();
         }
@@ -2704,61 +2737,95 @@
           driveSync.fileId = files[0].id;
           driveSync.fileName = files[0].name || DRIVE_FILE_NAME;
           persistDriveConfig();
-          remotePayload = await readDrivePayload(driveSync.fileId);
+          const remoteState = await readDriveFileState(driveSync.fileId, files[0]);
+          remotePayload = remoteState.payload;
+          remoteMetadata = remoteState.metadata;
         }
       }
 
       if (!remotePayload) {
         await createDriveFile();
-        if (announce) showToast("Google Drive connected", "A new Drive data file was created from this device's tracker data.");
+        if (announce) showToast("Google Drive connected", "A new Drive data file was created.");
         return;
       }
 
       const tracker = extractTrackerPayload(remotePayload);
       const remoteHash = trackerHash(tracker);
       const localHash = trackerHash();
+      const baseHash = driveSync.lastRemoteHash;
       const revision = remoteRevision(remotePayload);
+      const driveVersion = String(remoteMetadata?.version || "");
 
-      driveSync.fileName = driveSync.fileName || DRIVE_FILE_NAME;
+      driveSync.fileName = remoteMetadata?.name || driveSync.fileName || DRIVE_FILE_NAME;
 
-      if (remoteHash === localHash) {
+      const acceptRemoteMarkers = () => {
         driveSync.lastRemoteRevision = revision;
+        driveSync.lastRemoteDriveVersion = driveVersion;
         driveSync.lastRemoteHash = remoteHash;
         driveSync.lastSyncedAt = remotePayload.savedAt || new Date().toISOString();
-        driveSync.dirty = false;
         driveSync.conflict = null;
         persistDriveConfig();
+      };
+
+      if (remoteHash === localHash) {
+        acceptRemoteMarkers();
+        driveSync.dirty = false;
         updateDriveUi();
-        if (announce) showToast("Google Drive connected", "The local and Drive copies already match.");
+        if (announce) showToast("Google Drive connected", "Synced.");
         return;
       }
 
       if (!hasMeaningfulLocalData()) {
         applyRemoteTracker(remotePayload);
-        driveSync.lastRemoteRevision = revision;
-        driveSync.lastRemoteHash = remoteHash;
-        driveSync.lastSyncedAt = remotePayload.savedAt || new Date().toISOString();
+        acceptRemoteMarkers();
         driveSync.dirty = false;
-        driveSync.conflict = null;
-        persistDriveConfig();
         updateDriveUi();
-        if (announce) showToast("Drive data loaded", "This device was blank, so the Google Drive copy was restored automatically.");
+        if (announce) showToast("Drive data loaded", "Synced.");
         return;
       }
 
-      if (rememberedFileWorked && driveSync.lastRemoteRevision === revision) {
-        driveSync.dirty = true;
-        driveSync.conflict = null;
-        updateDriveUi();
-        scheduleDriveAutosave(100);
-        if (announce) showToast("Google Drive reconnected", "Locally saved offline changes are being uploaded.");
-        return;
+      if (baseHash) {
+        const localChanged = localHash !== baseHash;
+        const remoteChanged = remoteHash !== baseHash;
+
+        if (localChanged && !remoteChanged) {
+          acceptRemoteMarkers();
+          driveSync.dirty = true;
+          updateDriveUi();
+          scheduleDriveAutosave(100);
+          if (announce) showToast("Google Drive reconnected", "Saving local changes.");
+          return;
+        }
+
+        if (!localChanged && remoteChanged) {
+          applyRemoteTracker(remotePayload);
+          acceptRemoteMarkers();
+          driveSync.dirty = false;
+          updateDriveUi();
+          if (announce) showToast("Drive data loaded", "Synced.");
+          return;
+        }
+
+        if (!localChanged && !remoteChanged) {
+          acceptRemoteMarkers();
+          driveSync.dirty = false;
+          updateDriveUi();
+          return;
+        }
       }
 
-      setDriveConflict(remotePayload);
+      setDriveConflict(remotePayload, remoteMetadata);
     }
 
-    async function syncToDrive({ force = false, manual = false } = {}) {
+
+    function mergeDriveSyncOptions(current, incoming) {
+      return {
+        force: Boolean(current?.force || incoming?.force),
+        manual: Boolean(current?.manual || incoming?.manual)
+      };
+    }
+
+    async function performDriveSync({ force = false, manual = false } = {}) {
       clearTimeout(driveSync.autosaveTimer);
       driveSync.autosaveTimer = null;
 
@@ -2771,7 +2838,7 @@
         driveSync.connected = false;
         driveSync.lastError = "";
         updateDriveUi();
-        if (manual) showToast("Reconnect Google Drive", "Your changes remain saved locally until you reconnect.");
+        if (manual) showToast("Reconnect Google Drive", "Changes are saved locally.");
         return;
       }
 
@@ -2791,29 +2858,65 @@
         let knownRemoteRevision = driveSync.lastRemoteRevision;
 
         if (!force) {
-          const remotePayload = await readDrivePayload(driveSync.fileId);
+          const remoteState = await readDriveFileState(driveSync.fileId);
+          const remotePayload = remoteState.payload;
+          const remoteMetadata = remoteState.metadata;
           const revision = remoteRevision(remotePayload);
           const remoteHash = trackerHash(extractTrackerPayload(remotePayload));
+          const localHash = trackerHash();
+          const baseHash = driveSync.lastRemoteHash;
+          const driveVersion = String(remoteMetadata?.version || "");
 
-          if (revision !== driveSync.lastRemoteRevision) {
-            if (remoteHash === trackerHash()) {
-              driveSync.lastRemoteRevision = revision;
-              driveSync.lastRemoteHash = remoteHash;
-              driveSync.lastSyncedAt = remotePayload.savedAt || new Date().toISOString();
+          const acceptRemoteMarkers = () => {
+            driveSync.fileName = remoteMetadata?.name || driveSync.fileName || DRIVE_FILE_NAME;
+            driveSync.lastRemoteRevision = revision;
+            driveSync.lastRemoteDriveVersion = driveVersion;
+            driveSync.lastRemoteHash = remoteHash;
+            driveSync.lastSyncedAt = remotePayload.savedAt || new Date().toISOString();
+            driveSync.conflict = null;
+            persistDriveConfig();
+          };
+
+          if (remoteHash === localHash) {
+            acceptRemoteMarkers();
+            driveSync.dirty = false;
+            return;
+          }
+
+          if (baseHash) {
+            const localChanged = localHash !== baseHash;
+            const remoteChanged = remoteHash !== baseHash;
+
+            if (!localChanged && remoteChanged) {
+              applyRemoteTracker(remotePayload);
+              acceptRemoteMarkers();
               driveSync.dirty = false;
-              persistDriveConfig();
+              if (manual) showToast("Drive data loaded", "Synced.");
               return;
             }
 
-            setDriveConflict(remotePayload);
+            if (localChanged && remoteChanged) {
+              setDriveConflict(remotePayload, remoteMetadata);
+              return;
+            }
+
+            if (!localChanged && !remoteChanged) {
+              acceptRemoteMarkers();
+              driveSync.dirty = false;
+              return;
+            }
+          } else {
+            setDriveConflict(remotePayload, remoteMetadata);
             return;
           }
 
           knownRemoteRevision = revision;
+          driveSync.lastRemoteDriveVersion = driveVersion;
         }
 
         const nextRevision = Math.max(knownRemoteRevision, driveSync.lastRemoteRevision) + 1;
         const payload = buildDrivePayload(nextRevision);
+        const uploadedHash = trackerHash(payload.tracker);
         const response = await driveFetch(
           `https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(driveSync.fileId)}?uploadType=media&fields=id,name,modifiedTime,version`,
           {
@@ -2826,16 +2929,18 @@
         const metadata = await response.json();
         driveSync.fileName = metadata.name || driveSync.fileName || DRIVE_FILE_NAME;
         driveSync.lastRemoteRevision = nextRevision;
-        driveSync.lastRemoteHash = trackerHash();
+        driveSync.lastRemoteDriveVersion = String(metadata.version || "");
+        driveSync.lastRemoteHash = uploadedHash;
         driveSync.lastSyncedAt = payload.savedAt;
-        driveSync.dirty = false;
+        driveSync.dirty = trackerHash() !== uploadedHash;
         driveSync.conflict = null;
         persistDriveConfig();
 
         if (manual) showToast("Saved to Google Drive", `Drive revision ${nextRevision} was created.`);
+        if (driveSync.dirty) scheduleDriveAutosave(100);
       } catch (error) {
         driveSync.dirty = true;
-        driveSync.lastError = error.message || "Google Drive sync failed. Your changes remain saved locally.";
+        driveSync.lastError = error.message || "Google Drive sync failed. Changes are saved locally.";
 
         if (error instanceof DriveApiError && error.status === 401) {
           driveSync.accessToken = "";
@@ -2855,6 +2960,28 @@
         updateDriveUi();
       }
     }
+
+    async function syncToDrive(options = {}) {
+      driveSync.queuedSyncOptions = mergeDriveSyncOptions(driveSync.queuedSyncOptions, options);
+
+      if (driveSync.syncLoopPromise) return driveSync.syncLoopPromise;
+
+      driveSync.syncLoopPromise = (async () => {
+        while (driveSync.queuedSyncOptions) {
+          const nextOptions = driveSync.queuedSyncOptions;
+          driveSync.queuedSyncOptions = null;
+          await performDriveSync(nextOptions);
+        }
+      })();
+
+      try {
+        return await driveSync.syncLoopPromise;
+      } finally {
+        driveSync.syncLoopPromise = null;
+        if (driveSync.queuedSyncOptions) syncToDrive();
+      }
+    }
+
 
     function scheduleDriveAutosave(delay = appSettings.autosaveDelay) {
       clearTimeout(driveSync.autosaveTimer);
@@ -4279,21 +4406,26 @@
 
     $("useDriveCopyBtn").addEventListener("click", () => {
       if (!driveSync.conflict) return;
-      const payload = driveSync.conflict.remotePayload;
+      const conflict = driveSync.conflict;
+      const payload = conflict.remotePayload;
       applyRemoteTracker(payload);
-      driveSync.lastRemoteRevision = driveSync.conflict.remoteRevision;
+      driveSync.lastRemoteRevision = conflict.remoteRevision;
+      driveSync.lastRemoteDriveVersion = conflict.remoteDriveVersion || driveSync.lastRemoteDriveVersion;
       driveSync.lastRemoteHash = trackerHash(extractTrackerPayload(payload));
       driveSync.lastSyncedAt = payload.savedAt || new Date().toISOString();
       driveSync.dirty = false;
       driveSync.conflict = null;
       persistDriveConfig();
       updateDriveUi();
-      showToast("Drive copy restored", "This device now matches the Google Drive version.");
+      showToast("Drive copy restored", "Synced.");
     });
 
     $("keepDeviceCopyBtn").addEventListener("click", async () => {
       if (!driveSync.conflict) return;
-      driveSync.lastRemoteRevision = driveSync.conflict.remoteRevision;
+      const conflict = driveSync.conflict;
+      driveSync.lastRemoteRevision = conflict.remoteRevision;
+      driveSync.lastRemoteDriveVersion = conflict.remoteDriveVersion || driveSync.lastRemoteDriveVersion;
+      driveSync.lastRemoteHash = trackerHash(extractTrackerPayload(conflict.remotePayload));
       driveSync.conflict = null;
       driveSync.dirty = true;
       persistDriveConfig();
