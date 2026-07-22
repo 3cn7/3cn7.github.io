@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light dark" />
   <title>SAT Question Bank Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
       --page: #f5f5f7;
@@ -21,6 +24,7 @@
       --green: #1f8a4c;
       --red: #d92d20;
       --orange: #b65f00;
+      --partial: #7657d6;
       --shadow: 0 12px 38px rgba(0, 0, 0, 0.07);
       --small-shadow: 0 2px 10px rgba(0, 0, 0, 0.055);
       --radius-xl: 24px;
@@ -45,6 +49,7 @@
         --green: #30d158;
         --red: #ff453a;
         --orange: #ff9f0a;
+        --partial: #bf8cff;
         --shadow: 0 16px 44px rgba(0, 0, 0, 0.35);
         --small-shadow: 0 3px 13px rgba(0, 0, 0, 0.25);
       }
@@ -60,8 +65,7 @@
       overflow-x: hidden;
       background: var(--page);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-        "Helvetica Neue", Arial, sans-serif;
+      font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -381,12 +385,36 @@
 
     tbody tr:hover { background: var(--surface-2); }
 
-    tbody tr.completed {
-      background: color-mix(in srgb, var(--green) 7%, var(--surface));
+    tbody tr[data-number] { cursor: pointer; }
+    tbody tr[data-number] input,
+    tbody tr[data-number] select,
+    tbody tr[data-number] button { cursor: auto; }
+    tbody tr[data-number] button { cursor: pointer; }
+
+    tbody tr.result-correct {
+      background: color-mix(in srgb, var(--green) 12%, var(--surface));
     }
 
-    tbody tr.completed:hover {
-      background: color-mix(in srgb, var(--green) 11%, var(--surface));
+    tbody tr.result-incorrect {
+      background: color-mix(in srgb, var(--red) 12%, var(--surface));
+    }
+
+    tbody tr.result-partial {
+      background: color-mix(in srgb, var(--partial) 12%, var(--surface));
+    }
+
+    tbody tr.result-skipped {
+      background: color-mix(in srgb, var(--orange) 12%, var(--surface));
+    }
+
+    tbody tr.result-correct:hover { background: color-mix(in srgb, var(--green) 18%, var(--surface)); }
+    tbody tr.result-incorrect:hover { background: color-mix(in srgb, var(--red) 18%, var(--surface)); }
+    tbody tr.result-partial:hover { background: color-mix(in srgb, var(--partial) 18%, var(--surface)); }
+    tbody tr.result-skipped:hover { background: color-mix(in srgb, var(--orange) 18%, var(--surface)); }
+
+    tbody tr[class*="result-"]:not(.result-unattempted) input,
+    tbody tr[class*="result-"]:not(.result-unattempted) select {
+      background: color-mix(in srgb, var(--field) 84%, transparent);
     }
 
     td input, td select {
@@ -399,7 +427,7 @@
     .id-input {
       width: 110px;
       min-width: 110px;
-      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-family: var(--app-font);
       text-transform: lowercase;
     }
 
@@ -429,6 +457,7 @@
 
     .status.correct { color: var(--green); }
     .status.incorrect { color: var(--red); }
+    .status.partial { color: var(--partial); }
     .status.skipped { color: var(--orange); }
     .status.unattempted { color: var(--secondary); }
 
@@ -461,10 +490,18 @@
     }
 
     .notes-preview {
-      max-width: 250px;
+      min-width: 300px;
+      max-width: 560px;
       color: var(--secondary);
-      font-size: 0.82rem;
-      line-height: 1.35;
+      font-size: 0.84rem;
+      line-height: 1.42;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .notes-cell {
+      width: 34%;
+      min-width: 330px;
     }
 
     .pagination {
@@ -552,7 +589,7 @@
 
     .result-actions {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 9px;
       margin: 16px 0;
     }
@@ -567,8 +604,8 @@
     }
 
     .import-area {
-      min-height: 250px;
-      font-family: "SFMono-Regular", Consolas, monospace;
+      min-height: clamp(190px, 34dvh, 350px);
+      font-family: var(--app-font);
       line-height: 1.55;
     }
 
@@ -749,7 +786,7 @@
 
     .toast-region {
       position: fixed;
-      z-index: 100;
+      z-index: 2147483647;
       right: 18px;
       bottom: 18px;
       display: grid;
@@ -787,19 +824,32 @@
 
     .hidden { display: none !important; }
 
-    #driveBtn.drive-connected {
+    .brand {
+      transition: color 180ms ease, text-shadow 180ms ease, opacity 180ms ease;
+    }
+
+    .brand[data-drive-state="connected"] {
       color: var(--green);
-      border-color: color-mix(in srgb, var(--green) 40%, var(--line));
+      text-shadow: 0 0 18px color-mix(in srgb, var(--green) 24%, transparent);
     }
 
-    #driveBtn.drive-pending {
+    .brand[data-drive-state="syncing"] {
+      color: var(--blue);
+      text-shadow: 0 0 18px color-mix(in srgb, var(--blue) 24%, transparent);
+    }
+
+    .brand[data-drive-state="pending"] {
       color: var(--orange);
-      border-color: color-mix(in srgb, var(--orange) 42%, var(--line));
+      text-shadow: 0 0 18px color-mix(in srgb, var(--orange) 22%, transparent);
     }
 
-    #driveBtn.drive-error {
+    .brand[data-drive-state="error"] {
       color: var(--red);
-      border-color: color-mix(in srgb, var(--red) 42%, var(--line));
+      text-shadow: 0 0 18px color-mix(in srgb, var(--red) 22%, transparent);
+    }
+
+    .brand[data-drive-state="configured"] {
+      color: var(--blue);
     }
 
     .drive-status-card {
@@ -864,7 +914,34 @@
     }
 
 
-    @media (max-width: 1120px) {
+    @media (max-width: 1180px) {
+      .app-bar-inner {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+          "brand toggle"
+          "actions actions";
+        align-items: center;
+      }
+
+      .brand { grid-area: brand; }
+      .segmented { grid-area: toggle; justify-self: end; }
+      .top-actions {
+        grid-area: actions;
+        display: flex;
+        width: 100%;
+        justify-content: stretch;
+      }
+      .top-actions > button {
+        width: auto;
+        flex: 1 1 135px;
+        white-space: nowrap;
+      }
+      .top-actions > .undo-button:not(.is-visible),
+      .top-actions > .drive-gate-button:not(.is-visible) { flex: 0 0 0 !important; }
+      .top-actions > .undo-button.is-visible,
+      .top-actions > .drive-gate-button.is-visible { flex: 1 1 100px !important; }
+
       .cards { grid-template-columns: repeat(3, 1fr); }
       .toolbar { grid-template-columns: repeat(2, 1fr); }
       .toolbar .search-field { grid-column: 1 / -1; }
@@ -872,14 +949,18 @@
 
     @media (max-width: 760px) {
       .app-bar-inner {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "brand"
+          "toggle"
+          "actions";
         align-items: stretch;
-        flex-direction: column;
         padding: 10px 14px;
       }
 
       .brand { text-align: center; }
-      .segmented { width: 100%; }
-      .top-actions { justify-content: center; }
+      .segmented { width: 100%; justify-self: stretch; }
+      .top-actions > button { flex-basis: 125px; }
 
       .shell { padding: 22px 13px 40px; }
       .hero { flex-direction: column; }
@@ -892,6 +973,7 @@
     }
 
 
+
     /* Borderless visual system and user-controlled appearance */
     :root {
       --control: #e8e8ed;
@@ -899,7 +981,7 @@
       --field: #f0f0f3;
       --field-focus: #ffffff;
       --table-alt: rgba(118, 118, 128, 0.055);
-      --app-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      --app-font: Helvetica, "Helvetica Neue", Arial, sans-serif;
       --base-font-size: 16px;
     }
 
@@ -928,6 +1010,7 @@
       --green: #1f8a4c;
       --red: #d92d20;
       --orange: #b65f00;
+      --partial: #7657d6;
       --shadow: 0 12px 38px rgba(0, 0, 0, 0.07);
       --small-shadow: 0 2px 10px rgba(0, 0, 0, 0.055);
       --control: #e8e8ed;
@@ -952,6 +1035,7 @@
       --green: #30d158;
       --red: #ff453a;
       --orange: #ff9f0a;
+      --partial: #bf8cff;
       --shadow: 0 16px 44px rgba(0, 0, 0, 0.35);
       --small-shadow: 0 3px 13px rgba(0, 0, 0, 0.25);
       --control: #3a3a3c;
@@ -961,6 +1045,90 @@
       --table-alt: rgba(235, 235, 245, 0.045);
     }
 
+
+    /* Coherent UI color schemes. Each scheme tints the page, frames, controls, and fields. */
+    html[data-palette="blue"] {
+      --scheme-accent: #0071e3;
+      --scheme-accent-hover: #0077ed;
+    }
+
+    html[data-palette="violet"] {
+      --scheme-accent: #7657d6;
+      --scheme-accent-hover: #8465e4;
+    }
+
+    html[data-palette="teal"] {
+      --scheme-accent: #008f9c;
+      --scheme-accent-hover: #00a0ae;
+    }
+
+    html[data-palette="green"] {
+      --scheme-accent: #248a4b;
+      --scheme-accent-hover: #2b9a56;
+    }
+
+    html[data-palette="rose"] {
+      --scheme-accent: #c83f6d;
+      --scheme-accent-hover: #d34d79;
+    }
+
+    html[data-palette="orange"] {
+      --scheme-accent: #c65d09;
+      --scheme-accent-hover: #d76a12;
+    }
+
+    html[data-palette="graphite"] {
+      --scheme-accent: #545b66;
+      --scheme-accent-hover: #656d79;
+    }
+
+    html[data-theme="light"],
+    html[data-theme="system"] {
+      --blue: var(--scheme-accent, #0071e3);
+      --blue-hover: var(--scheme-accent-hover, #0077ed);
+      --page: color-mix(in srgb, var(--scheme-accent, #0071e3) 4%, #f7f7f9);
+      --glass: color-mix(in srgb, var(--scheme-accent, #0071e3) 4%, rgba(255, 255, 255, 0.88));
+      --surface: color-mix(in srgb, var(--scheme-accent, #0071e3) 1.25%, #ffffff);
+      --surface-2: color-mix(in srgb, var(--scheme-accent, #0071e3) 5.5%, #f3f3f6);
+      --surface-3: color-mix(in srgb, var(--scheme-accent, #0071e3) 10%, #e9e9ee);
+      --control: color-mix(in srgb, var(--scheme-accent, #0071e3) 8%, #e9e9ee);
+      --control-hover: color-mix(in srgb, var(--scheme-accent, #0071e3) 14%, #dedee5);
+      --field: color-mix(in srgb, var(--scheme-accent, #0071e3) 4.5%, #f0f0f4);
+      --field-focus: color-mix(in srgb, var(--scheme-accent, #0071e3) 1%, #ffffff);
+      --table-alt: color-mix(in srgb, var(--scheme-accent, #0071e3) 5%, transparent);
+    }
+
+    html[data-theme="dark"] {
+      --blue: color-mix(in srgb, var(--scheme-accent, #0a84ff) 82%, #ffffff);
+      --blue-hover: color-mix(in srgb, var(--scheme-accent-hover, #409cff) 78%, #ffffff);
+      --page: color-mix(in srgb, var(--scheme-accent, #0a84ff) 5%, #050507);
+      --glass: color-mix(in srgb, var(--scheme-accent, #0a84ff) 9%, rgba(24, 24, 27, 0.9));
+      --surface: color-mix(in srgb, var(--scheme-accent, #0a84ff) 8%, #19191c);
+      --surface-2: color-mix(in srgb, var(--scheme-accent, #0a84ff) 11%, #26262a);
+      --surface-3: color-mix(in srgb, var(--scheme-accent, #0a84ff) 16%, #323237);
+      --control: color-mix(in srgb, var(--scheme-accent, #0a84ff) 14%, #313136);
+      --control-hover: color-mix(in srgb, var(--scheme-accent, #0a84ff) 20%, #3d3d43);
+      --field: color-mix(in srgb, var(--scheme-accent, #0a84ff) 10%, #27272b);
+      --field-focus: color-mix(in srgb, var(--scheme-accent, #0a84ff) 14%, #323237);
+      --table-alt: color-mix(in srgb, var(--scheme-accent, #0a84ff) 7%, transparent);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      html[data-theme="system"] {
+        --blue: color-mix(in srgb, var(--scheme-accent, #0a84ff) 82%, #ffffff);
+        --blue-hover: color-mix(in srgb, var(--scheme-accent-hover, #409cff) 78%, #ffffff);
+        --page: color-mix(in srgb, var(--scheme-accent, #0a84ff) 5%, #050507);
+        --glass: color-mix(in srgb, var(--scheme-accent, #0a84ff) 9%, rgba(24, 24, 27, 0.9));
+        --surface: color-mix(in srgb, var(--scheme-accent, #0a84ff) 8%, #19191c);
+        --surface-2: color-mix(in srgb, var(--scheme-accent, #0a84ff) 11%, #26262a);
+        --surface-3: color-mix(in srgb, var(--scheme-accent, #0a84ff) 16%, #323237);
+        --control: color-mix(in srgb, var(--scheme-accent, #0a84ff) 14%, #313136);
+        --control-hover: color-mix(in srgb, var(--scheme-accent, #0a84ff) 20%, #3d3d43);
+        --field: color-mix(in srgb, var(--scheme-accent, #0a84ff) 10%, #27272b);
+        --field-focus: color-mix(in srgb, var(--scheme-accent, #0a84ff) 14%, #323237);
+        --table-alt: color-mix(in srgb, var(--scheme-accent, #0a84ff) 7%, transparent);
+      }
+    }
 
     html[data-text-size="small"] { --base-font-size: 14px; }
     html[data-text-size="standard"] { --base-font-size: 16px; }
@@ -1029,7 +1197,7 @@
     .table-wrap { background: var(--surface-2); padding: 4px; }
     table { border-radius: calc(var(--radius-lg) - 4px); overflow: hidden; }
     th, td { border-bottom: 0; }
-    tbody tr:nth-child(even):not(.completed) { background: var(--table-alt); }
+    tbody tr:nth-child(even).result-unattempted { background: var(--table-alt); }
     td input, td select { background: var(--field); }
 
     .status { background: var(--surface-2); }
@@ -1158,7 +1326,8 @@
       overflow-x: clip;
     }
 
-    .undo-button {
+    .undo-button,
+    .drive-gate-button {
       max-width: 0;
       min-width: 0;
       padding-left: 0;
@@ -1177,11 +1346,13 @@
     }
 
 
-    .undo-button:not(.is-visible) {
+    .undo-button:not(.is-visible),
+    .drive-gate-button:not(.is-visible) {
       flex: 0 0 0 !important;
     }
 
-    .undo-button.is-visible {
+    .undo-button.is-visible,
+    .drive-gate-button.is-visible {
       max-width: 110px;
       min-width: 72px;
       padding-left: 15px;
@@ -1191,6 +1362,11 @@
       pointer-events: auto;
       transform: translateY(0) scale(1);
       transition-delay: 0s;
+    }
+
+    .drive-gate-button.is-visible {
+      max-width: 145px;
+      min-width: 80px;
     }
 
     html,
@@ -1210,6 +1386,195 @@
       display: none;
     }
 
+    /* Toasts use the top layer so they remain above open dialogs. */
+    .toast-region[popover] {
+      inset: auto 18px 18px auto;
+      width: min(390px, calc(100% - 36px));
+      margin: 0;
+      padding: 0;
+      border: 0;
+      overflow: visible;
+      color: inherit;
+      background: transparent;
+    }
+
+    .toast-region:popover-open { display: grid; }
+
+    /* Wider, single-scroll bulk import dialog. */
+    #bulkDialog {
+      width: min(1080px, calc(100% - 18px));
+      max-height: calc(100dvh - 14px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    #bulkDialog .dialog-head,
+    #bulkDialog .dialog-foot {
+      position: static;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    #bulkDialog .dialog-body { overflow: visible; }
+
+    .page-jump input {
+      width: 72px;
+      min-width: 72px;
+      min-height: 36px;
+      padding: 6px 8px;
+      text-align: center;
+    }
+
+    math-field.notes-math-field {
+      display: block;
+      width: 100%;
+      min-height: 126px;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      outline: none;
+      color: var(--text);
+      background: var(--surface);
+      font-size: 1rem;
+      line-height: 1.55;
+      --caret-color: var(--blue);
+      --selection-background-color: color-mix(in srgb, var(--blue) 24%, transparent);
+      --contains-highlight-background-color: color-mix(in srgb, var(--blue) 12%, transparent);
+      --smart-fence-color: var(--secondary);
+      transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    math-field.notes-math-field:focus-within {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 20%, transparent);
+    }
+
+    math-field.notes-math-field::part(virtual-keyboard-toggle),
+    math-field.notes-math-field::part(menu-toggle) {
+      display: none;
+    }
+
+    .timer-float {
+      position: fixed;
+      z-index: 120;
+      right: 18px;
+      bottom: 18px;
+      width: min(260px, calc(100vw - 24px));
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      color: var(--text);
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(22px) saturate(155%);
+      -webkit-backdrop-filter: blur(22px) saturate(155%);
+      user-select: none;
+      animation: timer-float-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .timer-float.hidden { display: none !important; }
+
+    .timer-tab {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 13px;
+      justify-content: space-between;
+      border-radius: 19px 19px 11px 11px;
+      color: var(--text);
+      background: var(--surface-2);
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .timer-tab:hover { background: var(--surface-3); }
+    .timer-tab:active { cursor: grabbing; transform: none; }
+
+    .timer-tab-label {
+      color: var(--secondary);
+      font-size: 0.78rem;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .timer-toggle-symbol {
+      display: inline-grid;
+      width: 22px;
+      height: 22px;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--text);
+      background: var(--surface);
+      font-size: 1rem;
+      font-weight: 760;
+      line-height: 1;
+    }
+
+    .timer-panel { padding: 0 12px 12px; }
+
+    .timer-display {
+      margin: 8px 0 10px;
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(2rem, 6vw, 3rem);
+      font-weight: 780;
+      letter-spacing: -0.055em;
+      text-align: center;
+    }
+
+    .timer-controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+    }
+
+    .timer-controls button {
+      min-height: 34px;
+      padding: 6px 9px;
+      font-size: 0.82rem;
+    }
+
+    .timer-inputs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .timer-inputs input {
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    @keyframes timer-float-in {
+      from { opacity: 0; transform: translateY(14px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @media (max-width: 560px) {
+      .timer-float {
+        right: 10px;
+        bottom: 10px;
+        width: min(238px, calc(100vw - 20px));
+      }
+    }
+
+    button.partial-action {
+      color: #fff;
+      background: var(--partial);
+    }
+
+    button.partial-action:hover {
+      background: color-mix(in srgb, var(--partial) 86%, #ffffff);
+    }
+
+    @media (max-width: 760px) {
+      #bulkDialog { width: calc(100% - 8px); max-height: calc(100dvh - 8px); }
+      #bulkDialog .dialog-head,
+      #bulkDialog .dialog-body,
+      #bulkDialog .dialog-foot { padding-left: 14px; padding-right: 14px; }
+      .notes-preview { min-width: 240px; }
+      .notes-cell { min-width: 260px; }
+    }
+
     html[data-reduce-motion="true"] *,
     html[data-reduce-motion="true"] *::before,
     html[data-reduce-motion="true"] *::after {
@@ -1219,12 +1584,113 @@
       transition-duration: 0.001ms !important;
     }
 
+
+
+    /* Smooth color-mode changes. */
+    html.theme-transitioning,
+    html.theme-transitioning body,
+    html.theme-transitioning body *:not(.skill-dropdown):not(.toast) {
+      transition-property: background-color, color, box-shadow, border-color, fill, stroke !important;
+      transition-duration: 420ms !important;
+      transition-timing-function: cubic-bezier(.22,1,.36,1) !important;
+    }
+
+    .sun-theme-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 11px 12px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+    }
+    .sun-theme-row span { color: var(--secondary); font-size: .84rem; }
+    .sun-theme-row button { flex: 0 0 auto; }
+
+    .settings-about {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+      padding: 4px 4px 0;
+      color: var(--secondary);
+      font-size: .78rem;
+    }
+
+    .notes-editor.hidden { display: none !important; }
+
+    textarea.notes-text-field {
+      min-height: 150px;
+      font-family: "Open Sans", Arial, sans-serif;
+      font-size: .98rem;
+      line-height: 1.58;
+      color: var(--text) !important;
+      background: var(--field) !important;
+      opacity: 1 !important;
+    }
+
+    math-field.notes-math-field {
+      color: var(--text) !important;
+      background-color: var(--field) !important;
+      opacity: 1 !important;
+      --primary: var(--blue);
+      --placeholder-color: var(--secondary);
+      --selection-color: var(--text);
+    }
+
+    math-field.notes-math-field::part(content) { color: var(--text) !important; }
+
+    /* The timer is a manual popover so it stays above question-card dialogs. */
+    .timer-float[popover] {
+      inset: auto;
+      margin: 0;
+      overflow: visible;
+    }
+
+    .timer-float.minimized {
+      width: auto;
+      min-width: 108px;
+      border-radius: 999px;
+    }
+
+    .timer-float.minimized .timer-tab {
+      border-radius: 999px;
+    }
+
+    .timer-float.minimized .timer-panel {
+      display: none;
+    }
+
+    /* Responsive filter and table sizing. */
+    .toolbar > *, .toolbar label, .toolbar input, .toolbar select { min-width: 0; }
+    @media (max-width: 1180px) and (min-width: 841px) {
+      .toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .toolbar .search-field { grid-column: span 2; }
+      .toolbar-actions { align-self: end; }
+      table { min-width: 1080px; }
+      .skill-input { width: 235px; min-width: 235px; }
+      .notes-cell { min-width: 235px; }
+      .notes-preview { min-width: 215px; max-width: 360px; }
+    }
+
+    @media (max-width: 840px) and (min-width: 761px) {
+      .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .toolbar .search-field { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 520px) {
+      .settings-about { flex-direction: column; align-items: center; }
+      .sun-theme-row { align-items: stretch; flex-direction: column; }
+    }
+
+
   </style>
 </head>
 <body>
   <nav class="app-bar">
     <div class="app-bar-inner">
-      <div class="brand">SAT Question Bank Tracker</div>
+      <div id="brandTitle" class="brand" data-drive-state="disconnected">SAT Question Bank Tracker</div>
 
       <div id="sectionToggle" class="segmented" data-active="math" aria-label="Section">
         <button id="mathTab" class="active" data-section="math">Math</button>
@@ -1232,7 +1698,8 @@
       </div>
 
       <div class="top-actions">
-        <button id="driveBtn" class="secondary">Drive: Set up</button>
+        <button id="driveBtn" class="secondary drive-gate-button" aria-hidden="true" tabindex="-1">Setup</button>
+        <button id="timerBtn" class="secondary">Timer</button>
         <button id="bulkBtn" class="secondary">Bulk paste</button>
         <button id="dataBtn" class="secondary">Data</button>
         <button id="settingsBtn" class="secondary">Settings</button>
@@ -1253,7 +1720,7 @@
     <section class="cards">
       <div class="card">
         <div class="card-value" id="totalStat">1,756</div>
-        <div class="card-label">Total questions</div>
+        <div id="totalStatLabel" class="card-label">Total questions</div>
       </div>
       <div class="card">
         <div class="card-value" id="idsStat">0</div>
@@ -1308,6 +1775,7 @@
             <option value="unattempted">Unattempted</option>
             <option value="correct">Correct</option>
             <option value="incorrect">Incorrect</option>
+            <option value="partial">Partial correct</option>
             <option value="skipped">Skipped</option>
           </select>
         </label>
@@ -1341,7 +1809,6 @@
               <th>Completion</th>
               <th>Attempts</th>
               <th>Notes</th>
-              <th></th>
             </tr>
           </thead>
           <tbody id="questionRows"></tbody>
@@ -1366,7 +1833,11 @@
             </select>
           </label>
           <button id="previousBtn" class="secondary">Previous</button>
-          <span id="pageLabel">Page 1 of 1</span>
+          <label class="page-jump">
+            Page
+            <input id="pageNumberInput" type="number" min="1" step="1" value="1" inputmode="numeric" aria-label="Page number" />
+          </label>
+          <span id="pageTotal">of 1</span>
           <button id="nextPageBtn" class="secondary">Next</button>
         </div>
       </div>
@@ -1479,14 +1950,28 @@
         <datalist id="editSkillList"></datalist>
       </div>
 
-      <label style="margin-top:11px">
-        Notes
-        <textarea id="editNotes" placeholder="Mistake, method, or pattern."></textarea>
+      <label id="editNotesLabel" style="margin-top:11px">
+        <span>Notes</span>
+        <math-field
+          id="editNotes"
+          class="notes-math-field notes-editor"
+          smart-mode="true"
+          smart-fence="true"
+          virtual-keyboard-mode="manual"
+          aria-label="Math notes"
+        ></math-field>
+        <textarea
+          id="editNotesText"
+          class="notes-text-field notes-editor hidden"
+          aria-label="Reading and Writing notes"
+          placeholder="Notes"
+        ></textarea>
       </label>
 
       <div class="result-actions">
         <button id="correctBtn" class="success">Correct <span class="keyboard">C</span></button>
         <button id="incorrectBtn" class="danger">Incorrect <span class="keyboard">I</span></button>
+        <button id="partialBtn" class="partial-action">Partial <span class="keyboard">P</span></button>
         <button id="skippedBtn" class="warning">Skipped <span class="keyboard">S</span></button>
       </div>
 
@@ -1500,58 +1985,6 @@
       <button id="clearQuestionBtn" class="secondary">Clear slot</button>
       <button id="saveOnlyBtn" class="secondary">Save only</button>
       <button id="saveNextBtn">Save and next <span class="keyboard">Ctrl + Enter</span></button>
-    </div>
-  </dialog>
-
-  <dialog id="driveDialog">
-    <div class="dialog-head">
-      <h2>Google Drive sync</h2>
-      <button class="secondary" data-close="driveDialog">Close</button>
-    </div>
-
-    <div class="dialog-body">
-      <div class="drive-status-card">
-        <strong id="driveStatusTitle">Drive not configured</strong>
-        <span id="driveStatusDetail">Saved locally.</span>
-      </div>
-
-      <div id="driveConflictBox" class="notice drive-conflict hidden">
-        <strong>Sync conflict</strong>
-        <p id="driveConflictText" style="margin:6px 0 10px">Choose a copy.</p>
-        <div class="drive-actions">
-          <button id="useDriveCopyBtn">Use Drive copy</button>
-          <button id="keepDeviceCopyBtn" class="warning">Keep this device</button>
-          <button id="downloadBothCopiesBtn" class="secondary">Download both backups</button>
-        </div>
-      </div>
-
-      <label style="margin-top:14px">
-        OAuth client ID
-        <input id="googleClientIdInput" autocomplete="off" spellcheck="false" placeholder="1234567890-abc.apps.googleusercontent.com" />
-      </label>
-
-      <div class="drive-meta">
-        <div class="drive-meta-item">
-          <div class="label">Site</div>
-          <div class="value" id="driveOriginValue">—</div>
-        </div>
-        <div class="drive-meta-item">
-          <div class="label">Drive file</div>
-          <div class="value" id="driveFileValue">Not connected</div>
-        </div>
-      </div>
-
-      <div class="drive-actions">
-        <button id="connectDriveBtn">Connect Google Drive</button>
-        <button id="saveDriveNowBtn" class="secondary">Save now</button>
-        <button id="openDriveFileBtn" class="secondary">Open Drive file</button>
-        <button id="disconnectDriveBtn" class="secondary">Disconnect</button>
-      </div>
-
-    </div>
-
-    <div class="dialog-foot">
-      <button class="secondary" data-close="driveDialog">Done</button>
     </div>
   </dialog>
 
@@ -1569,11 +2002,24 @@
             Color mode
             <select id="themeSetting">
               <option value="system">Follow device</option>
+              <option value="sun">Sunrise &amp; sunset</option>
               <option value="light">Light</option>
               <option value="dark">Dark</option>
             </select>
           </label>
 
+          <label>
+            Color scheme
+            <select id="paletteSetting">
+              <option value="blue">Blue</option>
+              <option value="violet">Violet</option>
+              <option value="teal">Teal</option>
+              <option value="green">Green</option>
+              <option value="rose">Rose</option>
+              <option value="orange">Orange</option>
+              <option value="graphite">Graphite</option>
+            </select>
+          </label>
 
           <label>
             Text size
@@ -1593,26 +2039,57 @@
             </select>
           </label>
         </div>
-
+        <div id="sunThemeRow" class="sun-theme-row hidden">
+          <span id="sunThemeStatus">Location needed</span>
+          <button id="sunLocationBtn" class="secondary" type="button">Update location</button>
+        </div>
       </section>
 
-      <section class="settings-section">
-        <h3>Drive and motion</h3>
+      <section id="driveSettingsSection" class="settings-section">
+        <h3>Google Drive</h3>
 
-        <label class="toggle-row">
-          <span>
-            <strong>Auto-connect Drive</strong>
-          </span>
+        <div class="drive-status-card">
+          <strong id="driveStatusTitle">Drive not configured</strong>
+          <span id="driveStatusDetail">Saved locally.</span>
+        </div>
+
+        <div id="driveConflictBox" class="notice drive-conflict hidden">
+          <strong>Sync conflict</strong>
+          <p id="driveConflictText" style="margin:6px 0 10px">Choose a copy.</p>
+          <div class="drive-actions">
+            <button id="useDriveCopyBtn">Use Drive copy</button>
+            <button id="keepDeviceCopyBtn" class="warning">Keep this device</button>
+            <button id="downloadBothCopiesBtn" class="secondary">Download both backups</button>
+          </div>
+        </div>
+
+        <label style="margin-top:14px">
+          OAuth client ID
+          <input id="googleClientIdInput" autocomplete="off" spellcheck="false" placeholder="1234567890-abc.apps.googleusercontent.com" />
+        </label>
+
+        <div class="drive-meta">
+          <div class="drive-meta-item">
+            <div class="label">Site</div>
+            <div class="value" id="driveOriginValue">—</div>
+          </div>
+          <div class="drive-meta-item">
+            <div class="label">Drive file</div>
+            <div class="value" id="driveFileValue">Not connected</div>
+          </div>
+        </div>
+
+        <div class="drive-actions">
+          <button id="connectDriveBtn">Connect Google Drive</button>
+          <button id="saveDriveNowBtn" class="secondary">Save now</button>
+          <button id="openDriveFileBtn" class="secondary">Open Drive file</button>
+          <button id="disconnectDriveBtn" class="secondary">Disconnect</button>
+        </div>
+
+        <label class="toggle-row" style="margin-top:16px">
+          <span><strong>Auto-connect Drive</strong></span>
           <input id="autoConnectSetting" type="checkbox" />
         </label>
-
-        <label class="toggle-row">
-          <span>
-            <strong>Reduce motion</strong>
-          </span>
-          <input id="reduceMotionSetting" type="checkbox" />
-        </label>
-
         <label style="margin-top:12px">
           Drive autosave delay
           <select id="autosaveDelaySetting">
@@ -1621,8 +2098,26 @@
             <option value="3000">Fewer uploads — 3 seconds</option>
           </select>
         </label>
-
       </section>
+
+      <section class="settings-section">
+        <h3>Motion</h3>
+        <div class="grid-2">
+          <label class="toggle-row">
+            <span><strong>Reduce motion</strong></span>
+            <input id="reduceMotionSetting" type="checkbox" />
+          </label>
+          <label class="toggle-row">
+            <span><strong>Animate theme changes</strong></span>
+            <input id="animateThemeSetting" type="checkbox" />
+          </label>
+        </div>
+      </section>
+
+      <div class="settings-about">
+        <span id="versionInfo">Version</span>
+        <span>Created by 3cn7</span>
+      </div>
     </div>
 
     <div class="dialog-foot">
@@ -1630,6 +2125,57 @@
       <button data-close="settingsDialog">Done</button>
     </div>
   </dialog>
+
+  <dialog id="timerDialog">
+    <div class="dialog-head">
+      <h2>Timer</h2>
+      <button class="secondary" data-close="timerDialog">Close</button>
+    </div>
+    <div class="dialog-body">
+      <div class="timer-inputs">
+        <label>Hours<input id="timerHours" type="number" min="0" max="99" step="1" value="0" inputmode="numeric" /></label>
+        <label>Minutes<input id="timerMinutes" type="number" min="0" max="59" step="1" value="25" inputmode="numeric" /></label>
+        <label>Seconds<input id="timerSeconds" type="number" min="0" max="59" step="1" value="0" inputmode="numeric" /></label>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="secondary" data-close="timerDialog">Cancel</button>
+      <button id="startTimerBtn">Start timer</button>
+    </div>
+  </dialog>
+
+  <dialog id="timerEndedDialog">
+    <div class="dialog-head">
+      <h2>Timer ended</h2>
+      <button class="secondary" data-close="timerEndedDialog">Close</button>
+    </div>
+    <div class="dialog-body">
+      <div class="timer-inputs">
+        <label>Hours<input id="endedTimerHours" type="number" min="0" max="99" step="1" value="0" inputmode="numeric" /></label>
+        <label>Minutes<input id="endedTimerMinutes" type="number" min="0" max="59" step="1" value="25" inputmode="numeric" /></label>
+        <label>Seconds<input id="endedTimerSeconds" type="number" min="0" max="59" step="1" value="0" inputmode="numeric" /></label>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="secondary" data-close="timerEndedDialog">Dismiss</button>
+      <button id="restartTimerBtn">Start new timer</button>
+    </div>
+  </dialog>
+
+  <aside id="floatingTimer" class="timer-float hidden" popover="manual" role="timer" aria-live="off">
+    <button id="timerTab" class="timer-tab" type="button" aria-expanded="true">
+      <span class="timer-tab-label">Timer</span>
+      <span id="timerToggleSymbol" class="timer-toggle-symbol" aria-hidden="true">−</span>
+    </button>
+    <div class="timer-panel">
+      <div id="timerDisplay" class="timer-display">25:00</div>
+      <div class="timer-controls">
+        <button id="pauseTimerBtn" class="secondary" type="button">Pause</button>
+        <button id="resetTimerBtn" class="secondary" type="button">Reset</button>
+        <button id="editTimerBtn" class="secondary" type="button">Set</button>
+      </div>
+    </div>
+  </aside>
 
   <dialog id="dataDialog">
     <div class="dialog-head">
@@ -1672,8 +2218,10 @@
   </dialog>
 
   <div id="skillDropdown" class="skill-dropdown" role="listbox" aria-label="Skill options" popover="manual"></div>
-  <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+  <div id="toastRegion" class="toast-region" aria-live="polite" popover="manual"></div>
 
+  <script defer src="https://cdn.jsdelivr.net/npm/mathlive@0.110.0"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.min.js" onload="window.dispatchEvent(new Event('suncalcready'))"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
     "use strict";
@@ -1687,19 +2235,27 @@
     const DRIVE_APP_PROPERTY_VALUE = "v1";
     const DEFAULT_GOOGLE_CLIENT_ID = ""; // Optional: paste your Web OAuth client ID here before publishing.
 
+    const APP_VERSION = "6.1.0";
     const SETTINGS_KEY = "satQuestionBankTracker.settings.v1";
+    const TIMER_KEY = "satQuestionBankTracker.timer.v1";
     const DEFAULT_SETTINGS = Object.freeze({
       theme: "system",
+      palette: "blue",
       textSize: "standard",
       density: "comfortable",
       autoConnect: true,
       reduceMotion: false,
+      animateTheme: true,
+      sunLat: null,
+      sunLon: null,
+      sunLocationUpdatedAt: "",
       autosaveDelay: 1500
     });
 
     function normalizeAppSettings(saved = {}) {
       const allowed = {
-        theme: ["system", "light", "dark"],
+        theme: ["system", "sun", "light", "dark"],
+        palette: ["blue", "violet", "teal", "green", "rose", "orange", "graphite"],
         textSize: ["small", "standard", "large", "xlarge"],
         density: ["comfortable", "compact"],
         autosaveDelay: [750, 1500, 3000]
@@ -1707,10 +2263,15 @@
 
       return {
         theme: allowed.theme.includes(saved?.theme) ? saved.theme : DEFAULT_SETTINGS.theme,
+        palette: allowed.palette.includes(saved?.palette) ? saved.palette : DEFAULT_SETTINGS.palette,
         textSize: allowed.textSize.includes(saved?.textSize) ? saved.textSize : DEFAULT_SETTINGS.textSize,
         density: allowed.density.includes(saved?.density) ? saved.density : DEFAULT_SETTINGS.density,
         autoConnect: saved?.autoConnect === undefined ? DEFAULT_SETTINGS.autoConnect : Boolean(saved.autoConnect),
         reduceMotion: saved?.reduceMotion === undefined ? DEFAULT_SETTINGS.reduceMotion : Boolean(saved.reduceMotion),
+        animateTheme: saved?.animateTheme === undefined ? DEFAULT_SETTINGS.animateTheme : Boolean(saved.animateTheme),
+        sunLat: saved?.sunLat !== null && saved?.sunLat !== "" && Number.isFinite(Number(saved?.sunLat)) ? Number(saved.sunLat) : null,
+        sunLon: saved?.sunLon !== null && saved?.sunLon !== "" && Number.isFinite(Number(saved?.sunLon)) ? Number(saved.sunLon) : null,
+        sunLocationUpdatedAt: String(saved?.sunLocationUpdatedAt || ""),
         autosaveDelay: allowed.autosaveDelay.includes(Number(saved?.autosaveDelay))
           ? Number(saved.autosaveDelay)
           : DEFAULT_SETTINGS.autosaveDelay
@@ -1867,6 +2428,7 @@
 
     const $ = id => document.getElementById(id);
 
+
     const undoStack = [];
     const MAX_UNDO_STEPS = 20;
     let undoInProgress = false;
@@ -1952,6 +2514,7 @@
       if (!dialog || dialog.open) return;
       dialog.classList.remove("closing");
       dialog.showModal();
+      requestAnimationFrame(() => ensureTimerPopover(true));
     }
 
     function closeDialogAnimated(dialog) {
@@ -1970,18 +2533,76 @@
       }, 175);
     }
 
-    function applyAppSettings() {
+    function openDriveSettings({ focusClientId = false } = {}) {
+      populateSettingsUi();
+      updateDriveUi();
+      const dialog = $("settingsDialog");
+      openDialog(dialog);
+
+      requestAnimationFrame(() => {
+        const section = $("driveSettingsSection");
+        section?.scrollIntoView({ block: "start", behavior: appSettings.reduceMotion ? "auto" : "smooth" });
+        if (focusClientId || !driveSync.clientId) {
+          setTimeout(() => $("googleClientIdInput")?.focus(), appSettings.reduceMotion ? 0 : 220);
+        }
+      });
+    }
+
+    let sunThemeInterval = null;
+
+    function hasSunLocation() {
+      return appSettings.sunLat !== null && appSettings.sunLon !== null
+        && Number.isFinite(Number(appSettings.sunLat))
+        && Number.isFinite(Number(appSettings.sunLon));
+    }
+
+    function resolvedSunTheme() {
+      const latitude = Number(appSettings.sunLat);
+      const longitude = Number(appSettings.sunLon);
+      if (!hasSunLocation() || !globalThis.SunCalc) {
+        return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      const now = new Date();
+      const times = SunCalc.getTimes(now, latitude, longitude);
+      return now >= times.sunrise && now < times.sunset ? "light" : "dark";
+    }
+
+    function resolvedThemeSetting() {
+      return appSettings.theme === "sun" ? resolvedSunTheme() : appSettings.theme;
+    }
+
+    function animateThemeTransition() {
+      if (appSettings.reduceMotion || !appSettings.animateTheme) return;
       const root = document.documentElement;
-      root.dataset.theme = appSettings.theme;
+      root.classList.remove("theme-transitioning");
+      void root.offsetWidth;
+      root.classList.add("theme-transitioning");
+      clearTimeout(animateThemeTransition.timer);
+      animateThemeTransition.timer = setTimeout(() => root.classList.remove("theme-transitioning"), 460);
+    }
+
+    function applyAppSettings({ animate = false } = {}) {
+      const root = document.documentElement;
+      const nextTheme = resolvedThemeSetting();
+      if (animate && root.dataset.theme && root.dataset.theme !== nextTheme) animateThemeTransition();
+      root.dataset.theme = nextTheme;
+      root.dataset.themeMode = appSettings.theme;
+      root.dataset.palette = appSettings.palette;
       delete root.dataset.font;
       root.dataset.textSize = appSettings.textSize;
       root.dataset.density = appSettings.density;
       root.dataset.reduceMotion = appSettings.reduceMotion ? "true" : "false";
+
+      clearInterval(sunThemeInterval);
+      sunThemeInterval = null;
+      if (appSettings.theme === "sun") {
+        sunThemeInterval = setInterval(() => applyAppSettings({ animate: true }), 60000);
+      }
     }
 
-    function persistAppSettings(syncToDrive = false) {
+    function persistAppSettings(syncToDrive = false, animate = false) {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
-      applyAppSettings();
+      applyAppSettings({ animate });
 
       if (syncToDrive && !driveSync.applyingRemote) {
         driveSync.dirty = true;
@@ -1991,30 +2612,81 @@
       }
     }
 
+    function updateSunThemeUi() {
+      const active = appSettings.theme === "sun";
+      $("sunThemeRow")?.classList.toggle("hidden", !active);
+      if (!$("sunThemeStatus")) return;
+      if (hasSunLocation()) {
+        const date = appSettings.sunLocationUpdatedAt ? new Date(appSettings.sunLocationUpdatedAt) : null;
+        $("sunThemeStatus").textContent = date && !Number.isNaN(date.getTime())
+          ? `Location saved · ${date.toLocaleDateString()}`
+          : "Location saved";
+      } else {
+        $("sunThemeStatus").textContent = "Location needed";
+      }
+    }
+
     function populateSettingsUi() {
-      if (!$('themeSetting')) return;
-      $('themeSetting').value = appSettings.theme;
-      $('textSizeSetting').value = appSettings.textSize;
-      $('densitySetting').value = appSettings.density;
-      $('autoConnectSetting').checked = appSettings.autoConnect;
-      $('reduceMotionSetting').checked = appSettings.reduceMotion;
-      $('autosaveDelaySetting').value = String(appSettings.autosaveDelay);
+      if (!$("themeSetting")) return;
+      $("themeSetting").value = appSettings.theme;
+      $("paletteSetting").value = appSettings.palette;
+      $("textSizeSetting").value = appSettings.textSize;
+      $("densitySetting").value = appSettings.density;
+      $("autoConnectSetting").checked = appSettings.autoConnect;
+      $("reduceMotionSetting").checked = appSettings.reduceMotion;
+      $("animateThemeSetting").checked = appSettings.animateTheme;
+      $("autosaveDelaySetting").value = String(appSettings.autosaveDelay);
+      $("versionInfo").textContent = `Version ${APP_VERSION}`;
+      updateSunThemeUi();
+    }
+
+    function requestSunLocation() {
+      if (!navigator.geolocation) {
+        showToast("Location unavailable", "Use Follow device, Light, or Dark.");
+        return;
+      }
+      $("sunLocationBtn").disabled = true;
+      $("sunThemeStatus").textContent = "Getting location…";
+      navigator.geolocation.getCurrentPosition(position => {
+        captureUndo("sunrise setting");
+        appSettings.sunLat = Math.round(position.coords.latitude * 1000) / 1000;
+        appSettings.sunLon = Math.round(position.coords.longitude * 1000) / 1000;
+        appSettings.sunLocationUpdatedAt = new Date().toISOString();
+        persistAppSettings(true, true);
+        populateSettingsUi();
+        $("sunLocationBtn").disabled = false;
+        showToast("Location updated", "Sunrise and sunset mode is active.");
+      }, error => {
+        $("sunLocationBtn").disabled = false;
+        $("sunThemeStatus").textContent = "Location permission needed";
+        showToast("Location unavailable", error.message || "Location permission was not granted.");
+      }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 24 * 60 * 60 * 1000 });
     }
 
     function updateSettingsFromUi() {
+      const previousTheme = appSettings.theme;
       const nextSettings = {
-        theme: $('themeSetting').value,
-        textSize: $('textSizeSetting').value,
-        density: $('densitySetting').value,
-        autoConnect: $('autoConnectSetting').checked,
-        reduceMotion: $('reduceMotionSetting').checked,
-        autosaveDelay: Number($('autosaveDelaySetting').value) || DEFAULT_SETTINGS.autosaveDelay
+        ...appSettings,
+        theme: $("themeSetting").value,
+        palette: $("paletteSetting").value,
+        textSize: $("textSizeSetting").value,
+        density: $("densitySetting").value,
+        autoConnect: $("autoConnectSetting").checked,
+        reduceMotion: $("reduceMotionSetting").checked,
+        animateTheme: $("animateThemeSetting").checked,
+        autosaveDelay: Number($("autosaveDelaySetting").value) || DEFAULT_SETTINGS.autosaveDelay
       };
 
       if (JSON.stringify(nextSettings) === JSON.stringify(appSettings)) return;
       captureUndo("settings change");
-      appSettings = nextSettings;
-      persistAppSettings(true);
+      appSettings = normalizeAppSettings(nextSettings);
+      persistAppSettings(true, true);
+      updateSunThemeUi();
+
+      if (appSettings.theme === "sun" && previousTheme !== "sun"
+          && !hasSunLocation()) {
+        requestSunLocation();
+      }
 
       if (appSettings.autoConnect) {
         attemptAutomaticDriveConnection({ reason: "settings" });
@@ -2034,8 +2706,10 @@
         attempts: 0,
         correctAttempts: 0,
         incorrectAttempts: 0,
+        partialAttempts: 0,
         skippedAttempts: 0,
         notes: "",
+        notesFormat: "mathlive",
         updatedAt: ""
       };
     }
@@ -2102,8 +2776,9 @@
       if (inferredDomain && (domain === "Unknown" || !skillsFor(sectionKey, domain).includes(skill))) {
         domain = inferredDomain;
       }
-      const allowedStatus = ["unattempted", "correct", "incorrect", "skipped"];
-      const status = allowedStatus.includes(raw?.status) ? raw.status : "unattempted";
+      const allowedStatus = ["unattempted", "correct", "incorrect", "partial", "skipped"];
+      const rawStatus = raw?.status === "partial_correct" ? "partial" : raw?.status;
+      const status = allowedStatus.includes(rawStatus) ? rawStatus : "unattempted";
 
       return {
         number,
@@ -2114,8 +2789,10 @@
         attempts: Math.max(0, Number(raw?.attempts) || 0),
         correctAttempts: Math.max(0, Number(raw?.correctAttempts) || 0),
         incorrectAttempts: Math.max(0, Number(raw?.incorrectAttempts ?? raw?.wrongAttempts) || 0),
+        partialAttempts: Math.max(0, Number(raw?.partialAttempts) || 0),
         skippedAttempts: Math.max(0, Number(raw?.skippedAttempts) || 0),
         notes: String(raw?.notes || ""),
+        notesFormat: raw?.notesFormat === "mathlive" ? "mathlive" : (raw?.notesFormat === "plain" ? "plain" : "legacy"),
         updatedAt: String(raw?.updatedAt || raw?.lastAttempt || "")
       };
     }
@@ -2303,98 +2980,117 @@
 
     function updateDriveUi() {
       const button = $("driveBtn");
-      if (!button) return;
+      const brand = $("brandTitle");
+      const tokenConnected = driveSync.connected && isDriveTokenValid();
+      const setupComplete = Boolean(driveSync.clientId && driveSync.fileId);
 
-      button.classList.remove("drive-connected", "drive-pending", "drive-error");
-
-      let buttonText = "Drive: Set up";
+      let gateText = setupComplete ? "Connect" : "Setup";
+      let gateVisible = !tokenConnected;
       let title = "Drive not configured";
       let detail = "Saved locally";
+      let brandState = "disconnected";
 
       if (location.protocol === "file:") {
-        buttonText = "Drive: Hosting needed";
+        gateText = "Setup";
         title = "Hosting required";
         detail = "Use HTTPS or localhost";
-        button.classList.add("drive-error");
+        brandState = "error";
       } else if (driveSync.autoConnectInProgress) {
-        buttonText = "Drive: Connecting…";
+        gateText = "Connecting…";
+        gateVisible = true;
         title = "Connecting";
         detail = "Loading Drive file";
-        button.classList.add("drive-pending");
+        brandState = "syncing";
       } else if (driveSync.conflict) {
-        buttonText = "Drive: Conflict";
         title = "Sync conflict";
-        detail = "Choose a copy";
-        button.classList.add("drive-error");
+        detail = "Choose a copy in Settings";
+        brandState = "error";
       } else if (driveSync.syncing) {
-        buttonText = "Drive: Saving…";
         title = "Saving";
         detail = "Saved locally";
-        button.classList.add("drive-pending");
-      } else if (driveSync.connected && isDriveTokenValid() && driveSync.dirty) {
-        buttonText = "Drive: Pending";
+        brandState = "syncing";
+      } else if (tokenConnected && driveSync.dirty) {
         title = "Sync pending";
         detail = navigator.onLine ? "Waiting to save" : "Offline";
-        button.classList.add("drive-pending");
-      } else if (driveSync.connected && isDriveTokenValid()) {
-        buttonText = "Drive: Synced";
+        brandState = "pending";
+      } else if (tokenConnected) {
         title = "Drive connected";
         detail = driveSync.lastSyncedAt
           ? `Synced ${new Date(driveSync.lastSyncedAt).toLocaleString()}`
           : "Autosave active";
-        button.classList.add("drive-connected");
-      } else if (driveSync.needsInteraction && driveSync.clientId) {
-        buttonText = "Drive: Sign in";
+        brandState = "connected";
+      } else if (driveSync.needsInteraction && setupComplete) {
+        gateText = "Connect";
         title = "Sign in required";
-        detail = "Click Connect";
-        button.classList.add("drive-pending");
+        detail = "Connect Google Drive";
+        brandState = "pending";
       } else if (driveSync.fileId && driveSync.dirty) {
-        buttonText = "Drive: Reconnect";
+        gateText = "Connect";
         title = "Reconnect required";
         detail = "Changes saved locally";
-        button.classList.add("drive-pending");
-      } else if (driveSync.fileId) {
-        buttonText = "Drive: Connect";
+        brandState = "pending";
+      } else if (setupComplete) {
+        gateText = "Connect";
         title = "Drive file remembered";
-        detail = "Click Connect";
+        detail = "Connect Google Drive";
+        brandState = "configured";
       } else if (driveSync.clientId) {
-        buttonText = "Drive: Connect";
-        title = "Client ID saved";
-        detail = "Click Connect";
+        gateText = "Setup";
+        title = "Setup incomplete";
+        detail = "Connect once to create or locate the Drive file";
+        brandState = "configured";
       }
 
       if (driveSync.lastError) {
         title = "Google Drive sync error";
         detail = driveSync.lastError;
-        button.classList.add("drive-error");
+        brandState = "error";
       }
 
-      button.textContent = buttonText;
-      $("driveStatusTitle").textContent = title;
-      $("driveStatusDetail").textContent = detail;
-      $("driveOriginValue").textContent = currentOriginLabel();
-      $("driveFileValue").textContent = driveSync.fileId
-        ? `${driveSync.fileName || DRIVE_FILE_NAME} · revision ${driveSync.lastRemoteRevision || "unknown"}`
-        : "Not created or located";
+      if (button) {
+        button.textContent = gateText;
+        button.dataset.mode = setupComplete ? "connect" : "setup";
+        button.disabled = Boolean(driveSync.autoConnectInProgress);
+        button.classList.toggle("is-visible", gateVisible);
+        button.setAttribute("aria-hidden", gateVisible ? "false" : "true");
+        button.tabIndex = gateVisible ? 0 : -1;
+        button.title = gateText === "Setup"
+          ? "Open Google Drive settings"
+          : "Connect Google Drive";
+      }
 
-      if (document.activeElement !== $("googleClientIdInput")) {
+      if (brand) {
+        brand.dataset.driveState = brandState;
+        brand.title = `${title} · ${detail}`;
+      }
+      if ($("driveStatusTitle")) $("driveStatusTitle").textContent = title;
+      if ($("driveStatusDetail")) $("driveStatusDetail").textContent = detail;
+      if ($("driveOriginValue")) $("driveOriginValue").textContent = currentOriginLabel();
+      if ($("driveFileValue")) {
+        $("driveFileValue").textContent = driveSync.fileId
+          ? `${driveSync.fileName || DRIVE_FILE_NAME} · revision ${driveSync.lastRemoteRevision || "unknown"}`
+          : "Not created or located";
+      }
+
+      if ($("googleClientIdInput") && document.activeElement !== $("googleClientIdInput")) {
         $("googleClientIdInput").value = driveSync.clientId;
       }
 
-      $("connectDriveBtn").textContent = driveSync.connected && isDriveTokenValid()
-        ? "Reconnect Google Drive"
-        : "Connect Google Drive";
-      $("saveDriveNowBtn").disabled = !driveSync.fileId || !isDriveTokenValid() || driveSync.syncing || Boolean(driveSync.conflict);
-      $("openDriveFileBtn").disabled = !driveSync.fileId;
-      $("disconnectDriveBtn").disabled = !driveSync.accessToken;
-      $("driveConflictBox").classList.toggle("hidden", !driveSync.conflict);
+      if ($("connectDriveBtn")) {
+        $("connectDriveBtn").textContent = tokenConnected
+          ? "Reconnect Google Drive"
+          : "Connect Google Drive";
+      }
+      if ($("saveDriveNowBtn")) $("saveDriveNowBtn").disabled = !driveSync.fileId || !isDriveTokenValid() || driveSync.syncing || Boolean(driveSync.conflict);
+      if ($("openDriveFileBtn")) $("openDriveFileBtn").disabled = !driveSync.fileId;
+      if ($("disconnectDriveBtn")) $("disconnectDriveBtn").disabled = !driveSync.accessToken;
+      if ($("driveConflictBox")) $("driveConflictBox").classList.toggle("hidden", !driveSync.conflict);
 
-      if (driveSync.conflict) {
+      if (driveSync.conflict && $("driveConflictText")) {
         const remoteDate = driveSync.conflict.remotePayload?.savedAt
           ? new Date(driveSync.conflict.remotePayload.savedAt).toLocaleString()
-          : "an unknown time";
-        $("driveConflictText").textContent =
-          `Revision ${driveSync.conflict.remoteRevision} · ${remoteDate}`;
+          : "unknown time";
+        $("driveConflictText").textContent = `Drive changed ${remoteDate}. Choose a copy.`;
       }
     }
 
@@ -2686,7 +3382,7 @@
       driveSync.dirty = true;
       driveSync.lastError = "";
       updateDriveUi();
-      if (!$("driveDialog").open) openDialog($("driveDialog"));
+      openDriveSettings();
     }
 
     async function connectAndInitializeDrive({ interactive = true, announce = interactive } = {}) {
@@ -2844,7 +3540,7 @@
 
       if (driveSync.conflict && !force) {
         updateDriveUi();
-        if (manual && !$("driveDialog").open) openDialog($("driveDialog"));
+        if (manual) openDriveSettings();
         return;
       }
 
@@ -3029,15 +3725,25 @@
     }
 
     function showToast(title, message) {
+      const region = $("toastRegion");
+      if (typeof region.showPopover === "function" && !region.matches(":popover-open")) {
+        try { region.showPopover(); } catch (_) {}
+      }
+
       const toast = document.createElement("div");
       toast.className = "toast";
       toast.innerHTML = `<strong>${escapeHtml(title)}</strong><span>${escapeHtml(message)}</span>`;
-      $("toastRegion").appendChild(toast);
+      region.appendChild(toast);
 
       setTimeout(() => {
         toast.style.opacity = "0";
         toast.style.transform = "translateY(8px)";
-        setTimeout(() => toast.remove(), 180);
+        setTimeout(() => {
+          toast.remove();
+          if (!region.children.length && typeof region.hidePopover === "function") {
+            try { region.hidePopover(); } catch (_) {}
+          }
+        }, 180);
       }, 3200);
     }
 
@@ -3446,6 +4152,10 @@
       });
     }
 
+    function questionWord(count) {
+      return Number(count) === 1 ? "question" : "questions";
+    }
+
     function renderHeader() {
       const taxonomy = TAXONOMY[state.activeSection];
       const total = currentSection().targetCount;
@@ -3455,7 +4165,7 @@
       $("sectionToggle").dataset.active = state.activeSection;
       $("sectionTitle").textContent = taxonomy.label;
 
-      $("sectionSubtitle").textContent = `${total.toLocaleString()} questions.`;
+      $("sectionSubtitle").textContent = `${total.toLocaleString()} ${questionWord(total)}.`;
     }
 
     function renderStats() {
@@ -3465,19 +4175,23 @@
       const completed = section.questions.filter(q => q.status !== "unattempted").length;
       const correct = section.questions.filter(q => q.status === "correct").length;
       const incorrect = section.questions.filter(q => q.status === "incorrect").length;
-      const scored = correct + incorrect;
+      const partial = section.questions.filter(q => q.status === "partial").length;
+      const scored = correct + incorrect + partial;
       const remaining = Math.max(0, total - completed);
       const percent = total ? completed / total * 100 : 0;
 
       $("totalStat").textContent = total.toLocaleString();
+      $("totalStatLabel").textContent = `Total ${questionWord(total)}`;
       $("idsStat").textContent = ids.toLocaleString();
       $("completeStat").textContent = completed.toLocaleString();
       $("correctStat").textContent = correct.toLocaleString();
       $("remainingStat").textContent = remaining.toLocaleString();
-      $("accuracyStat").textContent = scored ? Math.round(correct / scored * 100) + "%" : "—";
+      $("accuracyStat").textContent = scored
+        ? Math.round((correct + partial * 0.5) / scored * 100) + "%"
+        : "—";
       $("progressBar").style.width = percent + "%";
       $("progressText").textContent =
-        `${completed.toLocaleString()} of ${total.toLocaleString()} completed (${percent.toFixed(1)}%)`;
+        `${completed.toLocaleString()} of ${total.toLocaleString()} ${questionWord(total)} completed (${percent.toFixed(1)}%)`;
     }
 
     function skillListIdFor(sectionKey, domain) {
@@ -3499,6 +4213,16 @@
       }
     }
 
+    function statusDisplay(status) {
+      return ({
+        unattempted: "Unattempted",
+        correct: "Correct",
+        incorrect: "Incorrect",
+        partial: "Partial correct",
+        skipped: "Skipped"
+      })[status] || "Unattempted";
+    }
+
     function renderTable() {
       if (skillCombobox.input?.matches('input[data-field="skill"]')) {
         closeSkillDropdown({ immediate: true });
@@ -3515,7 +4239,7 @@
         const skillListId = skillListIdFor(state.activeSection, q.domain);
 
         return `
-          <tr class="${completed ? "completed" : ""}" data-number="${q.number}">
+          <tr class="result-${q.status} ${completed ? "completed" : ""}" data-number="${q.number}">
             <td><strong>${q.number}</strong></td>
             <td>
               <input
@@ -3549,7 +4273,7 @@
                 aria-expanded="false"
               />
             </td>
-            <td><span class="status ${q.status}">${escapeHtml(q.status)}</span></td>
+            <td><span class="status ${q.status}">${escapeHtml(statusDisplay(q.status))}</span></td>
             <td>
               <span class="completion ${completed ? "done" : ""}">
                 <span class="check">${completed ? "✓" : ""}</span>
@@ -3568,15 +4292,16 @@
                 value="${q.attempts}"
               />
             </td>
-            <td><div class="notes-preview">${q.notes ? escapeHtml(q.notes.slice(0, 82)) + (q.notes.length > 82 ? "…" : "") : "—"}</div></td>
-            <td><button class="secondary" data-open-number="${q.number}">Open</button></td>
+            <td class="notes-cell"><div class="notes-preview">${q.notes ? escapeHtml(q.notes.slice(0, 240)) + (q.notes.length > 240 ? "…" : "") : "—"}</div></td>
           </tr>
         `;
       }).join("");
 
       $("emptyState").classList.toggle("hidden", currentSection().targetCount !== 0);
-      $("resultCount").textContent = `${filtered.length.toLocaleString()} result${filtered.length === 1 ? "" : "s"}`;
-      $("pageLabel").textContent = `Page ${state.page} of ${totalPages}`;
+      $("resultCount").textContent = `${filtered.length.toLocaleString()} ${questionWord(filtered.length)}`;
+      $("pageNumberInput").value = state.page;
+      $("pageNumberInput").max = totalPages;
+      $("pageTotal").textContent = `of ${totalPages}`;
       $("previousBtn").disabled = state.page <= 1;
       $("nextPageBtn").disabled = state.page >= totalPages;
     }
@@ -3717,6 +4442,64 @@
       }
     }
 
+    function escapeLatexText(value) {
+      const replacements = {
+        "\\": "\\textbackslash{}",
+        "{": "\\{",
+        "}": "\\}",
+        "%": "\\%",
+        "#": "\\#",
+        "&": "\\&",
+        "_": "\\_",
+        "$": "\\$"
+      };
+      return String(value || "").replace(/[\\{}%#&_$]/g, character => replacements[character]);
+    }
+
+    function legacyNoteToMathLive(value) {
+      const text = String(value || "");
+      if (!text) return "";
+      if (/\\[a-zA-Z]+|[\^_{}]/.test(text)) {
+        return text
+          .replace(/\\\((.*?)\\\)/gs, "$1")
+          .replace(/\\\[(.*?)\\\]/gs, "$1");
+      }
+      return `\\text{${escapeLatexText(text)}}`;
+    }
+
+    function setEditorNotesValue(question) {
+      const isMath = state.activeSection === "math";
+      const mathField = $("editNotes");
+      const textField = $("editNotesText");
+      mathField.classList.toggle("hidden", !isMath);
+      textField.classList.toggle("hidden", isMath);
+
+      if (isMath) {
+        const value = question.notesFormat === "mathlive"
+          ? question.notes
+          : legacyNoteToMathLive(question.notes);
+        if (typeof mathField.setValue === "function") {
+          mathField.setValue(value, { silenceNotifications: true });
+        } else {
+          mathField.value = value;
+        }
+      } else {
+        textField.value = String(question.notes || "");
+      }
+    }
+
+    function getEditorNotesValue() {
+      if (state.activeSection === "rw") return String($("editNotesText").value || "").trim();
+      const field = $("editNotes");
+      return String(typeof field.getValue === "function"
+        ? field.getValue("latex")
+        : field.value || "").trim();
+    }
+
+    function editorNotesFormat() {
+      return state.activeSection === "math" ? "mathlive" : "plain";
+    }
+
     function populateEditor(number) {
       const q = getQuestion(number);
       if (!q) return null;
@@ -3733,7 +4516,7 @@
       $("editId").classList.remove("invalid");
       $("editSkill").classList.remove("invalid");
       $("editAttempts").value = q.attempts;
-      $("editNotes").value = q.notes;
+      setEditorNotesValue(q);
       editorSessionUndoCaptured = false;
       updateEditorStatus();
       return q;
@@ -3803,13 +4586,14 @@
 
       const complete = q.status !== "unattempted";
       $("completionNotice").textContent = complete
-        ? `Completed · ${q.status}`
+        ? `Completed · ${statusDisplay(q.status)}`
         : "Not completed";
 
       $("completionNotice").classList.toggle("completion-success", complete);
       $("attemptSummary").textContent =
         `${q.attempts} attempt${q.attempts === 1 ? "" : "s"} · ` +
-        `${q.correctAttempts} correct · ${q.incorrectAttempts} incorrect · ${q.skippedAttempts} skipped`;
+        `${q.correctAttempts} correct · ${q.incorrectAttempts} incorrect · ` +
+        `${q.partialAttempts || 0} partial · ${q.skippedAttempts} skipped`;
 
       $("backQuestionBtn").disabled = !previousNumberBefore(q.number);
       updateUndoUi();
@@ -3838,7 +4622,7 @@
         $("editDomain").value = domain;
       }
       const attempts = Math.max(0, Math.floor(Number($("editAttempts").value) || 0));
-      const notes = $("editNotes").value;
+      const notes = getEditorNotesValue();
       let changed = false;
 
       if (!id || isValidId(id)) {
@@ -3867,6 +4651,7 @@
       if (validateSkill(state.activeSection, domain, skill)) q.skill = skill;
       q.attempts = attempts;
       q.notes = notes;
+      q.notesFormat = editorNotesFormat();
       q.updatedAt = new Date().toISOString();
       save(true);
       renderStats();
@@ -3889,7 +4674,7 @@
         $("editDomain").value = domain;
       }
       const attempts = Math.max(0, Math.floor(Number($("editAttempts").value) || 0));
-      const notes = $("editNotes").value.trim();
+      const notes = getEditorNotesValue();
 
       if (id && !isValidId(id)) {
         $("editId").classList.add("invalid");
@@ -3935,6 +4720,7 @@
       q.skill = skill;
       q.attempts = attempts;
       q.notes = notes;
+      q.notesFormat = editorNotesFormat();
       q.updatedAt = new Date().toISOString();
 
       save(true);
@@ -3984,6 +4770,7 @@
       q.attempts += 1;
       if (status === "correct") q.correctAttempts += 1;
       if (status === "incorrect") q.incorrectAttempts += 1;
+      if (status === "partial") q.partialAttempts = (q.partialAttempts || 0) + 1;
       if (status === "skipped") q.skippedAttempts += 1;
       q.updatedAt = new Date().toISOString();
 
@@ -4165,6 +4952,7 @@
             attempts: existing.attempts,
             correctAttempts: existing.correctAttempts,
             incorrectAttempts: existing.incorrectAttempts,
+            partialAttempts: existing.partialAttempts || 0,
             skippedAttempts: existing.skippedAttempts,
             notes: existing.notes,
             updatedAt: existing.updatedAt
@@ -4250,7 +5038,7 @@
     function exportCurrentCsv() {
       const headers = [
         "number", "questionId", "domain", "skill", "status", "attempts",
-        "correctAttempts", "incorrectAttempts", "skippedAttempts", "notes", "updatedAt"
+        "correctAttempts", "incorrectAttempts", "partialAttempts", "skippedAttempts", "notes", "notesFormat", "updatedAt"
       ];
 
       const lines = [headers.join(",")];
@@ -4369,27 +5157,321 @@
       showToast("Backup restored", "Data loaded.");
     }
 
-    $("driveBtn").addEventListener("click", () => {
-      updateDriveUi();
-      openDialog($("driveDialog"));
+    function loadTimerState() {
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem(TIMER_KEY)) || {}; } catch (_) {}
+      return {
+        durationMs: Math.max(0, Number(saved.durationMs) || 0),
+        remainingMs: Math.max(0, Number(saved.remainingMs) || 0),
+        endsAt: Math.max(0, Number(saved.endsAt) || 0),
+        running: Boolean(saved.running),
+        minimized: saved.minimized === undefined ? saved.visible === false : Boolean(saved.minimized),
+        x: Number.isFinite(Number(saved.x)) ? Number(saved.x) : null,
+        y: Number.isFinite(Number(saved.y)) ? Number(saved.y) : null,
+        endedShown: Boolean(saved.endedShown)
+      };
+    }
+
+    const timerState = loadTimerState();
+    let timerTickHandle = null;
+
+    function saveTimerState() {
+      localStorage.setItem(TIMER_KEY, JSON.stringify(timerState));
+    }
+
+    function timerRemainingMs() {
+      if (timerState.running && timerState.endsAt) {
+        return Math.max(0, timerState.endsAt - Date.now());
+      }
+      return Math.max(0, timerState.remainingMs);
+    }
+
+    function formatTimer(ms) {
+      const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return hours > 0
+        ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+        : `${minutes}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function timerPopoverOpen() {
+      const timer = $("floatingTimer");
+      try { return timer.matches(":popover-open"); } catch (_) { return !timer.classList.contains("hidden"); }
+    }
+
+    function ensureTimerPopover(bringToFront = false) {
+      const timer = $("floatingTimer");
+      if (!timer || !timerState.durationMs) return;
+      timer.classList.remove("hidden");
+      if (typeof timer.showPopover === "function") {
+        try {
+          if (bringToFront && timerPopoverOpen()) timer.hidePopover();
+          if (!timerPopoverOpen()) timer.showPopover();
+        } catch (_) {}
+      }
+      applyTimerPanelState();
+      requestAnimationFrame(applyTimerPosition);
+    }
+
+    function dismissTimerPopover() {
+      const timer = $("floatingTimer");
+      if (!timer) return;
+      if (typeof timer.hidePopover === "function" && timerPopoverOpen()) {
+        try { timer.hidePopover(); } catch (_) {}
+      }
+      timer.classList.add("hidden");
+    }
+
+    function applyTimerPosition() {
+      const timer = $("floatingTimer");
+      if (!timer) return;
+      if (timerState.x === null || timerState.y === null) {
+        timer.style.left = "";
+        timer.style.top = "";
+        timer.style.right = "18px";
+        timer.style.bottom = "18px";
+        return;
+      }
+      const maxX = Math.max(8, window.innerWidth - timer.offsetWidth - 8);
+      const maxY = Math.max(8, window.innerHeight - timer.offsetHeight - 8);
+      timerState.x = Math.min(maxX, Math.max(8, timerState.x));
+      timerState.y = Math.min(maxY, Math.max(8, timerState.y));
+      timer.style.left = `${timerState.x}px`;
+      timer.style.top = `${timerState.y}px`;
+      timer.style.right = "auto";
+      timer.style.bottom = "auto";
+    }
+
+    function showFloatingTimer(expand = true) {
+      if (expand) timerState.minimized = false;
+      ensureTimerPopover(true);
+      saveTimerState();
+    }
+
+    function applyTimerPanelState() {
+      const timer = $("floatingTimer");
+      const expanded = !timerState.minimized;
+      timer.classList.toggle("minimized", timerState.minimized);
+      $("timerTab").setAttribute("aria-expanded", String(expanded));
+      $("timerToggleSymbol").textContent = expanded ? "−" : "+";
+    }
+
+    function toggleFloatingTimer() {
+      timerState.minimized = !timerState.minimized;
+      ensureTimerPopover(true);
+      saveTimerState();
+    }
+
+    function openTimerEndedDialog() {
+      if ($("timerEndedDialog").open) return;
+      $("endedTimerHours").value = 0;
+      $("endedTimerMinutes").value = 25;
+      $("endedTimerSeconds").value = 0;
+      openDialog($("timerEndedDialog"));
+    }
+
+    function finishTimer() {
+      timerState.running = false;
+      timerState.remainingMs = 0;
+      timerState.endsAt = 0;
+      timerState.minimized = false;
+      timerState.endedShown = true;
+      saveTimerState();
+      showFloatingTimer(true);
+      updateTimerUi();
+      openTimerEndedDialog();
+    }
+
+    function updateTimerUi() {
+      const remaining = timerRemainingMs();
+      if (timerState.running && remaining <= 0) {
+        finishTimer();
+        return;
+      }
+
+      const displayMs = timerState.endedShown ? 0 : (remaining || timerState.durationMs);
+      const text = formatTimer(displayMs);
+      $("timerDisplay").textContent = text;
+      $("pauseTimerBtn").textContent = timerState.running ? "Pause" : "Resume";
+      $("pauseTimerBtn").disabled = !timerState.durationMs || (!timerState.running && !timerState.remainingMs);
+      $("resetTimerBtn").disabled = !timerState.durationMs;
+      $("timerBtn").textContent = timerState.durationMs && (timerState.running || timerState.remainingMs)
+        ? `Timer ${formatTimer(remaining)}`
+        : "Timer";
+
+      if (timerState.durationMs) ensureTimerPopover(false);
+      else dismissTimerPopover();
+    }
+
+    function startTimerFromInputs(prefix = "timer") {
+      const hours = Math.max(0, Math.floor(Number($(`${prefix}Hours`).value) || 0));
+      const minutes = Math.max(0, Math.floor(Number($(`${prefix}Minutes`).value) || 0));
+      const seconds = Math.max(0, Math.floor(Number($(`${prefix}Seconds`).value) || 0));
+      const durationMs = ((hours * 3600) + (minutes * 60) + seconds) * 1000;
+      if (!durationMs) {
+        showToast("Timer not started", "Set a time greater than zero.");
+        return false;
+      }
+
+      timerState.durationMs = durationMs;
+      timerState.remainingMs = durationMs;
+      timerState.endsAt = Date.now() + durationMs;
+      timerState.running = true;
+      timerState.minimized = false;
+      timerState.endedShown = false;
+      saveTimerState();
+      showFloatingTimer(true);
+      updateTimerUi();
+      return true;
+    }
+
+    function pauseOrResumeTimer() {
+      if (!timerState.durationMs) return;
+      if (timerState.running) {
+        timerState.remainingMs = timerRemainingMs();
+        timerState.running = false;
+        timerState.endsAt = 0;
+      } else if (timerState.remainingMs > 0) {
+        timerState.running = true;
+        timerState.endsAt = Date.now() + timerState.remainingMs;
+      }
+      saveTimerState();
+      updateTimerUi();
+    }
+
+    function resetTimer() {
+      if (!timerState.durationMs) return;
+      timerState.remainingMs = timerState.durationMs;
+      timerState.endsAt = Date.now() + timerState.durationMs;
+      timerState.running = true;
+      timerState.minimized = false;
+      timerState.endedShown = false;
+      saveTimerState();
+      showFloatingTimer(true);
+      updateTimerUi();
+    }
+
+    function seedTimerDialogFromState() {
+      const sourceMs = timerRemainingMs() || timerState.durationMs || 25 * 60 * 1000;
+      const totalSeconds = Math.max(0, Math.round(sourceMs / 1000));
+      $("timerHours").value = Math.floor(totalSeconds / 3600);
+      $("timerMinutes").value = Math.floor((totalSeconds % 3600) / 60);
+      $("timerSeconds").value = totalSeconds % 60;
+    }
+
+    $("timerBtn").addEventListener("click", () => {
+      if (timerState.durationMs && (timerState.running || timerState.remainingMs > 0)) {
+        showFloatingTimer(true);
+      } else {
+        seedTimerDialogFromState();
+        openDialog($("timerDialog"));
+      }
     });
 
-    $("connectDriveBtn").addEventListener("click", async () => {
-      $("connectDriveBtn").disabled = true;
+    $("startTimerBtn").addEventListener("click", () => {
+      if (startTimerFromInputs("timer")) closeDialogAnimated($("timerDialog"));
+    });
+
+    $("restartTimerBtn").addEventListener("click", () => {
+      if (startTimerFromInputs("endedTimer")) closeDialogAnimated($("timerEndedDialog"));
+    });
+
+    $("pauseTimerBtn").addEventListener("click", pauseOrResumeTimer);
+    $("resetTimerBtn").addEventListener("click", resetTimer);
+    $("editTimerBtn").addEventListener("click", () => {
+      seedTimerDialogFromState();
+      openDialog($("timerDialog"));
+    });
+
+    let timerTabDrag = null;
+    let suppressTimerTabClick = false;
+
+    $("timerTab").addEventListener("pointerdown", event => {
+      if (event.button !== undefined && event.button !== 0) return;
+      const timer = $("floatingTimer");
+      const rect = timer.getBoundingClientRect();
+      timerTabDrag = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        offsetX: event.clientX - rect.left,
+        offsetY: event.clientY - rect.top,
+        moved: false
+      };
+      $("timerTab").setPointerCapture?.(event.pointerId);
+    });
+
+    $("timerTab").addEventListener("pointermove", event => {
+      if (!timerTabDrag || event.pointerId !== timerTabDrag.pointerId) return;
+      const distance = Math.hypot(event.clientX - timerTabDrag.startX, event.clientY - timerTabDrag.startY);
+      if (distance > 5) timerTabDrag.moved = true;
+      if (!timerTabDrag.moved) return;
+      timerState.x = event.clientX - timerTabDrag.offsetX;
+      timerState.y = event.clientY - timerTabDrag.offsetY;
+      applyTimerPosition();
+    });
+
+    const endTimerTabDrag = event => {
+      if (!timerTabDrag || event.pointerId !== timerTabDrag.pointerId) return;
+      if (timerTabDrag.moved) {
+        suppressTimerTabClick = true;
+        saveTimerState();
+        setTimeout(() => { suppressTimerTabClick = false; }, 0);
+      }
+      timerTabDrag = null;
+    };
+
+    $("timerTab").addEventListener("pointerup", endTimerTabDrag);
+    $("timerTab").addEventListener("pointercancel", endTimerTabDrag);
+    $("timerTab").addEventListener("click", event => {
+      if (suppressTimerTabClick) {
+        event.preventDefault();
+        return;
+      }
+      toggleFloatingTimer();
+    });
+
+    window.addEventListener("resize", applyTimerPosition);
+    timerTickHandle = setInterval(updateTimerUi, 250);
+
+    async function handleInteractiveDriveConnection(triggerButton = null) {
+      const settingsButton = $("connectDriveBtn");
       driveSync.lastError = "";
       updateDriveUi();
+      if (triggerButton) triggerButton.disabled = true;
+      if (settingsButton) settingsButton.disabled = true;
 
       try {
         driveSync.needsInteraction = false;
         await connectAndInitializeDrive({ interactive: true, announce: true });
       } catch (error) {
+        driveSync.connected = false;
         driveSync.lastError = error.message || "Google Drive connection failed.";
         updateDriveUi();
         showToast("Google Drive connection failed", driveSync.lastError);
       } finally {
-        $("connectDriveBtn").disabled = false;
+        if (triggerButton) triggerButton.disabled = false;
+        if (settingsButton) settingsButton.disabled = false;
         updateDriveUi();
       }
+    }
+
+    $("driveBtn").addEventListener("click", async () => {
+      if (driveSync.connected && isDriveTokenValid()) return;
+
+      const setupComplete = Boolean(driveSync.clientId && driveSync.fileId);
+      if (!setupComplete) {
+        openDriveSettings({ focusClientId: !driveSync.clientId });
+        return;
+      }
+
+      await handleInteractiveDriveConnection($("driveBtn"));
+    });
+
+    $("connectDriveBtn").addEventListener("click", async () => {
+      await handleInteractiveDriveConnection($("connectDriveBtn"));
     });
 
     $("saveDriveNowBtn").addEventListener("click", () => {
@@ -4489,10 +5571,12 @@
 
     $('settingsBtn').addEventListener('click', () => {
       populateSettingsUi();
+      updateDriveUi();
       openDialog($('settingsDialog'));
     });
+    $('sunLocationBtn').addEventListener('click', requestSunLocation);
 
-    ['themeSetting', 'textSizeSetting', 'densitySetting', 'autoConnectSetting', 'reduceMotionSetting', 'autosaveDelaySetting']
+    ['themeSetting', 'paletteSetting', 'textSizeSetting', 'densitySetting', 'autoConnectSetting', 'reduceMotionSetting', 'animateThemeSetting', 'autosaveDelaySetting']
       .forEach(id => {
         $(id).addEventListener('change', updateSettingsFromUi);
       });
@@ -4500,7 +5584,7 @@
     $('resetSettingsBtn').addEventListener('click', () => {
       if (JSON.stringify(appSettings) !== JSON.stringify(DEFAULT_SETTINGS)) captureUndo('settings reset');
       appSettings = { ...DEFAULT_SETTINGS };
-      persistAppSettings(true);
+      persistAppSettings(true, true);
       populateSettingsUi();
       attemptAutomaticDriveConnection({ reason: 'settings-reset' });
       showToast('Settings reset', 'Defaults restored.');
@@ -4531,14 +5615,17 @@
     });
 
     document.addEventListener("click", event => {
-      const openButton = event.target.closest("[data-open-number]");
-      if (openButton) openEditor(Number(openButton.dataset.openNumber));
-
       const closeButton = event.target.closest("[data-close]");
       if (closeButton) {
         if (closeButton.dataset.close === "editDialog") saveEditorDraft();
         closeDialogAnimated($(closeButton.dataset.close));
       }
+    });
+
+    $("questionRows").addEventListener("click", event => {
+      if (event.target.closest("input, select, textarea, button, a, label, [role=option], .skill-dropdown")) return;
+      const row = event.target.closest("tr[data-number]");
+      if (row) openEditor(Number(row.dataset.number));
     });
 
     $("questionRows").addEventListener("change", event => {
@@ -4597,6 +5684,21 @@
       renderTable();
     });
 
+    function applyPageNumber() {
+      const max = Math.max(1, Number($("pageNumberInput").max) || 1);
+      state.page = Math.min(max, Math.max(1, Math.floor(Number($("pageNumberInput").value) || 1)));
+      renderTable();
+    }
+
+    $("pageNumberInput").addEventListener("change", applyPageNumber);
+    $("pageNumberInput").addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        applyPageNumber();
+        event.currentTarget.blur();
+      }
+    });
+
     $("previousBtn").addEventListener("click", () => {
       state.page--;
       renderTable();
@@ -4646,6 +5748,7 @@
       });
     });
     $("editNotes").addEventListener("input", scheduleEditorDraftAutosave);
+    $("editNotesText").addEventListener("input", scheduleEditorDraftAutosave);
     $("editId").addEventListener("input", scheduleEditorDraftAutosave);
     $("editAttempts").addEventListener("input", event => {
       event.target.value = String(Math.max(0, Math.floor(Number(event.target.value) || 0)));
@@ -4693,6 +5796,7 @@
 
     $("correctBtn").addEventListener("click", () => submitResult("correct"));
     $("incorrectBtn").addEventListener("click", () => submitResult("incorrect"));
+    $("partialBtn").addEventListener("click", () => submitResult("partial"));
     $("skippedBtn").addEventListener("click", () => submitResult("skipped"));
     $("saveNextBtn").addEventListener("click", saveAndNext);
     $("backQuestionBtn").addEventListener("click", moveToPrevious);
@@ -4731,11 +5835,12 @@
       }
 
       const tag = document.activeElement?.tagName;
-      const typing = ["INPUT", "TEXTAREA", "SELECT"].includes(tag);
+      const typing = ["INPUT", "TEXTAREA", "SELECT", "MATH-FIELD"].includes(tag);
       if (typing) return;
 
       if (event.key.toLowerCase() === "c") submitResult("correct");
       if (event.key.toLowerCase() === "i") submitResult("incorrect");
+      if (event.key.toLowerCase() === "p") submitResult("partial");
       if (event.key.toLowerCase() === "s") submitResult("skipped");
     });
 
@@ -4779,6 +5884,36 @@
       dialog.addEventListener("close", () => dialog.classList.remove("closing"));
     });
 
+    customElements.whenDefined("math-field").then(() => {
+      if (globalThis.MathfieldElement) {
+        MathfieldElement.fontsDirectory = "https://cdn.jsdelivr.net/npm/mathlive@0.110.0/fonts/";
+      }
+      const field = $("editNotes");
+      if (!field) return;
+      field.smartMode = true;
+      field.smartFence = true;
+      field.smartSuperscript = true;
+      field.defaultMode = "math";
+      field.virtualKeyboardMode = "manual";
+      field.inlineShortcutTimeout = 0;
+      field.inlineShortcuts = {
+        ...field.inlineShortcuts,
+        sqrt: "\\sqrt{#0}",
+        root: "\\sqrt{#0}"
+      };
+      if (state.activeNumber) {
+        const q = getQuestion(state.activeNumber);
+        if (q) setEditorNotesValue(q);
+      }
+    });
+
+    matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => {
+      if (appSettings.theme === "system") applyAppSettings({ animate: true });
+    });
+    window.addEventListener("suncalcready", () => {
+      if (appSettings.theme === "sun") applyAppSettings({ animate: true });
+    });
+
     applyAppSettings();
     populateSettingsUi();
     load();
@@ -4789,6 +5924,9 @@
     }
     persistDriveConfig();
     updateDriveUi();
+    updateTimerUi();
+    if (timerState.durationMs) ensureTimerPopover(false);
+    if (timerState.running && timerRemainingMs() <= 0 && !timerState.endedShown) finishTimer();
     attemptAutomaticDriveConnection({ force: true, reason: "startup" });
   </script>
 </body>
