@@ -128,6 +128,11 @@
       transition: border-color 120ms ease, box-shadow 120ms ease;
     }
 
+    select {
+      padding-right: 34px;
+      text-overflow: ellipsis;
+    }
+
     input:focus, select:focus, textarea:focus {
       border-color: var(--blue);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 20%, transparent);
@@ -233,6 +238,7 @@
     .top-actions {
       display: flex;
       justify-content: flex-end;
+      align-items: center;
       gap: 8px;
       flex-wrap: wrap;
     }
@@ -272,7 +278,7 @@
 
     .cards {
       display: grid;
-      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      grid-template-columns: repeat(8, minmax(110px, 1fr));
       gap: 12px;
       margin-bottom: 14px;
     }
@@ -300,6 +306,14 @@
       color: var(--secondary);
       font-size: 0.8rem;
       font-weight: 650;
+    }
+
+    .recommendation-card { grid-column: span 2; }
+    .recommendation-value {
+      font-size: 1.08rem;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      overflow-wrap: anywhere;
     }
 
     .panel {
@@ -334,7 +348,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: 2.2fr repeat(4, minmax(135px, 1fr)) auto;
+      grid-template-columns: 2.2fr repeat(3, minmax(135px, 1fr)) auto;
       gap: 9px;
       align-items: end;
     }
@@ -353,7 +367,7 @@
 
     table {
       width: 100%;
-      min-width: 1260px;
+      min-width: 1130px;
       border-collapse: separate;
       border-spacing: 0;
       background: var(--surface);
@@ -421,9 +435,12 @@
     td input, td select {
       min-width: 145px;
       min-height: 36px;
-      padding: 7px 9px;
+      padding: 7px 34px 7px 9px;
       background: transparent;
     }
+
+    td input { padding-right: 9px; }
+    td select[data-field="domain"] { min-width: 205px; }
 
     .id-input {
       width: 110px;
@@ -456,39 +473,20 @@
       white-space: nowrap;
     }
 
+    .status-symbol {
+      display: inline-grid;
+      width: 1.1em;
+      place-items: center;
+      font-size: 0.92rem;
+      font-weight: 850;
+      line-height: 1;
+    }
+
     .status.correct { color: var(--green); }
     .status.incorrect { color: var(--red); }
     .status.partial { color: var(--partial); }
     .status.skipped { color: var(--orange); }
     .status.unattempted { color: var(--secondary); }
-
-    .completion {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--secondary);
-      font-size: 0.78rem;
-      font-weight: 650;
-      white-space: nowrap;
-    }
-
-    .completion.done { color: var(--green); }
-
-    .check {
-      display: inline-grid;
-      width: 21px;
-      height: 21px;
-      place-items: center;
-      border: 1px solid var(--line);
-      border-radius: 50%;
-      font-size: 0.72rem;
-    }
-
-    .completion.done .check {
-      color: #fff;
-      border-color: var(--green);
-      background: var(--green);
-    }
 
     .notes-preview {
       min-width: 300px;
@@ -934,6 +932,21 @@
       margin-top: 12px;
     }
 
+    .drive-preferences {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .drive-preferences > label {
+      min-height: 72px;
+      margin: 0;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+    }
+
     .drive-conflict {
       margin-top: 13px;
       border-left: 4px solid var(--orange);
@@ -956,19 +969,22 @@
         grid-area: actions;
         display: flex;
         width: 100%;
-        justify-content: stretch;
+        justify-content: center;
       }
       .top-actions > button {
         width: auto;
-        flex: 1 1 135px;
+        flex: 0 1 auto;
         white-space: nowrap;
       }
       .top-actions > .undo-button:not(.is-visible),
-      .top-actions > .drive-gate-button:not(.is-visible) { flex: 0 0 0 !important; }
+      .top-actions > .drive-gate-button:not(.is-visible) {
+        display: none;
+        flex: 0 0 0 !important;
+      }
       .top-actions > .undo-button.is-visible,
-      .top-actions > .drive-gate-button.is-visible { flex: 1 1 100px !important; }
+      .top-actions > .drive-gate-button.is-visible { flex: 0 1 auto !important; }
 
-      .cards { grid-template-columns: repeat(3, 1fr); }
+      .cards { grid-template-columns: repeat(4, 1fr); }
       .toolbar { grid-template-columns: repeat(2, 1fr); }
       .toolbar .search-field { grid-column: 1 / -1; }
     }
@@ -986,7 +1002,8 @@
 
       .brand { text-align: center; }
       .segmented { width: 100%; justify-self: stretch; }
-      .top-actions > button { flex-basis: 125px; }
+      .top-actions { justify-content: center; }
+      .top-actions > button { flex: 0 1 auto; }
 
       .shell { padding: 22px 13px 40px; }
       .hero { flex-direction: column; }
@@ -996,6 +1013,7 @@
       .pagination { align-items: flex-start; flex-direction: column; }
       .dialog-foot button { flex: 1; }
       .drive-meta { grid-template-columns: 1fr; }
+      .drive-preferences { grid-template-columns: 1fr; }
     }
 
 
@@ -1177,7 +1195,6 @@
     .drive-status-card,
     .drive-meta-item,
     .status,
-    .check,
     .keyboard,
     .segmented,
     input,
@@ -1233,10 +1250,8 @@
     td input, td select { background: var(--field); }
 
     .status { background: var(--surface-2); }
-    .check { background: var(--control); }
     .keyboard { background: color-mix(in srgb, currentColor 10%, var(--surface)); }
     .drive-conflict { border-left: 0; background: color-mix(in srgb, var(--orange) 12%, var(--surface-2)); }
-    .completion-success { color: var(--green); background: color-mix(in srgb, var(--green) 12%, var(--surface-2)); }
 
     hr {
       height: 14px;
@@ -1253,6 +1268,23 @@
 
     .settings-section + .settings-section { margin-top: 12px; }
     .settings-section h3 { margin-bottom: 12px; }
+
+    .notes-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+      color: var(--secondary);
+      font-size: 0.84rem;
+      font-weight: 650;
+    }
+
+    .notes-mode-button {
+      min-height: 30px;
+      padding: 4px 9px;
+      font-size: 0.76rem;
+    }
 
     .settings-section select,
     .settings-section input:not([type="checkbox"]) {
@@ -1771,24 +1803,10 @@
       pointer-events: none;
     }
 
-    /* Redo completion state. */
-    .completion.redo { color: var(--red); }
-    .completion.redo .check {
-      display: inline-grid;
-      place-items: center;
-      padding: 0;
-      color: #fff;
-      border-color: var(--red);
-      background: var(--red);
-      font-size: .82rem;
-      font-weight: 800;
-      line-height: 1;
-      text-align: center;
-    }
-    .completion-redo {
-      color: var(--red);
-      background: color-mix(in srgb, var(--red) 12%, var(--surface-2));
-    }
+    .result-notice.correct { color: var(--green); background: color-mix(in srgb, var(--green) 12%, var(--surface-2)); }
+    .result-notice.incorrect { color: var(--red); background: color-mix(in srgb, var(--red) 12%, var(--surface-2)); }
+    .result-notice.partial { color: var(--partial); background: color-mix(in srgb, var(--partial) 12%, var(--surface-2)); }
+    .result-notice.skipped { color: var(--orange); background: color-mix(in srgb, var(--orange) 12%, var(--surface-2)); }
 
 
 
@@ -1955,6 +1973,10 @@
         <div class="card-value" id="accuracyStat">—</div>
         <div class="card-label">Accuracy</div>
       </div>
+      <div class="card recommendation-card">
+        <div class="card-value recommendation-value" id="improvementStat">Add results to get a suggestion</div>
+        <div class="card-label">Recommended improvement</div>
+      </div>
     </section>
 
     <section class="panel">
@@ -1970,16 +1992,6 @@
         <label class="search-field">
           Search
           <input id="searchInput" type="search" placeholder="Question ID, number, domain, skill, or notes" />
-        </label>
-
-        <label>
-          Completion
-          <select id="completionFilter">
-            <option value="">All questions</option>
-            <option value="complete">Completed</option>
-            <option value="redo">Redo</option>
-            <option value="incomplete">Not completed</option>
-          </select>
         </label>
 
         <label>
@@ -2020,7 +2032,6 @@
               <th>Domain</th>
               <th>Skill</th>
               <th>Result</th>
-              <th>Completion</th>
               <th>Attempts</th>
               <th>Notes</th>
             </tr>
@@ -2132,7 +2143,7 @@
     </div>
 
     <div class="dialog-body">
-      <div id="completionNotice" class="notice">Not completed</div>
+      <div id="completionNotice" class="notice result-notice">No result yet</div>
 
       <div class="grid-3" style="margin-top:14px">
         <label>
@@ -2164,8 +2175,13 @@
         <datalist id="editSkillList"></datalist>
       </div>
 
-      <label id="editNotesLabel" style="margin-top:11px">
-        <span>Notes</span>
+      <div id="editNotesLabel" style="margin-top:11px">
+        <div class="notes-heading">
+          <span>Notes</span>
+          <button id="notesModeBtn" class="secondary notes-mode-button" type="button">
+            Math input <span class="keyboard">Ctrl + Shift + M</span>
+          </button>
+        </div>
         <math-field
           id="editNotes"
           class="notes-math-field notes-editor"
@@ -2180,7 +2196,7 @@
           aria-label="Reading and Writing notes"
           placeholder="Notes"
         ></textarea>
-      </label>
+      </div>
 
       <div class="result-actions">
         <button id="correctBtn" class="success">Correct <span class="keyboard">C</span></button>
@@ -2197,7 +2213,6 @@
       <button id="cardUndoBtn" class="secondary undo-button" aria-hidden="true" tabindex="-1">Undo</button>
       <button id="addBlankBelowBtn" class="secondary">Add blank below</button>
       <button id="clearQuestionBtn" class="secondary">Clear slot</button>
-      <button id="saveOnlyBtn" class="secondary">Save only</button>
       <button id="saveNextBtn">Save and next <span class="keyboard">Ctrl + Enter</span></button>
     </div>
   </dialog>
@@ -2260,7 +2275,7 @@
       </section>
 
       <section id="driveSettingsSection" class="settings-section">
-        <h3>Google Drive</h3>
+        <h3>Drive settings</h3>
 
         <div class="drive-status-card">
           <strong id="driveStatusTitle">Drive not configured</strong>
@@ -2300,18 +2315,20 @@
           <button id="disconnectDriveBtn" class="secondary">Disconnect</button>
         </div>
 
-        <label class="toggle-row" style="margin-top:16px">
-          <span><strong>Auto-connect Drive</strong></span>
-          <input id="autoConnectSetting" type="checkbox" />
-        </label>
-        <label style="margin-top:12px">
-          Drive autosave delay
-          <select id="autosaveDelaySetting">
+        <div class="drive-preferences" aria-label="Drive preferences">
+          <label class="toggle-row">
+            <span><strong>Auto-connect Drive</strong></span>
+            <input id="autoConnectSetting" type="checkbox" />
+          </label>
+          <label>
+            Drive autosave delay
+            <select id="autosaveDelaySetting">
             <option value="750">Fast — 0.75 seconds</option>
             <option value="1500">Balanced — 1.5 seconds</option>
             <option value="3000">Fewer uploads — 3 seconds</option>
-          </select>
-        </label>
+            </select>
+          </label>
+        </div>
       </section>
 
       <section class="settings-section">
@@ -4438,23 +4455,14 @@
     function getFilteredQuestions() {
       const section = currentSection();
       const search = $("searchInput").value.trim().toLowerCase();
-      const completion = $("completionFilter").value;
       const status = $("statusFilter").value;
       const domain = $("domainFilter").value;
       const skill = $("skillFilter").value;
 
       return section.questions.filter(q => {
-        const redo = q.status === "incorrect";
-        const complete = q.status !== "unattempted" && !redo;
-        const incomplete = q.status === "unattempted";
-        const completionMatches = !completion
-          || (completion === "complete" && complete)
-          || (completion === "redo" && redo)
-          || (completion === "incomplete" && incomplete);
         const searchable = [q.number, q.questionId, q.domain, q.skill, q.notes].join(" ").toLowerCase();
 
         return (!search || searchable.includes(search))
-          && completionMatches
           && (!status || q.status === status)
           && (!domain || q.domain === domain)
           && (!skill || q.skill === skill);
@@ -4498,6 +4506,21 @@
       $("accuracyStat").textContent = scored
         ? Math.round((correct + partial * 0.5) / scored * 100) + "%"
         : "—";
+      const improvementScores = new Map();
+      section.questions.forEach(q => {
+        if (!["incorrect", "partial", "skipped"].includes(q.status)) return;
+        const topic = q.skill && q.skill !== "Unknown"
+          ? q.skill
+          : (q.domain && q.domain !== "Unknown" ? q.domain : "");
+        if (!topic) return;
+        const priority = q.status === "incorrect" ? 3 : (q.status === "partial" ? 2 : 1);
+        improvementScores.set(topic, (improvementScores.get(topic) || 0) + priority);
+      });
+      const recommendation = [...improvementScores.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0];
+      $("improvementStat").textContent = recommendation
+        ? `Practice ${recommendation}`
+        : "Add results to get a suggestion";
       $("progressBar").style.width = percent + "%";
       $("progressText").textContent =
         `${completed.toLocaleString()} of ${total.toLocaleString()} ${questionWord(total)} completed (${percent.toFixed(1)}%)`;
@@ -4532,6 +4555,15 @@
       })[status] || "Unattempted";
     }
 
+    function statusSymbol(status) {
+      return ({
+        correct: "&#10003;",
+        incorrect: "&#10005;",
+        partial: "&#9680;",
+        skipped: "&#8618;"
+      })[status] || "";
+    }
+
     function renderTable() {
       if (skillCombobox.input?.matches('input[data-field="skill"]')) {
         closeSkillDropdown({ immediate: true });
@@ -4544,15 +4576,11 @@
       const domains = validDomains(state.activeSection);
 
       $("questionRows").innerHTML = pageItems.map(q => {
-        const redo = q.status === "incorrect";
-        const completed = q.status !== "unattempted" && !redo;
-        const completionClass = redo ? "redo" : (completed ? "done" : "");
-        const completionIcon = redo ? "✕" : (completed ? "✓" : "");
-        const completionLabel = redo ? "Redo" : (completed ? "Completed" : "Not completed");
         const skillListId = skillListIdFor(state.activeSection, q.domain);
+        const symbol = statusSymbol(q.status);
 
         return `
-          <tr class="result-${q.status} ${completed ? "completed" : ""}" data-number="${q.number}">
+          <tr class="result-${q.status}" data-number="${q.number}">
             <td><strong>${q.number}</strong></td>
             <td>
               <input
@@ -4586,13 +4614,7 @@
                 aria-expanded="false"
               />
             </td>
-            <td><span class="status ${q.status}">${escapeHtml(statusDisplay(q.status))}</span></td>
-            <td>
-              <span class="completion ${completionClass}">
-                <span class="check">${completionIcon}</span>
-                ${completionLabel}
-              </span>
-            </td>
+            <td><span class="status ${q.status}">${symbol ? `<span class="status-symbol" aria-hidden="true">${symbol}</span>` : ""}${escapeHtml(statusDisplay(q.status))}</span></td>
             <td>
               <input
                 class="attempts-input"
@@ -4643,7 +4665,6 @@
 
     function clearFilters(render = true) {
       $("searchInput").value = "";
-      $("completionFilter").value = "";
       $("statusFilter").value = "";
       $("domainFilter").value = "";
       $("skillFilter").value = "";
@@ -4813,12 +4834,33 @@
       return text;
     }
 
+    let mathNotesInputMode = "math";
+
+    function updateMathNotesModeUi() {
+      const button = $("notesModeBtn");
+      if (!button) return;
+      const regularText = mathNotesInputMode === "text";
+      button.innerHTML = `${regularText ? "Regular text" : "Math input"} <span class="keyboard">Ctrl + Shift + M</span>`;
+      button.setAttribute("aria-label", `${regularText ? "Regular text" : "Math input"} mode. Press Control Shift M to toggle.`);
+    }
+
+    function toggleMathNotesInputMode() {
+      if (state.activeSection !== "math") return;
+      const field = $("editNotes");
+      mathNotesInputMode = mathNotesInputMode === "math" ? "text" : "math";
+      field.focus();
+      field.executeCommand?.(["switch-mode", mathNotesInputMode]);
+      updateMathNotesModeUi();
+    }
+
     function setEditorNotesValue(question) {
       const isMath = state.activeSection === "math";
       const mathField = $("editNotes");
       const textField = $("editNotesText");
       mathField.classList.toggle("hidden", !isMath);
       textField.classList.toggle("hidden", isMath);
+      $("notesModeBtn").classList.toggle("hidden", !isMath);
+      updateMathNotesModeUi();
 
       if (isMath) {
         const value = ensureMathNoteMultiline(question.notesFormat === "mathlive"
@@ -4933,14 +4975,14 @@
       const q = getQuestion(state.activeNumber);
       if (!q) return;
 
-      const redo = q.status === "incorrect";
-      const complete = q.status !== "unattempted" && !redo;
-      $("completionNotice").textContent = redo
-        ? "✕ Redo · Incorrect"
-        : (complete ? `Completed · ${statusDisplay(q.status)}` : "Not completed");
-
-      $("completionNotice").classList.toggle("completion-success", complete);
-      $("completionNotice").classList.toggle("completion-redo", redo);
+      const notice = $("completionNotice");
+      const symbols = { correct: "✓", incorrect: "✕", partial: "◐", skipped: "↪" };
+      notice.textContent = q.status === "unattempted"
+        ? "No result yet"
+        : `${symbols[q.status] || ""} ${statusDisplay(q.status)}`.trim();
+      ["correct", "incorrect", "partial", "skipped"].forEach(status => {
+        notice.classList.toggle(status, q.status === status);
+      });
       $("attemptSummary").textContent =
         `${q.attempts} attempt${q.attempts === 1 ? "" : "s"} · ` +
         `${q.correctAttempts} correct · ${q.incorrectAttempts} incorrect · ` +
@@ -6107,7 +6149,7 @@
       handleSkillComboboxKeydown(event, skillInput, () => saveInline(skillInput));
     });
 
-    ["searchInput", "completionFilter", "statusFilter", "domainFilter", "skillFilter"].forEach(id => {
+    ["searchInput", "statusFilter", "domainFilter", "skillFilter"].forEach(id => {
       $(id).addEventListener("input", () => {
         state.page = 1;
         renderTable();
@@ -6193,6 +6235,21 @@
     });
     $("editNotes").addEventListener("input", scheduleEditorDraftAutosave);
     $("editNotesText").addEventListener("input", scheduleEditorDraftAutosave);
+    $("notesModeBtn").addEventListener("click", toggleMathNotesInputMode);
+    $("editNotes").addEventListener("keydown", event => {
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "m") {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleMathNotesInputMode();
+      }
+    });
+    $("editNotes").addEventListener("mode-change", event => {
+      const mode = (typeof event.detail === "string" ? event.detail : event.detail?.mode) || event.target.mode;
+      if (mode === "math" || mode === "text") {
+        mathNotesInputMode = mode;
+        updateMathNotesModeUi();
+      }
+    });
     $("editId").addEventListener("input", scheduleEditorDraftAutosave);
     $("editAttempts").addEventListener("input", event => {
       event.target.value = String(Math.max(0, Math.floor(Number(event.target.value) || 0)));
@@ -6250,14 +6307,6 @@
     $("addBlankBelowBtn").addEventListener("click", addBlankQuestionBelow);
     $("mainUndoBtn").addEventListener("click", performUndo);
     $("cardUndoBtn").addEventListener("click", performUndo);
-
-    $("saveOnlyBtn").addEventListener("click", () => {
-      if (commitEditor()) {
-        updateEditorStatus();
-        editorSessionUndoCaptured = false;
-        showToast("Question saved", `Question ${state.activeNumber} saved.`);
-      }
-    });
 
     $("clearQuestionBtn").addEventListener("click", () => {
       const q = getQuestion(state.activeNumber);
