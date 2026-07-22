@@ -2021,213 +2021,6 @@
       box-shadow: none;
     }
 
-    /* Collision-safe top bar: the section toggle stays at the true center. */
-    .app-bar-inner {
-      position: relative;
-      width: min(1840px, 100%);
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-      grid-template-areas: "brand toggle actions";
-      grid-template-rows: auto;
-      align-items: center;
-      min-height: 66px;
-      padding: 10px 22px;
-      column-gap: 18px;
-      row-gap: 8px;
-    }
-
-    .brand {
-      grid-area: brand;
-      justify-self: start;
-      align-self: center;
-      text-align: left;
-    }
-
-    .segmented {
-      grid-area: toggle;
-      position: relative;
-      inset: auto;
-      justify-self: center;
-      align-self: center;
-      width: max-content;
-      min-width: max-content;
-      transform: none;
-      white-space: nowrap;
-    }
-
-    .app-bar-inner .segmented button {
-      padding-inline: 13px;
-    }
-
-    .top-actions {
-      grid-area: actions;
-      display: flex;
-      width: max-content;
-      height: auto;
-      min-height: 0;
-      max-width: none;
-      max-height: none;
-      margin: 0;
-      padding: 0;
-      align-items: center;
-      justify-content: flex-end;
-      justify-self: end;
-      flex-wrap: nowrap;
-      gap: 6px;
-      overflow: visible;
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-      transform: none;
-    }
-
-    .top-actions > button {
-      width: auto;
-      flex: 0 0 auto;
-      padding-inline: 12px;
-      white-space: nowrap;
-    }
-
-    .top-actions > .undo-button:not(.is-visible),
-    .top-actions > .drive-gate-button:not(.is-visible) {
-      flex: 0 0 0 !important;
-    }
-
-    /* Added by JavaScript only when either side would touch the centered toggle. */
-    .app-bar-inner.header-stacked {
-      grid-template-areas:
-        "brand toggle ."
-        "actions actions actions";
-      grid-template-rows: auto auto;
-      padding-bottom: 10px;
-    }
-
-    .app-bar-inner.header-stacked .top-actions {
-      width: 100%;
-      justify-self: stretch;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-      gap: 7px;
-    }
-
-    @media (max-width: 760px) {
-      .app-bar-inner,
-      .app-bar-inner.header-stacked {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-areas:
-          "brand"
-          "toggle"
-          "actions";
-        grid-template-rows: auto auto auto;
-        padding: 8px 10px 10px;
-        row-gap: 8px;
-      }
-
-      .brand {
-        width: 100%;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        text-align: center;
-        justify-self: stretch;
-      }
-
-      .segmented {
-        width: 100%;
-        min-width: 0;
-        justify-self: stretch;
-      }
-
-      .top-actions,
-      .app-bar-inner.header-stacked .top-actions {
-        width: 100%;
-        justify-self: stretch;
-        justify-content: stretch;
-        flex-wrap: wrap;
-      }
-
-      .top-actions > button {
-        flex: 1 1 112px;
-      }
-    }
-
-    /* Google Drive rows share one label/value grid and one vertical centerline. */
-    .drive-setting-row {
-      display: grid;
-      grid-template-columns: minmax(118px, 0.42fr) minmax(0, 1fr);
-      align-items: center;
-      gap: 16px;
-    }
-
-    .drive-setting-label {
-      min-width: 0;
-      color: var(--secondary);
-      font-size: 0.84rem;
-      font-weight: 650;
-      line-height: 1.35;
-    }
-
-    .drive-status-card {
-      display: grid;
-      grid-template-columns: minmax(118px, 0.42fr) minmax(0, 1fr);
-      align-items: center;
-      gap: 16px;
-    }
-
-    .drive-status-copy {
-      display: grid;
-      min-width: 0;
-      min-height: 48px;
-      align-content: center;
-      gap: 4px;
-    }
-
-    .drive-status-card strong,
-    .drive-status-card span {
-      margin: 0;
-      text-align: left;
-    }
-
-    .drive-client-row {
-      margin-top: 14px;
-      padding-inline: 14px;
-    }
-
-    .drive-client-row input {
-      min-width: 0;
-    }
-
-    .drive-conflict {
-      padding: 14px;
-      grid-template-columns: minmax(118px, 0.42fr) minmax(0, 1fr);
-      align-items: center;
-      gap: 16px;
-    }
-
-    .drive-conflict-copy {
-      min-width: 0;
-    }
-
-    .drive-conflict-copy > strong {
-      display: block;
-      margin: 0;
-    }
-
-    @media (max-width: 620px) {
-      .drive-setting-row,
-      .drive-status-card,
-      .drive-conflict {
-        grid-template-columns: minmax(0, 1fr);
-        align-items: stretch;
-        gap: 6px;
-      }
-
-      .drive-status-copy {
-        min-height: 0;
-      }
-    }
-
   </style>
 </head>
 <body>
@@ -2592,29 +2385,23 @@
       <section id="driveSettingsSection" class="settings-section">
         <h3>Google Drive</h3>
 
-        <div class="drive-status-card drive-setting-row">
-          <div class="drive-setting-label">Drive status</div>
-          <div class="drive-status-copy">
-            <strong id="driveStatusTitle">Drive not configured</strong>
-            <span id="driveStatusDetail">Saved locally.</span>
+        <div class="drive-status-card">
+          <strong id="driveStatusTitle">Drive not configured</strong>
+          <span id="driveStatusDetail">Saved locally.</span>
+        </div>
+
+        <div id="driveConflictBox" class="notice drive-conflict hidden">
+          <strong>Sync conflict</strong>
+          <p id="driveConflictText" style="margin:6px 0 10px">Choose a copy.</p>
+          <div class="drive-actions">
+            <button id="useDriveCopyBtn">Use Drive copy</button>
+            <button id="keepDeviceCopyBtn" class="warning">Keep this device</button>
+            <button id="downloadBothCopiesBtn" class="secondary">Download both backups</button>
           </div>
         </div>
 
-        <div id="driveConflictBox" class="notice drive-conflict drive-setting-row hidden">
-          <div class="drive-setting-label">Conflict</div>
-          <div class="drive-conflict-copy">
-            <strong>Sync conflict</strong>
-            <p id="driveConflictText" style="margin:6px 0 10px">Choose a copy.</p>
-            <div class="drive-actions">
-              <button id="useDriveCopyBtn">Use Drive copy</button>
-              <button id="keepDeviceCopyBtn" class="warning">Keep this device</button>
-              <button id="downloadBothCopiesBtn" class="secondary">Download both backups</button>
-            </div>
-          </div>
-        </div>
-
-        <label class="drive-setting-row drive-client-row">
-          <span class="drive-setting-label">OAuth client ID</span>
+        <label style="margin-top:14px">
+          OAuth client ID
           <input id="googleClientIdInput" autocomplete="off" spellcheck="false" placeholder="1234567890-abc.apps.googleusercontent.com" />
         </label>
 
@@ -2999,61 +2786,6 @@
 
     const $ = id => document.getElementById(id);
 
-    let headerLayoutFrame = 0;
-
-    function updateHeaderLayout() {
-      const header = document.querySelector(".app-bar-inner");
-      const brand = $("brandTitle");
-      const toggle = $("sectionToggle");
-      const actions = header?.querySelector(".top-actions");
-      if (!header || !brand || !toggle || !actions) return;
-
-      header.classList.remove("header-stacked");
-      if (matchMedia("(max-width: 760px)").matches) return;
-
-      const style = getComputedStyle(header);
-      const contentWidth = header.clientWidth
-        - (parseFloat(style.paddingLeft) || 0)
-        - (parseFloat(style.paddingRight) || 0);
-      const columnGap = parseFloat(style.columnGap) || 18;
-      const toggleWidth = toggle.getBoundingClientRect().width;
-      const sideWidth = Math.max(0, (contentWidth - toggleWidth - (columnGap * 2)) / 2);
-      const brandWidth = brand.getBoundingClientRect().width;
-      const actionsWidth = actions.getBoundingClientRect().width;
-      const safetyGap = 10;
-
-      header.classList.toggle(
-        "header-stacked",
-        brandWidth + safetyGap > sideWidth || actionsWidth + safetyGap > sideWidth
-      );
-    }
-
-    function scheduleHeaderLayout() {
-      cancelAnimationFrame(headerLayoutFrame);
-      headerLayoutFrame = requestAnimationFrame(updateHeaderLayout);
-    }
-
-    window.addEventListener("resize", scheduleHeaderLayout, { passive: true });
-    document.fonts?.ready?.then(scheduleHeaderLayout);
-
-    const headerActions = document.querySelector(".top-actions");
-    if (headerActions) {
-      new MutationObserver(scheduleHeaderLayout).observe(headerActions, {
-        subtree: true,
-        childList: true,
-        characterData: true,
-        attributes: true,
-        attributeFilter: ["class", "style", "aria-hidden"]
-      });
-
-      if ("ResizeObserver" in window) {
-        const headerContentResizeObserver = new ResizeObserver(scheduleHeaderLayout);
-        [$("brandTitle"), $("sectionToggle"), ...headerActions.children]
-          .filter(Boolean)
-          .forEach(element => headerContentResizeObserver.observe(element));
-      }
-    }
-
 
     const undoStack = [];
     const MAX_UNDO_STEPS = 20;
@@ -3084,7 +2816,6 @@
         button.tabIndex = available ? 0 : -1;
         button.title = available ? `Undo ${label}` : "";
       }
-      scheduleHeaderLayout();
     }
 
     function captureUndo(label = "change") {
@@ -3789,8 +3520,6 @@
           : "unknown time";
         $("driveConflictText").textContent = `Drive changed ${remoteDate}. Choose a copy.`;
       }
-
-      scheduleHeaderLayout();
     }
 
     class DriveApiError extends Error {
@@ -6749,7 +6478,6 @@
     }
     persistDriveConfig();
     updateDriveUi();
-    scheduleHeaderLayout();
     updateTimerUi();
     if (timerState.durationMs) ensureTimerPopover(false);
     if (timerState.running && timerRemainingMs() <= 0 && !timerState.endedShown) finishTimer();
