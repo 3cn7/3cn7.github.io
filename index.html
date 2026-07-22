@@ -2021,6 +2021,60 @@
       box-shadow: none;
     }
 
+    /* Final desktop header alignment fix */
+    @media (min-width: 1181px) {
+      .app-bar-inner {
+        position: relative;
+        display: grid;
+        grid-template-columns: max-content 1fr max-content;
+        grid-template-areas: "brand empty actions";
+        align-items: center;
+        min-height: 66px;
+        padding: 10px 22px;
+        column-gap: 20px;
+      }
+
+      .brand {
+        grid-area: brand;
+        justify-self: start;
+        align-self: center;
+      }
+
+      .segmented {
+        grid-area: auto;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        justify-self: auto;
+        transform: translate(-50%, -50%);
+      }
+
+      .top-actions {
+        grid-area: actions;
+        display: flex;
+        width: max-content;
+        max-width: none;
+        max-height: none;
+        align-items: center;
+        justify-content: flex-end;
+        justify-self: end;
+        flex-wrap: nowrap;
+        gap: 8px;
+        overflow: visible;
+      }
+
+      .top-actions > button {
+        width: auto;
+        flex: 0 0 auto;
+        white-space: nowrap;
+      }
+
+      .top-actions > .undo-button:not(.is-visible),
+      .top-actions > .drive-gate-button:not(.is-visible) {
+        flex: 0 0 0 !important;
+      }
+    }
+
   </style>
 </head>
 <body>
