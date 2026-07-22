@@ -2098,6 +2098,19 @@
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
         pointer-events: none !important;
+        transform: translateY(0) !important;
+        opacity: 1 !important;
+        transition: transform 320ms cubic-bezier(.22, 1, .36, 1),
+                    opacity 220ms ease;
+      }
+
+      .app-bar.nav-hidden {
+        transform: translateY(calc(100% + 24px + env(safe-area-inset-bottom))) !important;
+        opacity: 0 !important;
+      }
+
+      .app-bar.nav-hidden .app-bar-inner {
+        pointer-events: none;
       }
 
       .app-bar-inner,
@@ -2125,41 +2138,54 @@
       }
 
       .mobile-drive-status {
-        width: auto;
+        width: 42px;
         min-width: 42px;
         min-height: 42px;
-        padding: 8px 10px;
+        padding: 0;
+        justify-content: center;
         border-radius: 999px;
-        transition: padding 220ms ease, width 220ms ease;
+        transition: width 240ms cubic-bezier(.22, 1, .36, 1),
+                    padding 240ms cubic-bezier(.22, 1, .36, 1);
+      }
+
+      .mobile-drive-status #mobileDriveStatusText { display: none; }
+      .mobile-drive-status[data-drive-attention="true"] {
+        width: auto;
+        padding: 8px 12px;
+      }
+      .mobile-drive-status[data-drive-attention="true"] #mobileDriveStatusText { display: inline; }
+
+      .mobile-drive-status[data-drive-state="disconnected"] .drive-status-dot,
+      .mobile-drive-status[data-drive-state="configured"] .drive-status-dot {
+        background: var(--yellow);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 16%, transparent);
       }
 
       .segmented button { min-height: 42px; }
 
       .top-actions { display: contents; }
+      .app-bar #driveBtn { display: none !important; }
 
       .mobile-overflow-menu {
         position: absolute;
         right: 0;
         bottom: calc(100% + 10px);
-        left: 0;
+        left: auto;
+        width: min(218px, calc(100vw - 28px));
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr);
         gap: 7px;
-        padding: 9px;
-        border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
-        border-radius: 22px;
-        background: color-mix(in srgb, var(--glass) 88%, transparent);
-        box-shadow: 0 16px 44px rgba(0, 0, 0, 0.2);
-        backdrop-filter: blur(24px) saturate(165%);
-        -webkit-backdrop-filter: blur(24px) saturate(165%);
+        padding: 0;
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
-        transform: translateY(8px) scale(0.97);
-        transform-origin: bottom center;
-        transition: opacity 170ms ease,
-                    visibility 0s linear 170ms,
-                    transform 220ms cubic-bezier(.22, 1, .36, 1);
+        transform: translate(8px, 12px) scale(0.32);
+        transform-origin: calc(100% - 27px) calc(100% + 37px);
+        filter: blur(5px);
+        transition: opacity 180ms ease,
+                    visibility 0s linear 260ms,
+                    transform 280ms cubic-bezier(.22, 1, .36, 1),
+                    filter 220ms ease;
       }
 
       .app-bar.mobile-menu-open .mobile-overflow-menu {
@@ -2167,6 +2193,7 @@
         visibility: visible;
         pointer-events: auto;
         transform: translateY(0) scale(1);
+        filter: blur(0);
         transition-delay: 0s;
       }
 
@@ -2176,14 +2203,36 @@
         min-width: 0 !important;
         max-width: none !important;
         min-height: 38px;
-        padding: 6px 8px;
-        font-size: 0.74rem;
+        padding: 9px 14px;
+        border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--glass) 84%, transparent);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+        backdrop-filter: blur(22px) saturate(160%);
+        -webkit-backdrop-filter: blur(22px) saturate(160%);
+        font-size: 0.8rem;
+        opacity: 0;
+        transform: translateY(12px) scale(0.9);
+        transform-origin: right center;
+        transition: opacity 150ms ease,
+                    transform 240ms cubic-bezier(.22, 1, .36, 1),
+                    background 160ms ease;
       }
 
+      .app-bar.mobile-menu-open .mobile-overflow-menu > button {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+
+      .app-bar.mobile-menu-open .mobile-overflow-menu > button:nth-child(1) { transition-delay: 40ms; }
+      .app-bar.mobile-menu-open .mobile-overflow-menu > button:nth-child(2) { transition-delay: 65ms; }
+      .app-bar.mobile-menu-open .mobile-overflow-menu > button:nth-child(3) { transition-delay: 90ms; }
+      .app-bar.mobile-menu-open .mobile-overflow-menu > button:nth-child(4) { transition-delay: 115ms; }
+      .app-bar.mobile-menu-open .mobile-overflow-menu > button:nth-child(5) { transition-delay: 140ms; }
+
       .mobile-overflow-menu > .undo-button:not(.is-visible) { display: none; }
-      .mobile-overflow-menu #settingsBtn { grid-column: 1 / 3; grid-row: 2; }
-      .mobile-overflow-menu #mainUndoBtn { grid-column: 3; grid-row: 2; }
-      .mobile-overflow-menu:not(:has(#mainUndoBtn.is-visible)) #settingsBtn { grid-column: 1 / -1; }
+      .mobile-overflow-menu #settingsBtn,
+      .mobile-overflow-menu #mainUndoBtn { grid-column: 1; grid-row: auto; }
 
       #nextBtn {
         grid-area: next;
@@ -2209,21 +2258,9 @@
         letter-spacing: 0.08em;
       }
 
-      .app-bar.mobile-minimized:not(.mobile-menu-open) .app-bar-inner {
-        width: auto;
-        max-width: calc(100% - 18px);
-        grid-template-columns: auto auto auto;
-        grid-template-areas: "status next more";
-        padding: 5px;
-      }
-
-      .app-bar.mobile-minimized:not(.mobile-menu-open) .segmented { display: none; }
-      .app-bar.mobile-minimized:not(.mobile-menu-open) .mobile-drive-status { width: 42px; padding-inline: 12px; }
-      .app-bar.mobile-minimized:not(.mobile-menu-open) #mobileDriveStatusText { display: none; }
-
       html[data-reduce-transparency="true"] .app-bar { background: transparent !important; }
       html[data-reduce-transparency="true"] .app-bar-inner,
-      html[data-reduce-transparency="true"] .mobile-overflow-menu {
+      html[data-reduce-transparency="true"] .mobile-overflow-menu > button {
         background: var(--surface) !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
@@ -2245,9 +2282,9 @@
     <div class="app-bar-inner">
       <div id="brandTitle" class="brand" data-drive-state="disconnected">SAT Question Bank Tracker</div>
 
-      <button id="mobileDriveStatusBtn" class="secondary mobile-drive-status" type="button" data-drive-state="disconnected">
+      <button id="mobileDriveStatusBtn" class="secondary mobile-drive-status" type="button" data-drive-state="disconnected" data-drive-attention="true">
         <span class="drive-status-dot" aria-hidden="true"></span>
-        <span id="mobileDriveStatusText">Local</span>
+        <span id="mobileDriveStatusText">Set up</span>
       </button>
 
       <div id="sectionToggle" class="segmented" data-active="math" aria-label="Section">
@@ -3720,16 +3757,10 @@
         brandTitle.title = `${title} · ${detail}`;
       }
       if (mobileStatus) {
-        const mobileLabels = {
-          disconnected: "Local",
-          configured: "Ready",
-          syncing: "Syncing",
-          pending: "Pending",
-          error: "Error",
-          connected: "Synced"
-        };
+        const mobileNeedsAction = !tokenConnected && !driveSync.autoConnectInProgress;
         mobileStatus.dataset.driveState = brandState;
-        $("mobileDriveStatusText").textContent = mobileLabels[brandState] || "Local";
+        mobileStatus.dataset.driveAttention = mobileNeedsAction ? "true" : "false";
+        $("mobileDriveStatusText").textContent = setupComplete ? "Sign in" : "Set up";
         mobileStatus.disabled = Boolean(driveSync.autoConnectInProgress);
         mobileStatus.title = `${title} · ${detail}`;
         mobileStatus.setAttribute("aria-label", `${title}. ${detail}. Open Drive settings.`);
@@ -6288,11 +6319,12 @@
 
       if (appBar) {
         if (phoneBottomBarActive()) {
-          appBar.classList.remove("nav-hidden");
-          if (currentY < 72 || delta < -5 || modalOpen || appBar.classList.contains("mobile-menu-open")) {
-            appBar.classList.remove("mobile-minimized");
+          appBar.classList.remove("mobile-minimized");
+          if (currentY < 72 || delta < -5 || modalOpen) {
+            appBar.classList.remove("nav-hidden");
           } else if (delta > 5 && currentY > 110) {
-            appBar.classList.add("mobile-minimized");
+            setMobileOverflowOpen(false);
+            appBar.classList.add("nav-hidden");
           }
         } else if (currentY < 72 || delta < -5 || modalOpen) {
           appBar.classList.remove("nav-hidden");
