@@ -885,7 +885,10 @@
 
     .mobile-brand,
     .mobile-drive-status,
+    .mobile-more-button,
     .nav-short-label { display: none; }
+
+    .mobile-overflow-menu { display: contents; }
 
     .drive-status-card {
       display: grid;
@@ -2074,14 +2077,164 @@
       #settingsBtn { grid-column: 1; grid-row: 2; }
       #mainUndoBtn { grid-column: 2; grid-row: 2; }
       #nextBtn { grid-column: 3; grid-row: 2; }
-      .top-actions:not(:has(#mainUndoBtn.is-visible)) #nextBtn { grid-column: 2 / 4; }
-
       .shell {
         padding-bottom: calc(var(--phone-bar-offset) + 28px + env(safe-area-inset-bottom)) !important;
       }
 
       .toast-region[popover] {
         inset: auto 10px calc(var(--phone-bar-offset) + 10px + env(safe-area-inset-bottom)) auto;
+      }
+    }
+
+    @media (max-width: 760px), (max-height: 520px) and (pointer: coarse) {
+      :root { --phone-bar-offset: 86px; }
+
+      .app-bar {
+        inset: auto 0 calc(10px + env(safe-area-inset-bottom));
+        border: 0;
+        border-radius: 0;
+        background: transparent !important;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        pointer-events: none !important;
+      }
+
+      .app-bar-inner,
+      html[data-density="compact"] .app-bar-inner {
+        position: relative;
+        width: min(372px, calc(100% - 18px));
+        min-height: 0;
+        margin: 0 auto;
+        padding: 6px;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto auto;
+        grid-template-areas: "status toggle next more";
+        align-items: center;
+        gap: 6px;
+        border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--glass) 82%, transparent);
+        box-shadow: 0 14px 42px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(24px) saturate(165%);
+        -webkit-backdrop-filter: blur(24px) saturate(165%);
+        pointer-events: auto;
+        transition: width 240ms cubic-bezier(.22, 1, .36, 1),
+                    padding 240ms cubic-bezier(.22, 1, .36, 1),
+                    border-radius 240ms cubic-bezier(.22, 1, .36, 1);
+      }
+
+      .mobile-drive-status {
+        width: auto;
+        min-width: 42px;
+        min-height: 42px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        transition: padding 220ms ease, width 220ms ease;
+      }
+
+      .segmented button { min-height: 42px; }
+
+      .top-actions { display: contents; }
+
+      .mobile-overflow-menu {
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + 10px);
+        left: 0;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+        padding: 9px;
+        border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+        border-radius: 22px;
+        background: color-mix(in srgb, var(--glass) 88%, transparent);
+        box-shadow: 0 16px 44px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(24px) saturate(165%);
+        -webkit-backdrop-filter: blur(24px) saturate(165%);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(8px) scale(0.97);
+        transform-origin: bottom center;
+        transition: opacity 170ms ease,
+                    visibility 0s linear 170ms,
+                    transform 220ms cubic-bezier(.22, 1, .36, 1);
+      }
+
+      .app-bar.mobile-menu-open .mobile-overflow-menu {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+        transition-delay: 0s;
+      }
+
+      .mobile-overflow-menu > button,
+      .mobile-overflow-menu > .undo-button.is-visible {
+        width: 100%;
+        min-width: 0 !important;
+        max-width: none !important;
+        min-height: 38px;
+        padding: 6px 8px;
+        font-size: 0.74rem;
+      }
+
+      .mobile-overflow-menu > .undo-button:not(.is-visible) { display: none; }
+      .mobile-overflow-menu #settingsBtn { grid-column: 1 / 3; grid-row: 2; }
+      .mobile-overflow-menu #mainUndoBtn { grid-column: 3; grid-row: 2; }
+      .mobile-overflow-menu:not(:has(#mainUndoBtn.is-visible)) #settingsBtn { grid-column: 1 / -1; }
+
+      #nextBtn {
+        grid-area: next;
+        width: auto;
+        min-width: 58px !important;
+        min-height: 42px;
+        padding: 7px 13px;
+        border-radius: 999px;
+      }
+
+      .mobile-more-button {
+        grid-area: more;
+        display: inline-grid !important;
+        width: 42px !important;
+        min-width: 42px !important;
+        max-width: 42px !important;
+        height: 42px;
+        min-height: 42px !important;
+        padding: 0 !important;
+        place-items: center;
+        border-radius: 50%;
+        font-size: 0.9rem !important;
+        letter-spacing: 0.08em;
+      }
+
+      .app-bar.mobile-minimized:not(.mobile-menu-open) .app-bar-inner {
+        width: auto;
+        max-width: calc(100% - 18px);
+        grid-template-columns: auto auto auto;
+        grid-template-areas: "status next more";
+        padding: 5px;
+      }
+
+      .app-bar.mobile-minimized:not(.mobile-menu-open) .segmented { display: none; }
+      .app-bar.mobile-minimized:not(.mobile-menu-open) .mobile-drive-status { width: 42px; padding-inline: 12px; }
+      .app-bar.mobile-minimized:not(.mobile-menu-open) #mobileDriveStatusText { display: none; }
+
+      html[data-reduce-transparency="true"] .app-bar { background: transparent !important; }
+      html[data-reduce-transparency="true"] .app-bar-inner,
+      html[data-reduce-transparency="true"] .mobile-overflow-menu {
+        background: var(--surface) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+      .shell {
+        padding-bottom: calc(var(--phone-bar-offset) + 24px + env(safe-area-inset-bottom)) !important;
+      }
+
+      .toast-region[popover] {
+        inset: auto 10px calc(var(--phone-bar-offset) + 12px + env(safe-area-inset-bottom)) auto;
       }
     }
 
@@ -2104,12 +2257,15 @@
 
       <div class="top-actions">
         <button id="driveBtn" class="secondary drive-gate-button" aria-hidden="true" tabindex="-1">Setup</button>
-        <button id="timerBtn" class="secondary">Timer</button>
-        <button id="bulkBtn" class="secondary"><span class="nav-wide-label">Bulk paste</span><span class="nav-short-label">Bulk</span></button>
-        <button id="dataBtn" class="secondary">Data</button>
-        <button id="settingsBtn" class="secondary">Settings</button>
-        <button id="mainUndoBtn" class="secondary undo-button" aria-hidden="true" tabindex="-1">Undo</button>
+        <div id="mobileOverflowMenu" class="mobile-overflow-menu">
+          <button id="timerBtn" class="secondary">Timer</button>
+          <button id="bulkBtn" class="secondary"><span class="nav-wide-label">Bulk paste</span><span class="nav-short-label">Bulk</span></button>
+          <button id="dataBtn" class="secondary">Data</button>
+          <button id="settingsBtn" class="secondary">Settings</button>
+          <button id="mainUndoBtn" class="secondary undo-button" aria-hidden="true" tabindex="-1">Undo</button>
+        </div>
         <button id="nextBtn"><span class="nav-wide-label">Next unattempted</span><span class="nav-short-label">Next</span></button>
+        <button id="mobileMoreBtn" class="secondary mobile-more-button" type="button" aria-label="More actions" aria-expanded="false" aria-controls="mobileOverflowMenu"><span aria-hidden="true">•••</span></button>
       </div>
     </div>
   </nav>
@@ -5833,12 +5989,12 @@
         timer.style.top = "";
         timer.style.right = "18px";
         timer.style.bottom = phoneBottomBarActive()
-          ? "calc(160px + env(safe-area-inset-bottom))"
+          ? "calc(96px + env(safe-area-inset-bottom))"
           : "18px";
         return;
       }
       const maxX = Math.max(8, window.innerWidth - timer.offsetWidth - 8);
-      const bottomGuard = phoneBottomBarActive() ? 160 : 8;
+      const bottomGuard = phoneBottomBarActive() ? 96 : 8;
       const maxY = Math.max(8, window.innerHeight - timer.offsetHeight - bottomGuard);
       timerState.x = Math.min(maxX, Math.max(8, timerState.x));
       timerState.y = Math.min(maxY, Math.max(8, timerState.y));
@@ -6107,6 +6263,22 @@
 
     let lastPageScrollY = window.scrollY;
     let navScrollFrame = 0;
+
+    function setMobileOverflowOpen(open) {
+      const appBar = document.querySelector(".app-bar");
+      const moreButton = $("mobileMoreBtn");
+      const menu = $("mobileOverflowMenu");
+      if (!appBar || !moreButton || !menu) return;
+      const phoneLayout = phoneBottomBarActive();
+      const shouldOpen = Boolean(open && phoneLayout);
+      appBar.classList.toggle("mobile-menu-open", shouldOpen);
+      if (shouldOpen) appBar.classList.remove("mobile-minimized");
+      moreButton.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+      moreButton.setAttribute("aria-label", shouldOpen ? "Close more actions" : "More actions");
+      if (phoneLayout) menu.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+      else menu.removeAttribute("aria-hidden");
+    }
+
     function updateNavigationForScroll() {
       navScrollFrame = 0;
       const currentY = Math.max(0, window.scrollY);
@@ -6115,7 +6287,14 @@
       const modalOpen = Boolean(document.querySelector("dialog[open]"));
 
       if (appBar) {
-        if (currentY < 72 || delta < -5 || modalOpen) {
+        if (phoneBottomBarActive()) {
+          appBar.classList.remove("nav-hidden");
+          if (currentY < 72 || delta < -5 || modalOpen || appBar.classList.contains("mobile-menu-open")) {
+            appBar.classList.remove("mobile-minimized");
+          } else if (delta > 5 && currentY > 110) {
+            appBar.classList.add("mobile-minimized");
+          }
+        } else if (currentY < 72 || delta < -5 || modalOpen) {
           appBar.classList.remove("nav-hidden");
         } else if (delta > 5 && currentY > 110) {
           appBar.classList.add("nav-hidden");
@@ -6127,6 +6306,35 @@
     window.addEventListener("scroll", () => {
       if (!navScrollFrame) navScrollFrame = requestAnimationFrame(updateNavigationForScroll);
     }, { passive: true });
+
+    $("mobileMoreBtn").addEventListener("click", event => {
+      event.stopPropagation();
+      const appBar = document.querySelector(".app-bar");
+      setMobileOverflowOpen(!appBar?.classList.contains("mobile-menu-open"));
+    });
+
+    $("mobileOverflowMenu").addEventListener("click", event => {
+      if (event.target.closest("button")) setMobileOverflowOpen(false);
+    });
+
+    document.addEventListener("click", event => {
+      const appBar = document.querySelector(".app-bar");
+      if (appBar?.classList.contains("mobile-menu-open") && !event.target.closest(".app-bar")) {
+        setMobileOverflowOpen(false);
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") setMobileOverflowOpen(false);
+    });
+
+    window.addEventListener("resize", () => {
+      const appBar = document.querySelector(".app-bar");
+      if (!phoneBottomBarActive()) {
+        setMobileOverflowOpen(false);
+        appBar?.classList.remove("mobile-minimized");
+      }
+    });
 
     async function handleInteractiveDriveConnection(triggerButton = null) {
       const settingsButton = $("connectDriveBtn");
@@ -6636,6 +6844,7 @@
     });
 
     applyAppSettings();
+    setMobileOverflowOpen(false);
     populateSettingsUi();
     load();
     state.pageSize = Number($("pageSize").value);
