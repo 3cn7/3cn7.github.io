@@ -517,17 +517,21 @@
       gap: 8px;
     }
 
-    .page-controls label {
+    .page-controls label,
+    .pager-controls,
+    .page-position {
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
     .page-controls select { width: auto; }
+    .short-label { display: none; }
 
     dialog {
       width: min(790px, calc(100% - 24px));
       max-height: calc(100vh - 26px);
+      max-height: calc(100dvh - 26px);
       overflow-y: auto;
       overflow-x: clip;
       padding: 0;
@@ -1010,8 +1014,24 @@
       .cards { grid-template-columns: repeat(2, 1fr); }
       .toolbar, .grid-2, .grid-3, .result-actions, .range-preview { grid-template-columns: 1fr; }
       .toolbar .search-field { grid-column: auto; }
-      .pagination { align-items: flex-start; flex-direction: column; }
+      .pagination { width: 100%; align-items: stretch; flex-direction: column; }
+      .page-controls { width: 100%; align-items: stretch; flex-direction: column; }
+      .page-size-control { align-self: flex-start; }
+      .pager-controls {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        width: 100%;
+        gap: 8px;
+      }
+      .pager-controls > * { min-width: 0; }
+      .pager-controls > button { width: 100%; min-width: 0; padding-inline: 8px; }
+      .page-position { justify-content: center; white-space: nowrap; }
+      .page-label { display: none; }
+      .page-jump input { width: 54px; min-width: 54px; }
+      .wide-label { display: none; }
+      .short-label { display: inline; }
       .dialog-foot button { flex: 1; }
+      .dialog-foot > .undo-button:not(.is-visible) { display: none; }
       .drive-meta { grid-template-columns: 1fr; }
       .drive-preferences { grid-template-columns: 1fr; }
     }
@@ -2049,7 +2069,7 @@
         <span id="resultCount" class="subtle"></span>
 
         <div class="page-controls">
-          <label>
+          <label class="page-size-control">
             Rows
             <select id="pageSize">
               <option>25</option>
@@ -2058,13 +2078,17 @@
               <option>200</option>
             </select>
           </label>
-          <button id="previousBtn" class="secondary">Previous</button>
-          <label class="page-jump">
-            Page
-            <input id="pageNumberInput" type="number" min="1" step="1" value="1" inputmode="numeric" aria-label="Page number" />
-          </label>
-          <span id="pageTotal">of 1</span>
-          <button id="nextPageBtn" class="secondary">Next</button>
+          <div class="pager-controls">
+            <button id="previousBtn" class="secondary" aria-label="Previous page"><span class="wide-label">Previous</span><span class="short-label">Prev</span></button>
+            <div class="page-position">
+              <label class="page-jump">
+                <span class="page-label">Page</span>
+                <input id="pageNumberInput" type="number" min="1" step="1" value="1" inputmode="numeric" aria-label="Page number" />
+              </label>
+              <span id="pageTotal" aria-live="polite">of 1</span>
+            </div>
+            <button id="nextPageBtn" class="secondary" aria-label="Next page">Next</button>
+          </div>
         </div>
       </div>
     </section>
