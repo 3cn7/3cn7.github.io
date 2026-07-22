@@ -581,6 +581,29 @@
       gap: 11px;
     }
 
+    .settings-toggle-grid {
+      align-items: stretch;
+      grid-auto-rows: 1fr;
+    }
+
+    .settings-toggle-grid .toggle-row,
+    .settings-toggle-grid .toggle-row + .toggle-row {
+      height: 100%;
+      min-height: 72px;
+      margin-top: 0;
+    }
+
+    .settings-toggle-grid .toggle-row > span {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .settings-toggle-grid .toggle-row input[type="checkbox"] {
+      flex: 0 0 22px;
+      margin: 0;
+    }
+
     .grid-3 {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -1171,6 +1194,12 @@
     button.secondary:hover,
     .button.secondary:hover { background: var(--control-hover); }
 
+    .file-button {
+      font: inherit;
+      font-weight: 650;
+      line-height: 1;
+    }
+
     input,
     select,
     textarea {
@@ -1245,7 +1274,12 @@
     }
 
     .toggle-row + .toggle-row { margin-top: 9px; }
-    .toggle-row strong { display: block; font-size: 0.92rem; }
+    .toggle-row strong {
+      display: block;
+      font-size: inherit;
+      font-weight: 400;
+      letter-spacing: inherit;
+    }
     .toggle-row small { display: block; margin-top: 3px; color: var(--secondary); font-weight: 500; line-height: 1.35; }
     .toggle-row input[type="checkbox"] {
       width: 22px;
@@ -1586,13 +1620,20 @@
 
 
 
-    /* Smooth color-mode changes. */
-    html.theme-transitioning,
-    html.theme-transitioning body,
-    html.theme-transitioning body *:not(.skill-dropdown):not(.toast) {
-      transition-property: background-color, color, box-shadow, border-color, fill, stroke !important;
-      transition-duration: 420ms !important;
-      transition-timing-function: cubic-bezier(.22,1,.36,1) !important;
+    /* Smooth color-mode changes without transitioning every DOM node. */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 280ms;
+      animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+    }
+
+    html.theme-transition-fallback body {
+      animation: theme-fallback-in 260ms cubic-bezier(.22, 1, .36, 1) both;
+    }
+
+    @keyframes theme-fallback-in {
+      from { opacity: .9; }
+      to { opacity: 1; }
     }
 
     .sun-theme-row {
@@ -1685,6 +1726,301 @@
     }
 
 
+
+    /* Final layout and accessibility fixes. */
+    #driveSettingsSection { scroll-margin-top: 82px; }
+
+    .toast {
+      transition: opacity 190ms ease, transform 190ms ease, filter 190ms ease;
+    }
+
+    .toast.is-leaving {
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+      filter: blur(2px);
+    }
+
+    html[data-reduce-transparency="true"] .app-bar,
+    html[data-reduce-transparency="true"] .dialog-head,
+    html[data-reduce-transparency="true"] .dialog-foot,
+    html[data-reduce-transparency="true"] .toast,
+    html[data-reduce-transparency="true"] .timer-float {
+      background: var(--surface) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+    html[data-reduce-transparency="true"] dialog::backdrop {
+      backdrop-filter: none !important;
+    }
+
+    .app-bar-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      grid-template-areas: "brand toggle actions";
+      transition: min-height 280ms cubic-bezier(.22,1,.36,1),
+                  padding 280ms cubic-bezier(.22,1,.36,1),
+                  gap 280ms cubic-bezier(.22,1,.36,1);
+    }
+
+    .brand { grid-area: brand; }
+    .segmented { grid-area: toggle; justify-self: center; }
+    .top-actions {
+      grid-area: actions;
+      justify-self: end;
+      max-height: 96px;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      overflow: clip;
+      transition: max-height 260ms cubic-bezier(.22,1,.36,1),
+                  opacity 180ms ease,
+                  transform 260ms cubic-bezier(.22,1,.36,1),
+                  visibility 0s linear 0s;
+    }
+
+    @media (max-width: 1180px) {
+      .app-bar-inner {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+          "brand toggle"
+          "actions actions";
+        grid-template-rows: auto 0fr;
+        min-height: 52px;
+        padding: 7px 16px;
+        column-gap: 10px;
+        row-gap: 0;
+      }
+
+      .brand { text-align: left; }
+      .segmented { width: auto; justify-self: end; }
+      .top-actions {
+        width: 100%;
+        height: 0;
+        min-height: 0;
+        max-height: 0;
+        margin: 0;
+        padding: 0;
+        opacity: 0;
+        transform: translateY(-8px) scale(.98);
+        pointer-events: none;
+        visibility: hidden;
+        transition: max-height 260ms cubic-bezier(.22,1,.36,1),
+                    opacity 150ms ease,
+                    transform 220ms cubic-bezier(.22,1,.36,1),
+                    visibility 0s linear 260ms;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app-bar-inner {
+        grid-template-columns: minmax(0, 1fr) minmax(170px, auto);
+        grid-template-areas:
+          "brand toggle"
+          "actions actions";
+        padding: 7px 10px;
+      }
+      .brand {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .92rem;
+      }
+      .segmented button { padding-inline: 11px; }
+    }
+
+
+    /* Scroll-aware navigation. */
+    .app-bar {
+      transition: transform 280ms cubic-bezier(.22,1,.36,1),
+                  opacity 220ms ease,
+                  box-shadow 220ms ease;
+      will-change: transform;
+    }
+
+    .app-bar.nav-hidden {
+      transform: translateY(calc(-100% - 3px));
+      opacity: 0.98;
+      pointer-events: none;
+    }
+
+    /* Restore responsive actions; the entire bar now hides on downward scroll. */
+    @media (max-width: 1180px) {
+      .app-bar-inner {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+          "brand toggle"
+          "actions actions";
+        grid-template-rows: auto auto;
+        min-height: 52px;
+        padding: 8px 16px 10px;
+        column-gap: 10px;
+        row-gap: 8px;
+      }
+
+      .top-actions {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        max-height: 160px;
+        margin: 0;
+        padding: 0;
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+        visibility: visible;
+        overflow: visible;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+      }
+
+      .top-actions > button {
+        flex: 1 1 132px;
+        width: auto;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app-bar-inner {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "brand"
+          "toggle"
+          "actions";
+        padding: 8px 10px 10px;
+      }
+      .brand { text-align: center; }
+      .segmented { width: 100%; justify-self: stretch; }
+      .top-actions > button { flex-basis: 112px; }
+    }
+
+    /* Redo completion state. */
+    .completion.redo { color: var(--red); }
+    .completion.redo .check {
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
+      color: #fff;
+      border-color: var(--red);
+      background: var(--red);
+      font-size: .82rem;
+      font-weight: 800;
+      line-height: 1;
+      text-align: center;
+    }
+    .completion-redo {
+      color: var(--red);
+      background: color-mix(in srgb, var(--red) 12%, var(--surface-2));
+    }
+
+
+
+    .timer-float.menu-open {
+      opacity: 0;
+      transform: translateY(10px) scale(.96);
+      pointer-events: none !important;
+    }
+
+    .timer-dialog-current {
+      display: grid;
+      place-items: center;
+      gap: 4px;
+      margin-bottom: 16px;
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: var(--surface-2);
+      text-align: center;
+    }
+
+    .timer-dialog-current span {
+      color: var(--secondary);
+      font-size: .82rem;
+      font-weight: 400;
+    }
+
+    .timer-dialog-current strong {
+      color: var(--text);
+      font-size: clamp(2rem, 7vw, 3.25rem);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.045em;
+      line-height: 1;
+    }
+
+    .timer-dialog-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: -4px 0 16px;
+    }
+
+    .timer-dialog-actions button {
+      width: 100%;
+      min-width: 0;
+    }
+
+    /* Floating timer interaction and animation. */
+    .timer-float {
+      z-index: 2147483646 !important;
+      transition: width 260ms cubic-bezier(.22,1,.36,1),
+                  border-radius 260ms cubic-bezier(.22,1,.36,1),
+                  box-shadow 220ms ease,
+                  opacity 180ms ease,
+                  transform 260ms cubic-bezier(.22,1,.36,1);
+      pointer-events: auto !important;
+    }
+
+    .timer-tab,
+    .timer-panel,
+    .timer-panel button { pointer-events: auto; }
+
+    .timer-panel {
+      display: block;
+      max-height: 190px;
+      padding: 0 12px 12px;
+      overflow: hidden;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      transform-origin: top center;
+      transition: max-height 250ms cubic-bezier(.22,1,.36,1),
+                  padding 250ms cubic-bezier(.22,1,.36,1),
+                  opacity 160ms ease,
+                  transform 250ms cubic-bezier(.22,1,.36,1);
+    }
+
+    .timer-float.minimized {
+      width: 112px;
+      min-width: 112px;
+      border-radius: 999px;
+    }
+
+    .timer-float.minimized .timer-panel {
+      display: block;
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      opacity: 0;
+      transform: translateY(-8px) scale(.96);
+      pointer-events: none;
+    }
+
+    .timer-display-button {
+      display: block;
+      width: 100%;
+      min-height: 0;
+      padding: 0;
+      color: var(--text);
+      background: transparent;
+      box-shadow: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .timer-display-button:hover {
+      color: var(--blue);
+      background: color-mix(in srgb, var(--blue) 8%, transparent);
+      box-shadow: none;
+    }
+
   </style>
 </head>
 <body>
@@ -1764,6 +2100,7 @@
           <select id="completionFilter">
             <option value="">All questions</option>
             <option value="complete">Completed</option>
+            <option value="redo">Redo</option>
             <option value="incomplete">Not completed</option>
           </select>
         </label>
@@ -2101,15 +2438,23 @@
       </section>
 
       <section class="settings-section">
-        <h3>Motion</h3>
-        <div class="grid-2">
+        <h3>More Settings</h3>
+        <div class="grid-2 settings-toggle-grid">
           <label class="toggle-row">
-            <span><strong>Reduce motion</strong></span>
+            <span>Reduce motion</span>
             <input id="reduceMotionSetting" type="checkbox" />
           </label>
           <label class="toggle-row">
-            <span><strong>Animate theme changes</strong></span>
-            <input id="animateThemeSetting" type="checkbox" />
+            <span>Reduce transparency</span>
+            <input id="reduceTransparencySetting" type="checkbox" />
+          </label>
+          <label class="toggle-row">
+            <span>Timer in tab title</span>
+            <input id="timerInTitleSetting" type="checkbox" />
+          </label>
+          <label class="toggle-row">
+            <span>Floating timer</span>
+            <input id="floatingTimerSetting" type="checkbox" />
           </label>
         </div>
       </section>
@@ -2132,6 +2477,15 @@
       <button class="secondary" data-close="timerDialog">Close</button>
     </div>
     <div class="dialog-body">
+      <div class="timer-dialog-current" aria-live="off">
+        <span id="timerDialogState">Timer not set</span>
+        <strong id="timerDialogCurrent">25:00</strong>
+      </div>
+      <div class="timer-dialog-actions" aria-label="Timer controls">
+        <button id="timerDialogPauseBtn" class="secondary" type="button">Start</button>
+        <button id="timerDialogResetBtn" class="secondary" type="button">Reset</button>
+        <button id="timerDialogEndBtn" class="danger" type="button">End</button>
+      </div>
       <div class="timer-inputs">
         <label>Hours<input id="timerHours" type="number" min="0" max="99" step="1" value="0" inputmode="numeric" /></label>
         <label>Minutes<input id="timerMinutes" type="number" min="0" max="59" step="1" value="25" inputmode="numeric" /></label>
@@ -2168,11 +2522,11 @@
       <span id="timerToggleSymbol" class="timer-toggle-symbol" aria-hidden="true">−</span>
     </button>
     <div class="timer-panel">
-      <div id="timerDisplay" class="timer-display">25:00</div>
+      <button id="timerDisplay" class="timer-display timer-display-button" type="button" aria-label="Set timer">25:00</button>
       <div class="timer-controls">
         <button id="pauseTimerBtn" class="secondary" type="button">Pause</button>
         <button id="resetTimerBtn" class="secondary" type="button">Reset</button>
-        <button id="editTimerBtn" class="secondary" type="button">Set</button>
+        <button id="endTimerBtn" class="danger" type="button">End</button>
       </div>
     </div>
   </aside>
@@ -2235,7 +2589,7 @@
     const DRIVE_APP_PROPERTY_VALUE = "v1";
     const DEFAULT_GOOGLE_CLIENT_ID = ""; // Optional: paste your Web OAuth client ID here before publishing.
 
-    const APP_VERSION = "6.1.0";
+    const APP_VERSION = "6.6.0";
     const SETTINGS_KEY = "satQuestionBankTracker.settings.v1";
     const TIMER_KEY = "satQuestionBankTracker.timer.v1";
     const DEFAULT_SETTINGS = Object.freeze({
@@ -2245,7 +2599,9 @@
       density: "comfortable",
       autoConnect: true,
       reduceMotion: false,
-      animateTheme: true,
+      reduceTransparency: false,
+      timerInTitle: true,
+      floatingTimer: true,
       sunLat: null,
       sunLon: null,
       sunLocationUpdatedAt: "",
@@ -2268,7 +2624,9 @@
         density: allowed.density.includes(saved?.density) ? saved.density : DEFAULT_SETTINGS.density,
         autoConnect: saved?.autoConnect === undefined ? DEFAULT_SETTINGS.autoConnect : Boolean(saved.autoConnect),
         reduceMotion: saved?.reduceMotion === undefined ? DEFAULT_SETTINGS.reduceMotion : Boolean(saved.reduceMotion),
-        animateTheme: saved?.animateTheme === undefined ? DEFAULT_SETTINGS.animateTheme : Boolean(saved.animateTheme),
+        reduceTransparency: saved?.reduceTransparency === undefined ? DEFAULT_SETTINGS.reduceTransparency : Boolean(saved.reduceTransparency),
+        timerInTitle: saved?.timerInTitle === undefined ? DEFAULT_SETTINGS.timerInTitle : Boolean(saved.timerInTitle),
+        floatingTimer: saved?.floatingTimer === undefined ? DEFAULT_SETTINGS.floatingTimer : Boolean(saved.floatingTimer),
         sunLat: saved?.sunLat !== null && saved?.sunLat !== "" && Number.isFinite(Number(saved?.sunLat)) ? Number(saved.sunLat) : null,
         sunLon: saved?.sunLon !== null && saved?.sunLon !== "" && Number.isFinite(Number(saved?.sunLon)) ? Number(saved.sunLon) : null,
         sunLocationUpdatedAt: String(saved?.sunLocationUpdatedAt || ""),
@@ -2510,11 +2868,55 @@
       showToast("Undone", snapshot.label);
     }
 
+    const timerHomeAnchor = document.createComment("floating-timer-home");
+    $("floatingTimer")?.before(timerHomeAnchor);
+
+    function moveTimerIntoCard(dialog) {
+      const timer = $("floatingTimer");
+      if (!timer || dialog?.id !== "editDialog" || timer.parentElement === dialog) return;
+      if (timerPopoverOpen()) {
+        try { timer.hidePopover(); } catch (_) {}
+      }
+      dialog.appendChild(timer);
+    }
+
+    function openDialogs() {
+      return [...document.querySelectorAll("dialog[open]")]
+        .filter(dialog => !dialog.classList.contains("closing"));
+    }
+
+    function floatingTimerAllowed() {
+      const dialogs = openDialogs();
+      return dialogs.length === 0 || dialogs.every(dialog => dialog.id === "editDialog");
+    }
+
+    function refreshFloatingTimerVisibility({ bringToFront = false } = {}) {
+      if (!appSettings.floatingTimer || !timerState.durationMs || !floatingTimerAllowed()) {
+        dismissTimerPopover();
+        return;
+      }
+      ensureTimerPopover(bringToFront);
+    }
+
+    function restoreTimerHome() {
+      const timer = $("floatingTimer");
+      if (!timer || !timerHomeAnchor.parentNode || timer.parentNode === timerHomeAnchor.parentNode) {
+        requestAnimationFrame(() => refreshFloatingTimerVisibility({ bringToFront: true }));
+        return;
+      }
+      if (timerPopoverOpen()) {
+        try { timer.hidePopover(); } catch (_) {}
+      }
+      timerHomeAnchor.parentNode.insertBefore(timer, timerHomeAnchor.nextSibling);
+      requestAnimationFrame(() => refreshFloatingTimerVisibility({ bringToFront: true }));
+    }
+
     function openDialog(dialog) {
       if (!dialog || dialog.open) return;
       dialog.classList.remove("closing");
+      moveTimerIntoCard(dialog);
       dialog.showModal();
-      requestAnimationFrame(() => ensureTimerPopover(true));
+      requestAnimationFrame(() => refreshFloatingTimerVisibility({ bringToFront: dialog.id === "editDialog" }));
     }
 
     function closeDialogAnimated(dialog) {
@@ -2539,11 +2941,16 @@
       const dialog = $("settingsDialog");
       openDialog(dialog);
 
+      dialog.scrollTop = 0;
       requestAnimationFrame(() => {
         const section = $("driveSettingsSection");
-        section?.scrollIntoView({ block: "start", behavior: appSettings.reduceMotion ? "auto" : "smooth" });
+        const header = dialog.querySelector(".dialog-head");
+        if (section) {
+          const top = Math.max(0, section.offsetTop - (header?.offsetHeight || 0) - 12);
+          dialog.scrollTo({ top, behavior: appSettings.reduceMotion ? "auto" : "smooth" });
+        }
         if (focusClientId || !driveSync.clientId) {
-          setTimeout(() => $("googleClientIdInput")?.focus(), appSettings.reduceMotion ? 0 : 220);
+          setTimeout(() => $("googleClientIdInput")?.focus({ preventScroll: true }), appSettings.reduceMotion ? 0 : 240);
         }
       });
     }
@@ -2571,20 +2978,8 @@
       return appSettings.theme === "sun" ? resolvedSunTheme() : appSettings.theme;
     }
 
-    function animateThemeTransition() {
-      if (appSettings.reduceMotion || !appSettings.animateTheme) return;
+    function applyAppearanceAttributes(nextTheme) {
       const root = document.documentElement;
-      root.classList.remove("theme-transitioning");
-      void root.offsetWidth;
-      root.classList.add("theme-transitioning");
-      clearTimeout(animateThemeTransition.timer);
-      animateThemeTransition.timer = setTimeout(() => root.classList.remove("theme-transitioning"), 460);
-    }
-
-    function applyAppSettings({ animate = false } = {}) {
-      const root = document.documentElement;
-      const nextTheme = resolvedThemeSetting();
-      if (animate && root.dataset.theme && root.dataset.theme !== nextTheme) animateThemeTransition();
       root.dataset.theme = nextTheme;
       root.dataset.themeMode = appSettings.theme;
       root.dataset.palette = appSettings.palette;
@@ -2592,6 +2987,34 @@
       root.dataset.textSize = appSettings.textSize;
       root.dataset.density = appSettings.density;
       root.dataset.reduceMotion = appSettings.reduceMotion ? "true" : "false";
+      root.dataset.reduceTransparency = appSettings.reduceTransparency ? "true" : "false";
+    }
+
+    function applyAppSettings({ animate = false } = {}) {
+      const root = document.documentElement;
+      const nextTheme = resolvedThemeSetting();
+      const themeChanged = Boolean(root.dataset.theme && root.dataset.theme !== nextTheme);
+      const shouldAnimate = animate && themeChanged && !appSettings.reduceMotion;
+      const apply = () => applyAppearanceAttributes(nextTheme);
+
+      if (shouldAnimate && typeof document.startViewTransition === "function") {
+        try {
+          document.startViewTransition(apply);
+        } catch (_) {
+          apply();
+        }
+      } else if (shouldAnimate && typeof root.animate === "function") {
+        apply();
+        root.classList.remove("theme-transition-fallback");
+        void root.offsetWidth;
+        root.classList.add("theme-transition-fallback");
+        clearTimeout(applyAppSettings.fallbackTimer);
+        applyAppSettings.fallbackTimer = setTimeout(() => {
+          root.classList.remove("theme-transition-fallback");
+        }, 280);
+      } else {
+        apply();
+      }
 
       clearInterval(sunThemeInterval);
       sunThemeInterval = null;
@@ -2634,7 +3057,9 @@
       $("densitySetting").value = appSettings.density;
       $("autoConnectSetting").checked = appSettings.autoConnect;
       $("reduceMotionSetting").checked = appSettings.reduceMotion;
-      $("animateThemeSetting").checked = appSettings.animateTheme;
+      $("reduceTransparencySetting").checked = appSettings.reduceTransparency;
+      $("timerInTitleSetting").checked = appSettings.timerInTitle;
+      $("floatingTimerSetting").checked = appSettings.floatingTimer;
       $("autosaveDelaySetting").value = String(appSettings.autosaveDelay);
       $("versionInfo").textContent = `Version ${APP_VERSION}`;
       updateSunThemeUi();
@@ -2673,7 +3098,9 @@
         density: $("densitySetting").value,
         autoConnect: $("autoConnectSetting").checked,
         reduceMotion: $("reduceMotionSetting").checked,
-        animateTheme: $("animateThemeSetting").checked,
+        reduceTransparency: $("reduceTransparencySetting").checked,
+        timerInTitle: $("timerInTitleSetting").checked,
+        floatingTimer: $("floatingTimerSetting").checked,
         autosaveDelay: Number($("autosaveDelaySetting").value) || DEFAULT_SETTINGS.autosaveDelay
       };
 
@@ -2682,6 +3109,7 @@
       appSettings = normalizeAppSettings(nextSettings);
       persistAppSettings(true, true);
       updateSunThemeUi();
+      updateTimerUi();
 
       if (appSettings.theme === "sun" && previousTheme !== "sun"
           && !hasSunLocation()) {
@@ -3736,8 +4164,7 @@
       region.appendChild(toast);
 
       setTimeout(() => {
-        toast.style.opacity = "0";
-        toast.style.transform = "translateY(8px)";
+        toast.classList.add("is-leaving");
         setTimeout(() => {
           toast.remove();
           if (!region.children.length && typeof region.hidePopover === "function") {
@@ -4141,11 +4568,17 @@
       const skill = $("skillFilter").value;
 
       return section.questions.filter(q => {
-        const complete = q.status !== "unattempted";
+        const redo = q.status === "incorrect";
+        const complete = q.status !== "unattempted" && !redo;
+        const incomplete = q.status === "unattempted";
+        const completionMatches = !completion
+          || (completion === "complete" && complete)
+          || (completion === "redo" && redo)
+          || (completion === "incomplete" && incomplete);
         const searchable = [q.number, q.questionId, q.domain, q.skill, q.notes].join(" ").toLowerCase();
 
         return (!search || searchable.includes(search))
-          && (!completion || (completion === "complete" ? complete : !complete))
+          && completionMatches
           && (!status || q.status === status)
           && (!domain || q.domain === domain)
           && (!skill || q.skill === skill);
@@ -4172,7 +4605,7 @@
       const section = currentSection();
       const total = section.targetCount;
       const ids = section.questions.filter(q => q.questionId).length;
-      const completed = section.questions.filter(q => q.status !== "unattempted").length;
+      const completed = section.questions.filter(q => q.status !== "unattempted" && q.status !== "incorrect").length;
       const correct = section.questions.filter(q => q.status === "correct").length;
       const incorrect = section.questions.filter(q => q.status === "incorrect").length;
       const partial = section.questions.filter(q => q.status === "partial").length;
@@ -4235,7 +4668,11 @@
       const domains = validDomains(state.activeSection);
 
       $("questionRows").innerHTML = pageItems.map(q => {
-        const completed = q.status !== "unattempted";
+        const redo = q.status === "incorrect";
+        const completed = q.status !== "unattempted" && !redo;
+        const completionClass = redo ? "redo" : (completed ? "done" : "");
+        const completionIcon = redo ? "✕" : (completed ? "✓" : "");
+        const completionLabel = redo ? "Redo" : (completed ? "Completed" : "Not completed");
         const skillListId = skillListIdFor(state.activeSection, q.domain);
 
         return `
@@ -4275,9 +4712,9 @@
             </td>
             <td><span class="status ${q.status}">${escapeHtml(statusDisplay(q.status))}</span></td>
             <td>
-              <span class="completion ${completed ? "done" : ""}">
-                <span class="check">${completed ? "✓" : ""}</span>
-                ${completed ? "Completed" : "Not completed"}
+              <span class="completion ${completionClass}">
+                <span class="check">${completionIcon}</span>
+                ${completionLabel}
               </span>
             </td>
             <td>
@@ -4292,7 +4729,10 @@
                 value="${q.attempts}"
               />
             </td>
-            <td class="notes-cell"><div class="notes-preview">${q.notes ? escapeHtml(q.notes.slice(0, 240)) + (q.notes.length > 240 ? "…" : "") : "—"}</div></td>
+            <td class="notes-cell"><div class="notes-preview">${(() => {
+              const preview = notePreviewText(q);
+              return preview ? escapeHtml(preview.slice(0, 240)) + (preview.length > 240 ? "…" : "") : "—";
+            })()}</div></td>
           </tr>
         `;
       }).join("");
@@ -4457,14 +4897,44 @@
     }
 
     function legacyNoteToMathLive(value) {
-      const text = String(value || "");
+      const text = String(value || "").replace(/\r\n?/g, "\n");
       if (!text) return "";
       if (/\\[a-zA-Z]+|[\^_{}]/.test(text)) {
         return text
           .replace(/\\\((.*?)\\\)/gs, "$1")
-          .replace(/\\\[(.*?)\\\]/gs, "$1");
+          .replace(/\\\[(.*?)\\\]/gs, "$1")
+          .replace(/\n/g, " \\\\ ");
       }
-      return `\\text{${escapeLatexText(text)}}`;
+      return text
+        .split("\n")
+        .map(line => `\\text{${escapeLatexText(line)}}`)
+        .join(" \\\\ ");
+    }
+
+    function ensureMathNoteMultiline(value) {
+      const text = String(value || "").trim();
+      if (!text) return "\\displaylines{}";
+      if (/^\\displaylines\{[\s\S]*\}$/.test(text)
+          || /^\\begin\{(?:gather|align|multline|split)\}/.test(text)) return text;
+      return `\\displaylines{${text}}`;
+    }
+
+    function normalizeStoredMathNote(value) {
+      const text = String(value || "");
+      if (/^\\displaylines\{\s*\}$/.test(text.trim())) return "";
+      return text;
+    }
+
+    function notePreviewText(question) {
+      let text = String(question?.notes || "");
+      if (question?.notesFormat === "mathlive") {
+        const match = text.match(/^\\displaylines\{([\s\S]*)\}$/);
+        if (match) text = match[1];
+        text = text
+          .replace(/\\\\/g, "\n")
+          .replace(/\\text\{([^{}]*)\}/g, "$1");
+      }
+      return text;
     }
 
     function setEditorNotesValue(question) {
@@ -4475,9 +4945,9 @@
       textField.classList.toggle("hidden", isMath);
 
       if (isMath) {
-        const value = question.notesFormat === "mathlive"
+        const value = ensureMathNoteMultiline(question.notesFormat === "mathlive"
           ? question.notes
-          : legacyNoteToMathLive(question.notes);
+          : legacyNoteToMathLive(question.notes));
         if (typeof mathField.setValue === "function") {
           mathField.setValue(value, { silenceNotifications: true });
         } else {
@@ -4489,11 +4959,14 @@
     }
 
     function getEditorNotesValue() {
-      if (state.activeSection === "rw") return String($("editNotesText").value || "").trim();
+      if (state.activeSection === "rw") {
+        return String($("editNotesText").value || "").replace(/\r\n?/g, "\n");
+      }
       const field = $("editNotes");
-      return String(typeof field.getValue === "function"
+      const value = String(typeof field.getValue === "function"
         ? field.getValue("latex")
-        : field.value || "").trim();
+        : field.value || "");
+      return normalizeStoredMathNote(value);
     }
 
     function editorNotesFormat() {
@@ -4584,12 +5057,14 @@
       const q = getQuestion(state.activeNumber);
       if (!q) return;
 
-      const complete = q.status !== "unattempted";
-      $("completionNotice").textContent = complete
-        ? `Completed · ${statusDisplay(q.status)}`
-        : "Not completed";
+      const redo = q.status === "incorrect";
+      const complete = q.status !== "unattempted" && !redo;
+      $("completionNotice").textContent = redo
+        ? "✕ Redo · Incorrect"
+        : (complete ? `Completed · ${statusDisplay(q.status)}` : "Not completed");
 
       $("completionNotice").classList.toggle("completion-success", complete);
+      $("completionNotice").classList.toggle("completion-redo", redo);
       $("attemptSummary").textContent =
         `${q.attempts} attempt${q.attempts === 1 ? "" : "s"} · ` +
         `${q.correctAttempts} correct · ${q.incorrectAttempts} incorrect · ` +
@@ -5203,7 +5678,11 @@
 
     function ensureTimerPopover(bringToFront = false) {
       const timer = $("floatingTimer");
-      if (!timer || !timerState.durationMs) return;
+      if (!timer || !timerState.durationMs || !appSettings.floatingTimer) return;
+      if (!floatingTimerAllowed()) {
+        dismissTimerPopover();
+        return;
+      }
       timer.classList.remove("hidden");
       if (typeof timer.showPopover === "function") {
         try {
@@ -5245,6 +5724,7 @@
     }
 
     function showFloatingTimer(expand = true) {
+      if (!appSettings.floatingTimer) return;
       if (expand) timerState.minimized = false;
       ensureTimerPopover(true);
       saveTimerState();
@@ -5262,6 +5742,17 @@
       timerState.minimized = !timerState.minimized;
       ensureTimerPopover(true);
       saveTimerState();
+    }
+
+    function updateTimerPopupForMenus() {
+      requestAnimationFrame(() => refreshFloatingTimerVisibility({ bringToFront: true }));
+    }
+
+    function openTimerMenu() {
+      seedTimerDialogFromState();
+      const dialog = $("timerDialog");
+      if (!dialog.open) openDialog(dialog);
+      updateTimerUi();
     }
 
     function openTimerEndedDialog() {
@@ -5294,15 +5785,36 @@
       const displayMs = timerState.endedShown ? 0 : (remaining || timerState.durationMs);
       const text = formatTimer(displayMs);
       $("timerDisplay").textContent = text;
-      $("pauseTimerBtn").textContent = timerState.running ? "Pause" : "Resume";
-      $("pauseTimerBtn").disabled = !timerState.durationMs || (!timerState.running && !timerState.remainingMs);
+      const actionLabel = timerState.running
+        ? "Pause"
+        : (timerState.remainingMs > 0 ? "Resume" : "Start");
+      $("pauseTimerBtn").textContent = actionLabel;
+      $("pauseTimerBtn").disabled = !timerState.durationMs;
       $("resetTimerBtn").disabled = !timerState.durationMs;
+      $("endTimerBtn").disabled = !timerState.durationMs;
+      $("timerDialogPauseBtn").textContent = actionLabel;
+      $("timerDialogPauseBtn").disabled = !timerState.durationMs;
+      $("timerDialogResetBtn").disabled = !timerState.durationMs;
+      $("timerDialogEndBtn").disabled = !timerState.durationMs;
+
+      const timerDialogCurrent = $("timerDialogCurrent");
+      const timerDialogState = $("timerDialogState");
+      if (timerDialogCurrent) timerDialogCurrent.textContent = timerState.durationMs ? text : "—";
+      if (timerDialogState) {
+        timerDialogState.textContent = !timerState.durationMs
+          ? "Timer not set"
+          : (timerState.running ? "Running" : (timerState.remainingMs > 0 ? "Paused" : "Ended"));
+      }
       $("timerBtn").textContent = timerState.durationMs && (timerState.running || timerState.remainingMs)
         ? `Timer ${formatTimer(remaining)}`
         : "Timer";
 
-      if (timerState.durationMs) ensureTimerPopover(false);
-      else dismissTimerPopover();
+      const timerActive = timerState.durationMs && (timerState.running || timerState.remainingMs || timerState.endedShown);
+      document.title = appSettings.timerInTitle && timerActive
+        ? `${text} · SAT Question Bank Tracker`
+        : "SAT Question Bank Tracker";
+
+      refreshFloatingTimerVisibility();
     }
 
     function startTimerFromInputs(prefix = "timer") {
@@ -5336,6 +5848,11 @@
       } else if (timerState.remainingMs > 0) {
         timerState.running = true;
         timerState.endsAt = Date.now() + timerState.remainingMs;
+      } else if (timerState.durationMs > 0) {
+        timerState.remainingMs = timerState.durationMs;
+        timerState.running = true;
+        timerState.endsAt = Date.now() + timerState.durationMs;
+        timerState.endedShown = false;
       }
       saveTimerState();
       updateTimerUi();
@@ -5361,14 +5878,7 @@
       $("timerSeconds").value = totalSeconds % 60;
     }
 
-    $("timerBtn").addEventListener("click", () => {
-      if (timerState.durationMs && (timerState.running || timerState.remainingMs > 0)) {
-        showFloatingTimer(true);
-      } else {
-        seedTimerDialogFromState();
-        openDialog($("timerDialog"));
-      }
-    });
+    $("timerBtn").addEventListener("click", openTimerMenu);
 
     $("startTimerBtn").addEventListener("click", () => {
       if (startTimerFromInputs("timer")) closeDialogAnimated($("timerDialog"));
@@ -5378,12 +5888,26 @@
       if (startTimerFromInputs("endedTimer")) closeDialogAnimated($("timerEndedDialog"));
     });
 
+    function endTimer() {
+      timerState.durationMs = 0;
+      timerState.remainingMs = 0;
+      timerState.endsAt = 0;
+      timerState.running = false;
+      timerState.minimized = false;
+      timerState.endedShown = false;
+      saveTimerState();
+      dismissTimerPopover();
+      updateTimerUi();
+      showToast("Timer ended", "Timer cleared.");
+    }
+
     $("pauseTimerBtn").addEventListener("click", pauseOrResumeTimer);
     $("resetTimerBtn").addEventListener("click", resetTimer);
-    $("editTimerBtn").addEventListener("click", () => {
-      seedTimerDialogFromState();
-      openDialog($("timerDialog"));
-    });
+    $("endTimerBtn").addEventListener("click", endTimer);
+    $("timerDialogPauseBtn").addEventListener("click", pauseOrResumeTimer);
+    $("timerDialogResetBtn").addEventListener("click", resetTimer);
+    $("timerDialogEndBtn").addEventListener("click", endTimer);
+    $("timerDisplay").addEventListener("click", openTimerMenu);
 
     let timerTabDrag = null;
     let suppressTimerTabClick = false;
@@ -5435,6 +5959,29 @@
 
     window.addEventListener("resize", applyTimerPosition);
     timerTickHandle = setInterval(updateTimerUi, 250);
+
+    let lastPageScrollY = window.scrollY;
+    let navScrollFrame = 0;
+    function updateNavigationForScroll() {
+      navScrollFrame = 0;
+      const currentY = Math.max(0, window.scrollY);
+      const delta = currentY - lastPageScrollY;
+      const appBar = document.querySelector(".app-bar");
+      const modalOpen = Boolean(document.querySelector("dialog[open]"));
+
+      if (appBar) {
+        if (currentY < 72 || delta < -5 || modalOpen) {
+          appBar.classList.remove("nav-hidden");
+        } else if (delta > 5 && currentY > 110) {
+          appBar.classList.add("nav-hidden");
+        }
+      }
+      lastPageScrollY = currentY;
+    }
+
+    window.addEventListener("scroll", () => {
+      if (!navScrollFrame) navScrollFrame = requestAnimationFrame(updateNavigationForScroll);
+    }, { passive: true });
 
     async function handleInteractiveDriveConnection(triggerButton = null) {
       const settingsButton = $("connectDriveBtn");
@@ -5576,7 +6123,7 @@
     });
     $('sunLocationBtn').addEventListener('click', requestSunLocation);
 
-    ['themeSetting', 'paletteSetting', 'textSizeSetting', 'densitySetting', 'autoConnectSetting', 'reduceMotionSetting', 'animateThemeSetting', 'autosaveDelaySetting']
+    ['themeSetting', 'paletteSetting', 'textSizeSetting', 'densitySetting', 'autoConnectSetting', 'reduceMotionSetting', 'reduceTransparencySetting', 'timerInTitleSetting', 'floatingTimerSetting', 'autosaveDelaySetting']
       .forEach(id => {
         $(id).addEventListener('change', updateSettingsFromUi);
       });
@@ -5755,6 +6302,9 @@
       scheduleEditorDraftAutosave();
     });
     $("editDialog").addEventListener("close", saveEditorDraft);
+    $("editDialog").addEventListener("close", restoreTimerHome);
+    $("timerDialog").addEventListener("close", updateTimerPopupForMenus);
+    $("timerEndedDialog").addEventListener("close", updateTimerPopupForMenus);
     $("bulkSkill").addEventListener("focus", event => focusSkillDropdown(event.target));
     $("bulkSkill").addEventListener("input", event => {
       event.target.classList.remove("invalid");
@@ -5881,7 +6431,10 @@
         if (dialog.id === "editDialog") saveEditorDraft();
         closeDialogAnimated(dialog);
       });
-      dialog.addEventListener("close", () => dialog.classList.remove("closing"));
+      dialog.addEventListener("close", () => {
+        dialog.classList.remove("closing");
+        requestAnimationFrame(() => refreshFloatingTimerVisibility({ bringToFront: true }));
+      });
     });
 
     customElements.whenDefined("math-field").then(() => {
@@ -5901,6 +6454,7 @@
         sqrt: "\\sqrt{#0}",
         root: "\\sqrt{#0}"
       };
+      if (field.registers) field.registers.jot = "7pt";
       if (state.activeNumber) {
         const q = getQuestion(state.activeNumber);
         if (q) setEditorNotesValue(q);
