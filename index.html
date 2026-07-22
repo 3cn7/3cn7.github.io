@@ -162,6 +162,7 @@
       -webkit-backdrop-filter: saturate(180%) blur(22px);
     }
 
+    /* Restored pre-autohide top-bar layout formula. */
     .app-bar-inner {
       width: min(1480px, 100%);
       min-height: 66px;
@@ -882,6 +883,8 @@
       border: 1px solid var(--line);
       border-radius: var(--radius-lg);
       background: var(--surface-2);
+      text-align: center;
+      justify-items: center;
     }
 
     .drive-status-card strong {
@@ -1754,81 +1757,6 @@
       backdrop-filter: none !important;
     }
 
-    .app-bar-inner {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-      grid-template-areas: "brand toggle actions";
-      transition: min-height 280ms cubic-bezier(.22,1,.36,1),
-                  padding 280ms cubic-bezier(.22,1,.36,1),
-                  gap 280ms cubic-bezier(.22,1,.36,1);
-    }
-
-    .brand { grid-area: brand; }
-    .segmented { grid-area: toggle; justify-self: center; }
-    .top-actions {
-      grid-area: actions;
-      justify-self: end;
-      max-height: 96px;
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      overflow: clip;
-      transition: max-height 260ms cubic-bezier(.22,1,.36,1),
-                  opacity 180ms ease,
-                  transform 260ms cubic-bezier(.22,1,.36,1),
-                  visibility 0s linear 0s;
-    }
-
-    @media (max-width: 1180px) {
-      .app-bar-inner {
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-areas:
-          "brand toggle"
-          "actions actions";
-        grid-template-rows: auto 0fr;
-        min-height: 52px;
-        padding: 7px 16px;
-        column-gap: 10px;
-        row-gap: 0;
-      }
-
-      .brand { text-align: left; }
-      .segmented { width: auto; justify-self: end; }
-      .top-actions {
-        width: 100%;
-        height: 0;
-        min-height: 0;
-        max-height: 0;
-        margin: 0;
-        padding: 0;
-        opacity: 0;
-        transform: translateY(-8px) scale(.98);
-        pointer-events: none;
-        visibility: hidden;
-        transition: max-height 260ms cubic-bezier(.22,1,.36,1),
-                    opacity 150ms ease,
-                    transform 220ms cubic-bezier(.22,1,.36,1),
-                    visibility 0s linear 260ms;
-      }
-    }
-
-    @media (max-width: 620px) {
-      .app-bar-inner {
-        grid-template-columns: minmax(0, 1fr) minmax(170px, auto);
-        grid-template-areas:
-          "brand toggle"
-          "actions actions";
-        padding: 7px 10px;
-      }
-      .brand {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: .92rem;
-      }
-      .segmented button { padding-inline: 11px; }
-    }
-
-
     /* Scroll-aware navigation. */
     .app-bar {
       transition: transform 280ms cubic-bezier(.22,1,.36,1),
@@ -1841,57 +1769,6 @@
       transform: translateY(calc(-100% - 3px));
       opacity: 0.98;
       pointer-events: none;
-    }
-
-    /* Restore responsive actions; the entire bar now hides on downward scroll. */
-    @media (max-width: 1180px) {
-      .app-bar-inner {
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-areas:
-          "brand toggle"
-          "actions actions";
-        grid-template-rows: auto auto;
-        min-height: 52px;
-        padding: 8px 16px 10px;
-        column-gap: 10px;
-        row-gap: 8px;
-      }
-
-      .top-actions {
-        width: 100%;
-        height: auto;
-        min-height: 0;
-        max-height: 160px;
-        margin: 0;
-        padding: 0;
-        opacity: 1;
-        transform: none;
-        pointer-events: auto;
-        visibility: visible;
-        overflow: visible;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 7px;
-      }
-
-      .top-actions > button {
-        flex: 1 1 132px;
-        width: auto;
-      }
-    }
-
-    @media (max-width: 620px) {
-      .app-bar-inner {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-          "brand"
-          "toggle"
-          "actions";
-        padding: 8px 10px 10px;
-      }
-      .brand { text-align: center; }
-      .segmented { width: 100%; justify-self: stretch; }
-      .top-actions > button { flex-basis: 112px; }
     }
 
     /* Redo completion state. */
@@ -2785,7 +2662,6 @@
     };
 
     const $ = id => document.getElementById(id);
-
 
     const undoStack = [];
     const MAX_UNDO_STEPS = 20;
@@ -5637,6 +5513,7 @@
       try { saved = JSON.parse(localStorage.getItem(TIMER_KEY)) || {}; } catch (_) {}
       return {
         durationMs: Math.max(0, Number(saved.durationMs) || 0),
+        lastSetDurationMs: Math.max(0, Number(saved.lastSetDurationMs) || Number(saved.durationMs) || 25 * 60 * 1000),
         remainingMs: Math.max(0, Number(saved.remainingMs) || 0),
         endsAt: Math.max(0, Number(saved.endsAt) || 0),
         running: Boolean(saved.running),
@@ -5757,9 +5634,10 @@
 
     function openTimerEndedDialog() {
       if ($("timerEndedDialog").open) return;
-      $("endedTimerHours").value = 0;
-      $("endedTimerMinutes").value = 25;
-      $("endedTimerSeconds").value = 0;
+      const presetSeconds = Math.max(0, Math.round((timerState.lastSetDurationMs || timerState.durationMs || 25 * 60 * 1000) / 1000));
+      $("endedTimerHours").value = Math.floor(presetSeconds / 3600);
+      $("endedTimerMinutes").value = Math.floor((presetSeconds % 3600) / 60);
+      $("endedTimerSeconds").value = presetSeconds % 60;
       openDialog($("timerEndedDialog"));
     }
 
@@ -5828,6 +5706,7 @@
       }
 
       timerState.durationMs = durationMs;
+      timerState.lastSetDurationMs = durationMs;
       timerState.remainingMs = durationMs;
       timerState.endsAt = Date.now() + durationMs;
       timerState.running = true;
@@ -5871,7 +5750,7 @@
     }
 
     function seedTimerDialogFromState() {
-      const sourceMs = timerRemainingMs() || timerState.durationMs || 25 * 60 * 1000;
+      const sourceMs = timerRemainingMs() || timerState.durationMs || timerState.lastSetDurationMs || 25 * 60 * 1000;
       const totalSeconds = Math.max(0, Math.round(sourceMs / 1000));
       $("timerHours").value = Math.floor(totalSeconds / 3600);
       $("timerMinutes").value = Math.floor((totalSeconds % 3600) / 60);
@@ -5879,6 +5758,24 @@
     }
 
     $("timerBtn").addEventListener("click", openTimerMenu);
+
+    function saveLastTimerInputs(prefix = "timer") {
+      const hours = Math.max(0, Math.floor(Number($(`${prefix}Hours`)?.value) || 0));
+      const minutes = Math.max(0, Math.floor(Number($(`${prefix}Minutes`)?.value) || 0));
+      const seconds = Math.max(0, Math.floor(Number($(`${prefix}Seconds`)?.value) || 0));
+      const durationMs = ((hours * 3600) + (minutes * 60) + seconds) * 1000;
+      if (durationMs > 0) {
+        timerState.lastSetDurationMs = durationMs;
+        saveTimerState();
+      }
+    }
+
+    for (const prefix of ["timer", "endedTimer"]) {
+      for (const unit of ["Hours", "Minutes", "Seconds"]) {
+        $(`${prefix}${unit}`)?.addEventListener("input", () => saveLastTimerInputs(prefix));
+        $(`${prefix}${unit}`)?.addEventListener("change", () => saveLastTimerInputs(prefix));
+      }
+    }
 
     $("startTimerBtn").addEventListener("click", () => {
       if (startTimerFromInputs("timer")) closeDialogAnimated($("timerDialog"));
