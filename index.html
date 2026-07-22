@@ -1284,6 +1284,7 @@
       min-height: 30px;
       padding: 4px 9px;
       font-size: 0.76rem;
+      white-space: nowrap;
     }
 
     .settings-section select,
@@ -2178,9 +2179,7 @@
       <div id="editNotesLabel" style="margin-top:11px">
         <div class="notes-heading">
           <span>Notes</span>
-          <button id="notesModeBtn" class="secondary notes-mode-button" type="button">
-            Math input <span class="keyboard">Ctrl + Shift + M</span>
-          </button>
+          <button id="notesModeBtn" class="secondary notes-mode-button" type="button" title="Toggle math and regular text input (Ctrl + Shift + M)">Math input</button>
         </div>
         <math-field
           id="editNotes"
@@ -4509,17 +4508,21 @@
       const improvementScores = new Map();
       section.questions.forEach(q => {
         if (!["incorrect", "partial", "skipped"].includes(q.status)) return;
-        const topic = q.skill && q.skill !== "Unknown"
-          ? q.skill
-          : (q.domain && q.domain !== "Unknown" ? q.domain : "");
-        if (!topic) return;
+        const domain = q.domain && q.domain !== "Unknown" ? q.domain : "";
+        const skill = q.skill && q.skill !== "Unknown" ? q.skill : "";
+        if (!domain || !skill) return;
         const priority = q.status === "incorrect" ? 3 : (q.status === "partial" ? 2 : 1);
-        improvementScores.set(topic, (improvementScores.get(topic) || 0) + priority);
+        const key = `${domain}\u0000${skill}`;
+        const existing = improvementScores.get(key) || { domain, skill, score: 0 };
+        existing.score += priority;
+        improvementScores.set(key, existing);
       });
-      const recommendation = [...improvementScores.entries()]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0];
+      const recommendation = [...improvementScores.values()]
+        .sort((a, b) => b.score - a.score
+          || a.domain.localeCompare(b.domain)
+          || a.skill.localeCompare(b.skill))[0];
       $("improvementStat").textContent = recommendation
-        ? `Practice ${recommendation}`
+        ? `Practice ${recommendation.skill} in ${recommendation.domain}`
         : "Add results to get a suggestion";
       $("progressBar").style.width = percent + "%";
       $("progressText").textContent =
@@ -4840,7 +4843,8 @@
       const button = $("notesModeBtn");
       if (!button) return;
       const regularText = mathNotesInputMode === "text";
-      button.innerHTML = `${regularText ? "Regular text" : "Math input"} <span class="keyboard">Ctrl + Shift + M</span>`;
+      button.textContent = regularText ? "Regular text" : "Math input";
+      button.title = "Toggle math and regular text input (Ctrl + Shift + M)";
       button.setAttribute("aria-label", `${regularText ? "Regular text" : "Math input"} mode. Press Control Shift M to toggle.`);
     }
 
