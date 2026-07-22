@@ -23,6 +23,7 @@
       --blue-hover: #0077ed;
       --green: #1f8a4c;
       --red: #d92d20;
+      --yellow: #9a6700;
       --orange: #b65f00;
       --partial: #7657d6;
       --shadow: 0 12px 38px rgba(0, 0, 0, 0.07);
@@ -48,6 +49,7 @@
         --blue-hover: #409cff;
         --green: #30d158;
         --red: #ff453a;
+        --yellow: #ffd60a;
         --orange: #ff9f0a;
         --partial: #bf8cff;
         --shadow: 0 16px 44px rgba(0, 0, 0, 0.35);
@@ -851,7 +853,14 @@
     .hidden { display: none !important; }
 
     .brand {
+      color: var(--secondary);
       transition: color 180ms ease, text-shadow 180ms ease, opacity 180ms ease;
+    }
+
+    .brand[data-drive-state="disconnected"],
+    .brand[data-drive-state="configured"] {
+      color: var(--secondary);
+      text-shadow: none;
     }
 
     .brand[data-drive-state="connected"] {
@@ -860,13 +869,13 @@
     }
 
     .brand[data-drive-state="syncing"] {
-      color: var(--blue);
-      text-shadow: 0 0 18px color-mix(in srgb, var(--blue) 24%, transparent);
+      color: var(--yellow);
+      text-shadow: 0 0 18px color-mix(in srgb, var(--yellow) 24%, transparent);
     }
 
     .brand[data-drive-state="pending"] {
-      color: var(--orange);
-      text-shadow: 0 0 18px color-mix(in srgb, var(--orange) 22%, transparent);
+      color: var(--yellow);
+      text-shadow: 0 0 18px color-mix(in srgb, var(--yellow) 22%, transparent);
     }
 
     .brand[data-drive-state="error"] {
@@ -874,9 +883,9 @@
       text-shadow: 0 0 18px color-mix(in srgb, var(--red) 22%, transparent);
     }
 
-    .brand[data-drive-state="configured"] {
-      color: var(--blue);
-    }
+    .mobile-brand,
+    .mobile-drive-status,
+    .nav-short-label { display: none; }
 
     .drive-status-card {
       display: grid;
@@ -1937,6 +1946,145 @@
       box-shadow: none;
     }
 
+    /* Phone navigation: persistent status and actions in a bottom control bar. */
+    @media (max-width: 760px), (max-height: 520px) and (pointer: coarse) {
+      :root { --phone-bar-offset: 150px; }
+
+      html { scroll-padding-bottom: calc(var(--phone-bar-offset) + env(safe-area-inset-bottom)); }
+
+      .app-bar {
+        position: fixed;
+        inset: auto 0 0;
+        z-index: 100;
+        border-top: 1px solid var(--line);
+        border-bottom: 0;
+        border-radius: 24px 24px 0 0;
+        box-shadow: 0 -14px 38px rgba(0, 0, 0, 0.14);
+        transform: none !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
+
+      .app-bar-inner,
+      html[data-density="compact"] .app-bar-inner {
+        width: min(640px, 100%);
+        min-height: 0;
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(104px, 0.52fr);
+        grid-template-areas:
+          "toggle status"
+          "actions actions";
+        align-items: stretch;
+        gap: 7px 8px;
+      }
+
+      .app-bar .brand { display: none; }
+
+      .mobile-brand {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 0.86rem;
+        font-weight: 750;
+        letter-spacing: -0.01em;
+        text-align: left;
+      }
+
+      .segmented {
+        grid-area: toggle;
+        width: 100%;
+        min-width: 0;
+        justify-self: stretch;
+      }
+
+      .segmented button {
+        min-width: 0;
+        min-height: 40px;
+        padding: 5px 8px;
+        font-size: 0.78rem;
+      }
+
+      .nav-wide-label { display: none; }
+      .nav-short-label { display: inline; }
+
+      .mobile-drive-status {
+        grid-area: status;
+        display: inline-flex;
+        width: 100%;
+        min-width: 0;
+        min-height: 40px;
+        padding: 6px 9px;
+        gap: 7px;
+        border-radius: 13px;
+        overflow: hidden;
+        font-size: 0.76rem;
+      }
+
+      .mobile-drive-status > :last-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .drive-status-dot {
+        width: 9px;
+        height: 9px;
+        flex: 0 0 9px;
+        border-radius: 50%;
+        background: var(--secondary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--secondary) 14%, transparent);
+      }
+
+      .mobile-drive-status[data-drive-state="disconnected"],
+      .mobile-drive-status[data-drive-state="configured"] { color: var(--secondary); }
+      .mobile-drive-status[data-drive-state="connected"] { color: var(--green); }
+      .mobile-drive-status[data-drive-state="connected"] .drive-status-dot { background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 16%, transparent); }
+      .mobile-drive-status[data-drive-state="syncing"],
+      .mobile-drive-status[data-drive-state="pending"] { color: var(--yellow); }
+      .mobile-drive-status[data-drive-state="syncing"] .drive-status-dot,
+      .mobile-drive-status[data-drive-state="pending"] .drive-status-dot { background: var(--yellow); box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 16%, transparent); }
+      .mobile-drive-status[data-drive-state="error"] { color: var(--red); }
+      .mobile-drive-status[data-drive-state="error"] .drive-status-dot { background: var(--red); box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 16%, transparent); }
+
+      .top-actions {
+        grid-area: actions;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: repeat(2, 34px);
+        width: 100%;
+        gap: 6px;
+      }
+
+      .top-actions > button,
+      .top-actions > .undo-button.is-visible {
+        width: 100%;
+        min-width: 0 !important;
+        max-width: none !important;
+        min-height: 34px;
+        padding: 5px 7px;
+        font-size: 0.72rem;
+        white-space: nowrap;
+      }
+
+      #driveBtn { display: none !important; }
+      #timerBtn { grid-column: 1; grid-row: 1; }
+      #bulkBtn { grid-column: 2; grid-row: 1; }
+      #dataBtn { grid-column: 3; grid-row: 1; }
+      #settingsBtn { grid-column: 1; grid-row: 2; }
+      #mainUndoBtn { grid-column: 2; grid-row: 2; }
+      #nextBtn { grid-column: 3; grid-row: 2; }
+      .top-actions:not(:has(#mainUndoBtn.is-visible)) #nextBtn { grid-column: 2 / 4; }
+
+      .shell {
+        padding-bottom: calc(var(--phone-bar-offset) + 28px + env(safe-area-inset-bottom)) !important;
+      }
+
+      .toast-region[popover] {
+        inset: auto 10px calc(var(--phone-bar-offset) + 10px + env(safe-area-inset-bottom)) auto;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1944,19 +2092,24 @@
     <div class="app-bar-inner">
       <div id="brandTitle" class="brand" data-drive-state="disconnected">SAT Question Bank Tracker</div>
 
+      <button id="mobileDriveStatusBtn" class="secondary mobile-drive-status" type="button" data-drive-state="disconnected">
+        <span class="drive-status-dot" aria-hidden="true"></span>
+        <span id="mobileDriveStatusText">Local</span>
+      </button>
+
       <div id="sectionToggle" class="segmented" data-active="math" aria-label="Section">
         <button id="mathTab" class="active" data-section="math">Math</button>
-        <button id="rwTab" data-section="rw">Reading & Writing</button>
+        <button id="rwTab" data-section="rw"><span class="nav-wide-label">Reading &amp; Writing</span><span class="nav-short-label">R&amp;W</span></button>
       </div>
 
       <div class="top-actions">
         <button id="driveBtn" class="secondary drive-gate-button" aria-hidden="true" tabindex="-1">Setup</button>
         <button id="timerBtn" class="secondary">Timer</button>
-        <button id="bulkBtn" class="secondary">Bulk paste</button>
+        <button id="bulkBtn" class="secondary"><span class="nav-wide-label">Bulk paste</span><span class="nav-short-label">Bulk</span></button>
         <button id="dataBtn" class="secondary">Data</button>
         <button id="settingsBtn" class="secondary">Settings</button>
         <button id="mainUndoBtn" class="secondary undo-button" aria-hidden="true" tabindex="-1">Undo</button>
-        <button id="nextBtn">Next unattempted</button>
+        <button id="nextBtn"><span class="nav-wide-label">Next unattempted</span><span class="nav-short-label">Next</span></button>
       </div>
     </div>
   </nav>
@@ -1964,6 +2117,7 @@
   <main class="shell">
     <section class="hero">
       <div>
+        <div id="mobileBrandTitle" class="brand mobile-brand" data-drive-state="disconnected">SAT Question Bank Tracker</div>
         <h1 id="sectionTitle">Math</h1>
         <p id="sectionSubtitle" class="subtle">1,756 questions.</p>
       </div>
@@ -3325,6 +3479,7 @@
     function updateDriveUi() {
       const button = $("driveBtn");
       const brand = $("brandTitle");
+      const mobileStatus = $("mobileDriveStatusBtn");
       const tokenConnected = driveSync.connected && isDriveTokenValid();
       const setupComplete = Boolean(driveSync.clientId && driveSync.fileId);
 
@@ -3403,9 +3558,25 @@
           : "Connect Google Drive";
       }
 
-      if (brand) {
-        brand.dataset.driveState = brandState;
-        brand.title = `${title} · ${detail}`;
+      for (const brandTitle of [brand, $("mobileBrandTitle")]) {
+        if (!brandTitle) continue;
+        brandTitle.dataset.driveState = brandState;
+        brandTitle.title = `${title} · ${detail}`;
+      }
+      if (mobileStatus) {
+        const mobileLabels = {
+          disconnected: "Local",
+          configured: "Ready",
+          syncing: "Syncing",
+          pending: "Pending",
+          error: "Error",
+          connected: "Synced"
+        };
+        mobileStatus.dataset.driveState = brandState;
+        $("mobileDriveStatusText").textContent = mobileLabels[brandState] || "Local";
+        mobileStatus.disabled = Boolean(driveSync.autoConnectInProgress);
+        mobileStatus.title = `${title} · ${detail}`;
+        mobileStatus.setAttribute("aria-label", `${title}. ${detail}. Open Drive settings.`);
       }
       if ($("driveStatusTitle")) $("driveStatusTitle").textContent = title;
       if ($("driveStatusDetail")) $("driveStatusDetail").textContent = detail;
@@ -5650,6 +5821,10 @@
       timer.classList.add("hidden");
     }
 
+    function phoneBottomBarActive() {
+      return matchMedia("(max-width: 760px), (max-height: 520px) and (pointer: coarse)").matches;
+    }
+
     function applyTimerPosition() {
       const timer = $("floatingTimer");
       if (!timer) return;
@@ -5657,11 +5832,14 @@
         timer.style.left = "";
         timer.style.top = "";
         timer.style.right = "18px";
-        timer.style.bottom = "18px";
+        timer.style.bottom = phoneBottomBarActive()
+          ? "calc(160px + env(safe-area-inset-bottom))"
+          : "18px";
         return;
       }
       const maxX = Math.max(8, window.innerWidth - timer.offsetWidth - 8);
-      const maxY = Math.max(8, window.innerHeight - timer.offsetHeight - 8);
+      const bottomGuard = phoneBottomBarActive() ? 160 : 8;
+      const maxY = Math.max(8, window.innerHeight - timer.offsetHeight - bottomGuard);
       timerState.x = Math.min(maxX, Math.max(8, timerState.x));
       timerState.y = Math.min(maxY, Math.max(8, timerState.y));
       timer.style.left = `${timerState.x}px`;
@@ -5982,6 +6160,21 @@
       }
 
       await handleInteractiveDriveConnection($("driveBtn"));
+    });
+
+    $("mobileDriveStatusBtn").addEventListener("click", async () => {
+      if (driveSync.connected && isDriveTokenValid()) {
+        openDriveSettings();
+        return;
+      }
+
+      const setupComplete = Boolean(driveSync.clientId && driveSync.fileId);
+      if (!setupComplete) {
+        openDriveSettings({ focusClientId: !driveSync.clientId });
+        return;
+      }
+
+      await handleInteractiveDriveConnection($("mobileDriveStatusBtn"));
     });
 
     $("connectDriveBtn").addEventListener("click", async () => {
