@@ -87,6 +87,17 @@
 
     button, input, select, textarea { font: inherit; }
 
+    button,
+    .button,
+    a,
+    input,
+    select,
+    textarea,
+    label,
+    [role="button"] {
+      -webkit-tap-highlight-color: transparent;
+    }
+
     button, .button {
       display: inline-flex;
       align-items: center;
@@ -108,6 +119,14 @@
     button:hover, .button:hover { background: var(--blue-hover); }
     button:active, .button:active { transform: scale(0.98); }
     button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+    button:focus-visible,
+    .button:focus-visible,
+    a:focus-visible,
+    [role="button"]:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
 
     button.secondary {
       color: var(--text);
@@ -301,7 +320,6 @@
 
     .card, .panel {
       border: 1px solid var(--line);
-      background: var(--surface);
       box-shadow: var(--shadow);
     }
 
@@ -309,6 +327,7 @@
       min-height: 98px;
       padding: 17px;
       border-radius: var(--radius-lg);
+      background: var(--surface-2);
     }
 
     .card-value {
@@ -336,6 +355,7 @@
       padding: 16px;
       border-radius: var(--radius-xl);
       margin-bottom: 14px;
+      background: var(--surface);
     }
 
     .progress-track {
@@ -1525,22 +1545,42 @@
 
     .toast-region:popover-open { display: grid; }
 
-    /* Wider, single-scroll bulk import dialog. */
+    /* Viewport-fitted data tools: the page and dialog frame stay fixed. */
+    #bulkDialog,
+    #dataDialog {
+      max-height: calc(100dvh - 14px);
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+
     #bulkDialog {
       width: min(1080px, calc(100% - 18px));
-      max-height: calc(100dvh - 14px);
-      overflow-y: auto;
-      overscroll-behavior: contain;
+    }
+
+    #bulkDialog[open],
+    #dataDialog[open] {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+    }
+
+    #dataDialog[open] {
+      grid-template-rows: auto minmax(0, 1fr);
     }
 
     #bulkDialog .dialog-head,
-    #bulkDialog .dialog-foot {
+    #bulkDialog .dialog-foot,
+    #dataDialog .dialog-head {
       position: static;
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
     }
 
-    #bulkDialog .dialog-body { overflow: visible; }
+    #bulkDialog .dialog-body,
+    #dataDialog .dialog-body {
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
 
     .page-jump input {
       width: 72px;
@@ -1693,9 +1733,21 @@
 
     @media (max-width: 760px) {
       #bulkDialog { width: calc(100% - 8px); max-height: calc(100dvh - 8px); }
+      #dataDialog { width: calc(100% - 12px); max-height: calc(100dvh - 8px); }
       #bulkDialog .dialog-head,
       #bulkDialog .dialog-body,
-      #bulkDialog .dialog-foot { padding-left: 14px; padding-right: 14px; }
+      #bulkDialog .dialog-foot,
+      #dataDialog .dialog-head,
+      #dataDialog .dialog-body { padding-left: 14px; padding-right: 14px; }
+      #bulkDialog .grid-2,
+      #dataDialog .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #bulkDialog .range-preview { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      #bulkDialog .range-card { padding: 9px 7px; }
+      #bulkDialog .range-card .value { font-size: 1rem; }
+      #bulkDialog .range-card .label { font-size: 0.66rem; }
+      #bulkDialog .import-area { min-height: clamp(120px, 24dvh, 220px); }
+      #dataDialog h3 { margin-bottom: 8px; }
+      #dataDialog hr { height: 8px; margin: 8px 0 !important; }
       .notes-preview { min-width: 240px; }
       .notes-cell { min-width: 260px; }
     }
@@ -2007,13 +2059,16 @@
 
       .app-bar .brand { display: none; }
 
+      .hero > div { width: 100%; }
+
       .mobile-brand {
         display: block;
-        margin-bottom: 7px;
-        font-size: 0.86rem;
-        font-weight: 750;
-        letter-spacing: -0.01em;
-        text-align: left;
+        width: 100%;
+        margin-bottom: 10px;
+        font-size: clamp(1rem, 4vw, 1.2rem);
+        font-weight: 780;
+        letter-spacing: -0.025em;
+        text-align: center;
       }
 
       .segmented {
@@ -2191,6 +2246,7 @@
 
       .mobile-overflow-menu {
         position: absolute;
+        z-index: 1;
         right: 0;
         bottom: calc(100% + 10px);
         left: auto;
@@ -2246,7 +2302,14 @@
 
       .app-bar.mobile-menu-open .mobile-overflow-menu > button {
         opacity: 1;
+        visibility: visible !important;
+        pointer-events: auto !important;
         transform: translateY(0) scale(1);
+      }
+
+      .mobile-overflow-menu[aria-hidden="true"] > button {
+        visibility: hidden !important;
+        pointer-events: none !important;
       }
 
       .app-bar.mobile-menu-open .mobile-overflow-menu > button:nth-child(1) { transition-delay: 40ms; }
@@ -2267,6 +2330,8 @@
       }
 
       .mobile-more-button {
+        position: relative;
+        z-index: 2;
         grid-area: more;
         display: inline-grid !important;
         width: 42px !important;
@@ -2333,12 +2398,28 @@
         width: 100%;
         overflow: hidden;
         border-radius: 18px;
-        background: var(--surface);
+        background: var(--surface-2);
         box-shadow: none;
       }
 
       .question-list-panel tbody tr.result-unattempted {
-        background: var(--surface);
+        background: var(--surface-2);
+      }
+
+      .question-list-panel tbody tr.result-correct {
+        background: color-mix(in srgb, var(--green) 12%, var(--surface));
+      }
+
+      .question-list-panel tbody tr.result-incorrect {
+        background: color-mix(in srgb, var(--red) 12%, var(--surface));
+      }
+
+      .question-list-panel tbody tr.result-partial {
+        background: color-mix(in srgb, var(--partial) 12%, var(--surface));
+      }
+
+      .question-list-panel tbody tr.result-skipped {
+        background: color-mix(in srgb, var(--orange) 12%, var(--surface));
       }
 
       .question-list-panel tbody td { display: none; }
@@ -2361,7 +2442,7 @@
         padding: 14px;
         border-radius: 17px;
         color: var(--text);
-        background: transparent;
+        background: inherit;
         box-shadow: none;
         font-family: var(--app-font);
         text-align: left;
@@ -2370,7 +2451,8 @@
 
       .mobile-question-summary:hover {
         color: var(--text);
-        background: color-mix(in srgb, var(--text) 5%, transparent);
+        background: inherit;
+        box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--text) 5%, transparent);
       }
 
       .mobile-question-content {
@@ -5782,12 +5864,8 @@
       return [...getFilteredQuestions()].reverse().find(q => q.number < currentNumber)?.number || null;
     }
 
-    function moveToNext(currentNumber, completionMessage = "") {
+    function moveToNext(currentNumber) {
       const nextNumber = nextNumberAfter(currentNumber);
-
-      if (completionMessage) {
-        showToast(`Question ${currentNumber} completed`, completionMessage);
-      }
 
       if (nextNumber) {
         switchEditorQuestion(nextNumber, 1);
@@ -5823,8 +5901,7 @@
       save(true);
       renderAll();
 
-      const label = status.charAt(0).toUpperCase() + status.slice(1);
-      moveToNext(number, label);
+      moveToNext(number);
     }
 
     function saveAndNext() {
@@ -6573,8 +6650,13 @@
       if (shouldOpen) appBar.classList.remove("mobile-minimized");
       moreButton.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
       moreButton.setAttribute("aria-label", shouldOpen ? "Close more actions" : "More actions");
-      if (phoneLayout) menu.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
-      else menu.removeAttribute("aria-hidden");
+      if (phoneLayout) {
+        menu.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+        menu.toggleAttribute("inert", !shouldOpen);
+      } else {
+        menu.removeAttribute("aria-hidden");
+        menu.removeAttribute("inert");
+      }
     }
 
     function updateNavigationForScroll() {
