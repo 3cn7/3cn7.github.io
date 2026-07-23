@@ -71,6 +71,20 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    html.main-frame-scroll-locked,
+    html.main-frame-scroll-locked body {
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+
+    html.main-frame-scroll-locked body {
+      position: fixed;
+      top: var(--main-frame-scroll-offset, 0);
+      right: 0;
+      left: 0;
+      width: 100%;
+    }
+
     button, input, select, textarea { font: inherit; }
 
     button, .button {
@@ -504,6 +518,15 @@
       width: 34%;
       min-width: 330px;
     }
+
+    .question-list-panel {
+      container-type: inline-size;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .mobile-question-summary { display: none; }
 
     .pagination {
       display: flex;
@@ -2217,6 +2240,8 @@
         transition: opacity 150ms ease,
                     transform 240ms cubic-bezier(.22, 1, .36, 1),
                     background 160ms ease;
+        grid-column: 1 !important;
+        grid-row: auto !important;
       }
 
       .app-bar.mobile-menu-open .mobile-overflow-menu > button {
@@ -2231,8 +2256,6 @@
       .app-bar.mobile-menu-open .mobile-overflow-menu > button:nth-child(5) { transition-delay: 140ms; }
 
       .mobile-overflow-menu > .undo-button:not(.is-visible) { display: none; }
-      .mobile-overflow-menu #settingsBtn,
-      .mobile-overflow-menu #mainUndoBtn { grid-column: 1; grid-row: auto; }
 
       #nextBtn {
         grid-area: next;
@@ -2272,6 +2295,197 @@
 
       .toast-region[popover] {
         inset: auto 10px calc(var(--phone-bar-offset) + 12px + env(safe-area-inset-bottom)) auto;
+      }
+    }
+
+    /* Switch before the editable columns would need horizontal scrolling. */
+    @container (max-width: 1339px) {
+      .question-list-panel .table-wrap {
+        overflow: visible;
+        width: calc(100% - 6px);
+        margin-inline: 3px;
+        padding: 7px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: var(--surface);
+        box-shadow: none;
+      }
+
+      .question-list-panel table {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        overflow: visible;
+        border-radius: 0;
+        background: transparent;
+      }
+
+      .question-list-panel thead { display: none; }
+
+      .question-list-panel tbody {
+        display: grid;
+        gap: 10px;
+        width: 100%;
+      }
+
+      .question-list-panel tbody tr {
+        display: block;
+        width: 100%;
+        overflow: hidden;
+        border-radius: 18px;
+        background: var(--surface);
+        box-shadow: none;
+      }
+
+      .question-list-panel tbody tr.result-unattempted {
+        background: var(--surface);
+      }
+
+      .question-list-panel tbody td { display: none; }
+
+      .question-list-panel .question-number-cell {
+        display: block;
+        width: 100%;
+        padding: 0;
+      }
+
+      .question-list-panel .question-number-cell > strong { display: none; }
+
+      .mobile-question-summary {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: stretch;
+        gap: 12px;
+        width: 100%;
+        min-height: 0;
+        padding: 14px;
+        border-radius: 17px;
+        color: var(--text);
+        background: transparent;
+        box-shadow: none;
+        font-family: var(--app-font);
+        text-align: left;
+        white-space: normal;
+      }
+
+      .mobile-question-summary:hover {
+        color: var(--text);
+        background: color-mix(in srgb, var(--text) 5%, transparent);
+      }
+
+      .mobile-question-content {
+        display: grid;
+        align-content: start;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .mobile-question-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .mobile-question-title strong {
+        flex: 0 0 auto;
+        font-size: 0.94rem;
+        letter-spacing: -0.02em;
+      }
+
+      .mobile-question-id {
+        min-width: 0;
+        padding: 4px 7px;
+        overflow: hidden;
+        border: 0;
+        border-radius: 7px;
+        color: var(--blue);
+        background: color-mix(in srgb, var(--blue) 10%, transparent);
+        font-family: var(--app-font);
+        font-size: 0.68rem;
+        font-weight: 700;
+        line-height: 1;
+        text-overflow: ellipsis;
+        text-transform: lowercase;
+        white-space: nowrap;
+      }
+
+      .mobile-question-id.is-empty {
+        color: var(--tertiary);
+        font-family: inherit;
+        font-weight: 650;
+        text-transform: none;
+      }
+
+      .mobile-question-taxonomy,
+      .mobile-question-note {
+        display: -webkit-box;
+        min-width: 0;
+        overflow: hidden;
+        color: var(--secondary);
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+        -webkit-box-orient: vertical;
+      }
+
+      .mobile-question-taxonomy {
+        font-size: 0.78rem;
+        font-weight: 650;
+        -webkit-line-clamp: 2;
+      }
+
+      .mobile-question-note {
+        font-size: 0.74rem;
+        font-weight: 500;
+        -webkit-line-clamp: 1;
+      }
+
+      .mobile-question-note.is-empty { color: var(--tertiary); }
+
+      .mobile-question-trailing {
+        display: grid;
+        grid-template-columns: auto auto;
+        grid-template-areas:
+          "status status"
+          "attempts chevron";
+        align-content: space-between;
+        justify-items: end;
+        gap: 8px 6px;
+      }
+
+      .mobile-question-trailing .status {
+        grid-area: status;
+        min-height: 24px;
+        padding: 3px 7px;
+        border: 0;
+        background: color-mix(in srgb, currentColor 9%, transparent);
+        font-size: 0.67rem;
+      }
+
+      .mobile-question-attempts {
+        grid-area: attempts;
+        align-self: center;
+        color: var(--tertiary);
+        font-size: 0.68rem;
+        font-weight: 650;
+        white-space: nowrap;
+      }
+
+      .mobile-question-chevron {
+        grid-area: chevron;
+        display: inline-grid;
+        width: 23px;
+        height: 23px;
+        place-items: center;
+        border-radius: 50%;
+        color: var(--secondary);
+        background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+        font-size: 1rem;
+        line-height: 1;
+      }
+
+      .question-list-panel .pagination {
+        padding: 4px 2px 0;
       }
     }
 
@@ -2390,7 +2604,7 @@
       </div>
     </section>
 
-    <section class="panel">
+    <section class="panel question-list-panel">
       <div class="table-wrap">
         <table>
           <thead>
@@ -3174,11 +3388,36 @@
       requestAnimationFrame(() => refreshFloatingTimerVisibility({ bringToFront: true }));
     }
 
+    let mainFrameScrollY = 0;
+
+    function lockMainFrameScroll() {
+      const root = document.documentElement;
+      if (root.classList.contains("main-frame-scroll-locked")) return;
+      mainFrameScrollY = Math.max(0, window.scrollY);
+      root.style.setProperty("--main-frame-scroll-offset", `${-mainFrameScrollY}px`);
+      root.classList.add("main-frame-scroll-locked");
+    }
+
+    function unlockMainFrameScroll() {
+      if (document.querySelector("dialog[open]")) return;
+      const root = document.documentElement;
+      if (!root.classList.contains("main-frame-scroll-locked")) return;
+      root.classList.remove("main-frame-scroll-locked");
+      root.style.removeProperty("--main-frame-scroll-offset");
+      window.scrollTo(0, mainFrameScrollY);
+    }
+
     function openDialog(dialog) {
       if (!dialog || dialog.open) return;
       dialog.classList.remove("closing");
       moveTimerIntoCard(dialog);
-      dialog.showModal();
+      lockMainFrameScroll();
+      try {
+        dialog.showModal();
+      } catch (error) {
+        unlockMainFrameScroll();
+        throw error;
+      }
       requestAnimationFrame(() => refreshFloatingTimerVisibility({ bringToFront: dialog.id === "editDialog" }));
     }
 
@@ -3713,7 +3952,7 @@
         brandState = "connected";
       } else if (driveSync.needsInteraction && setupComplete) {
         gateText = "Connect";
-        title = "Sign in required";
+        title = "Connection required";
         detail = "Connect Google Drive";
         brandState = "pending";
       } else if (driveSync.fileId && driveSync.dirty) {
@@ -3760,7 +3999,7 @@
         const mobileNeedsAction = !tokenConnected && !driveSync.autoConnectInProgress;
         mobileStatus.dataset.driveState = brandState;
         mobileStatus.dataset.driveAttention = mobileNeedsAction ? "true" : "false";
-        $("mobileDriveStatusText").textContent = setupComplete ? "Sign in" : "Set up";
+        $("mobileDriveStatusText").textContent = setupComplete ? "Connect" : "Set up";
         mobileStatus.disabled = Boolean(driveSync.autoConnectInProgress);
         mobileStatus.title = `${title} · ${detail}`;
         mobileStatus.setAttribute("aria-label", `${title}. ${detail}. Open Drive settings.`);
@@ -4963,10 +5202,38 @@
       $("questionRows").innerHTML = pageItems.map(q => {
         const skillListId = skillListIdFor(state.activeSection, q.domain);
         const symbol = statusSymbol(q.status);
+        const notePreview = notePreviewText(q);
+        const mobileNote = notePreview
+          ? notePreview.slice(0, 120) + (notePreview.length > 120 ? "…" : "")
+          : "Tap to open details";
+        const mobileStatus = q.status === "partial" ? "Partial" : statusDisplay(q.status);
+        const attemptLabel = `${q.attempts} ${q.attempts === 1 ? "try" : "tries"}`;
 
         return `
           <tr class="result-${q.status}" data-number="${q.number}">
-            <td><strong>${q.number}</strong></td>
+            <td class="question-number-cell">
+              <strong>${q.number}</strong>
+              <button
+                class="mobile-question-summary"
+                type="button"
+                data-open-question="${q.number}"
+                aria-label="Open question ${q.number}"
+              >
+                <span class="mobile-question-content">
+                  <span class="mobile-question-title">
+                    <strong>Question ${q.number}</strong>
+                    <span class="mobile-question-id ${q.questionId ? "" : "is-empty"}">${escapeHtml(q.questionId || "No ID")}</span>
+                  </span>
+                  <span class="mobile-question-taxonomy">${escapeHtml(q.domain)} · ${escapeHtml(q.skill)}</span>
+                  <span class="mobile-question-note ${notePreview ? "" : "is-empty"}">${escapeHtml(mobileNote)}</span>
+                </span>
+                <span class="mobile-question-trailing">
+                  <span class="status ${q.status}">${symbol ? `<span class="status-symbol" aria-hidden="true">${symbol}</span>` : ""}${escapeHtml(mobileStatus)}</span>
+                  <span class="mobile-question-attempts">${escapeHtml(attemptLabel)}</span>
+                  <span class="mobile-question-chevron" aria-hidden="true">›</span>
+                </span>
+              </button>
+            </td>
             <td>
               <input
                 class="id-input"
@@ -6570,6 +6837,11 @@
     });
 
     $("questionRows").addEventListener("click", event => {
+      const mobileOpenButton = event.target.closest("[data-open-question]");
+      if (mobileOpenButton) {
+        openEditor(Number(mobileOpenButton.dataset.openQuestion));
+        return;
+      }
       if (event.target.closest("input, select, textarea, button, a, label, [role=option], .skill-dropdown")) return;
       const row = event.target.closest("tr[data-number]");
       if (row) openEditor(Number(row.dataset.number));
@@ -6840,6 +7112,7 @@
       });
       dialog.addEventListener("close", () => {
         dialog.classList.remove("closing");
+        unlockMainFrameScroll();
         requestAnimationFrame(() => refreshFloatingTimerVisibility({ bringToFront: true }));
       });
     });
