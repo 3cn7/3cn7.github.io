@@ -395,6 +395,31 @@
       align-items: center;
     }
 
+    .filter-panel {
+      position: relative;
+      z-index: 10;
+      container-type: inline-size;
+    }
+
+    .search-field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      color: var(--secondary);
+      font-size: 0.84rem;
+      font-weight: 650;
+    }
+
+    .android-search-bar,
+    .filter-controls {
+      display: contents;
+    }
+
+    .search-icon,
+    .filter-menu-button {
+      display: none;
+    }
+
     .table-wrap {
       overflow: auto;
       border: 1px solid var(--line);
@@ -2165,7 +2190,7 @@
     }
 
     @media (max-width: 760px), (max-height: 520px) and (pointer: coarse) {
-      :root { --phone-bar-offset: 86px; }
+      :root { --phone-bar-offset: 94px; }
 
       .app-bar {
         inset: auto 0 calc(10px + env(safe-area-inset-bottom));
@@ -2194,15 +2219,15 @@
       .app-bar-inner,
       html[data-density="compact"] .app-bar-inner {
         position: relative;
-        width: min(372px, calc(100% - 18px));
+        width: min(408px, calc(100% - 14px));
         min-height: 0;
         margin: 0 auto;
-        padding: 6px;
+        padding: 7px;
         display: grid;
         grid-template-columns: auto minmax(0, 1fr) auto auto;
         grid-template-areas: "status toggle next more";
         align-items: center;
-        gap: 6px;
+        gap: 7px;
         border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
         border-radius: 999px;
         background: color-mix(in srgb, var(--glass) 82%, transparent);
@@ -2216,9 +2241,9 @@
       }
 
       .mobile-drive-status {
-        width: 42px;
-        min-width: 42px;
-        min-height: 42px;
+        width: 46px;
+        min-width: 46px;
+        min-height: 46px;
         padding: 0;
         justify-content: center;
         border-radius: 999px;
@@ -2239,7 +2264,10 @@
         box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 16%, transparent);
       }
 
-      .segmented button { min-height: 42px; }
+      .segmented button {
+        min-height: 46px;
+        font-size: 0.8rem;
+      }
 
       .top-actions { display: contents; }
       .app-bar #driveBtn { display: none !important; }
@@ -2259,7 +2287,7 @@
         visibility: hidden;
         pointer-events: none;
         transform: translate(8px, 12px) scale(0.32);
-        transform-origin: calc(100% - 27px) calc(100% + 37px);
+        transform-origin: calc(100% - 30px) calc(100% + 40px);
         filter: blur(5px);
         transition: opacity 180ms ease,
                     visibility 0s linear 260ms,
@@ -2323,9 +2351,9 @@
       #nextBtn {
         grid-area: next;
         width: auto;
-        min-width: 58px !important;
-        min-height: 42px;
-        padding: 7px 13px;
+        min-width: 64px !important;
+        min-height: 46px;
+        padding: 8px 15px;
         border-radius: 999px;
       }
 
@@ -2334,11 +2362,11 @@
         z-index: 2;
         grid-area: more;
         display: inline-grid !important;
-        width: 42px !important;
-        min-width: 42px !important;
-        max-width: 42px !important;
-        height: 42px;
-        min-height: 42px !important;
+        width: 46px !important;
+        min-width: 46px !important;
+        max-width: 46px !important;
+        height: 46px;
+        min-height: 46px !important;
         padding: 0 !important;
         place-items: center;
         border-radius: 50%;
@@ -2365,11 +2393,128 @@
 
     /* Switch before the editable columns would need horizontal scrolling. */
     @container (max-width: 1339px) {
+      .filter-panel .toolbar {
+        display: block;
+      }
+
+      .filter-panel .search-field-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+      }
+
+      .filter-panel .android-search-bar {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr) 42px;
+        align-items: center;
+        gap: 8px;
+        min-height: 54px;
+        padding: 5px 6px 5px 17px;
+        border-radius: 999px;
+        background: var(--control);
+        box-shadow: var(--small-shadow);
+      }
+
+      .filter-panel .search-icon {
+        position: relative;
+        display: block;
+        width: 17px;
+        height: 17px;
+        border: 2px solid var(--secondary);
+        border-radius: 50%;
+      }
+
+      .filter-panel .search-icon::after {
+        content: "";
+        position: absolute;
+        right: -5px;
+        bottom: -3px;
+        width: 7px;
+        height: 2px;
+        border-radius: 999px;
+        background: var(--secondary);
+        transform: rotate(45deg);
+        transform-origin: left center;
+      }
+
+      .filter-panel .android-search-bar input,
+      .filter-panel .android-search-bar input:focus {
+        min-width: 0;
+        min-height: 42px;
+        padding: 0 4px;
+        border: 0;
+        color: var(--text);
+        background: transparent;
+        box-shadow: none;
+        font-size: 0.94rem;
+      }
+
+      .filter-panel .filter-menu-button {
+        display: inline-grid !important;
+        width: 42px;
+        min-width: 42px;
+        max-width: 42px;
+        height: 42px;
+        min-height: 42px;
+        padding: 0;
+        place-items: center;
+        border-radius: 50%;
+        color: var(--secondary);
+        background: transparent;
+        font-size: 0.9rem;
+        letter-spacing: 0.08em;
+      }
+
+      .filter-panel .filter-menu-button:hover,
+      .filter-panel .filter-menu-button.has-active {
+        color: var(--blue);
+        background: color-mix(in srgb, var(--blue) 10%, transparent);
+      }
+
+      .filter-panel .filter-controls {
+        position: absolute;
+        z-index: 40;
+        top: calc(100% + 8px);
+        right: 16px;
+        left: 16px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+        align-items: end;
+        gap: 9px;
+        padding: 12px;
+        border-radius: 20px;
+        background: color-mix(in srgb, var(--glass) 94%, var(--surface));
+        box-shadow: 0 18px 54px color-mix(in srgb, var(--text) 18%, transparent);
+        backdrop-filter: blur(24px) saturate(160%);
+        -webkit-backdrop-filter: blur(24px) saturate(160%);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(-7px) scale(0.985);
+        transform-origin: top right;
+        transition:
+          opacity 150ms ease,
+          visibility 0s linear 190ms,
+          transform 190ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .filter-panel.filter-menu-open .filter-controls {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+        transition-delay: 0s;
+      }
+
       .question-list-panel .table-wrap {
         overflow: visible;
-        width: calc(100% - 6px);
-        margin-inline: 3px;
-        padding: 7px;
+        width: 100%;
+        margin-inline: 0;
+        padding: 9px;
         border: 1px solid var(--line);
         border-radius: 24px;
         background: var(--surface);
@@ -2389,7 +2534,7 @@
 
       .question-list-panel tbody {
         display: grid;
-        gap: 10px;
+        gap: 12px;
         width: 100%;
       }
 
@@ -2571,6 +2716,17 @@
       }
     }
 
+    @media (max-width: 560px) {
+      .filter-panel .filter-controls {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .filter-panel .toolbar-actions,
+      .filter-panel .toolbar-actions button {
+        width: 100%;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -2651,37 +2807,43 @@
       </div>
     </section>
 
-    <section class="panel">
+    <section id="filterPanel" class="panel filter-panel">
       <div class="toolbar">
-        <label class="search-field">
-          Search
-          <input id="searchInput" type="search" placeholder="Question ID, number, domain, skill, or notes" />
-        </label>
+        <div class="search-field">
+          <label class="search-field-label" for="searchInput">Search</label>
+          <div class="android-search-bar">
+            <span class="search-icon" aria-hidden="true"></span>
+            <input id="searchInput" type="search" placeholder="Search questions" aria-label="Search questions" />
+            <button id="filterMenuBtn" class="secondary filter-menu-button" type="button" aria-label="Open filters" aria-expanded="false" aria-controls="filterControls"><span aria-hidden="true">•••</span></button>
+          </div>
+        </div>
 
-        <label>
-          Result
-          <select id="statusFilter">
-            <option value="">All results</option>
-            <option value="unattempted">Unattempted</option>
-            <option value="correct">Correct</option>
-            <option value="incorrect">Incorrect</option>
-            <option value="partial">Partial correct</option>
-            <option value="skipped">Skipped</option>
-          </select>
-        </label>
+        <div id="filterControls" class="filter-controls">
+          <label>
+            Result
+            <select id="statusFilter">
+              <option value="">All results</option>
+              <option value="unattempted">Unattempted</option>
+              <option value="correct">Correct</option>
+              <option value="incorrect">Incorrect</option>
+              <option value="partial">Partial correct</option>
+              <option value="skipped">Skipped</option>
+            </select>
+          </label>
 
-        <label>
-          Domain
-          <select id="domainFilter"></select>
-        </label>
+          <label>
+            Domain
+            <select id="domainFilter"></select>
+          </label>
 
-        <label>
-          Skill
-          <select id="skillFilter"></select>
-        </label>
+          <label>
+            Skill
+            <select id="skillFilter"></select>
+          </label>
 
-        <div class="toolbar-actions">
-          <button id="clearFiltersBtn" class="secondary">Clear</button>
+          <div class="toolbar-actions">
+            <button id="clearFiltersBtn" class="secondary">Clear</button>
+          </div>
         </div>
       </div>
     </section>
@@ -3791,6 +3953,13 @@
       const allowedStatus = ["unattempted", "correct", "incorrect", "partial", "skipped"];
       const rawStatus = raw?.status === "partial_correct" ? "partial" : raw?.status;
       const status = allowedStatus.includes(rawStatus) ? rawStatus : "unattempted";
+      const notesFormat = raw?.notesFormat === "mathlive"
+        ? "mathlive"
+        : (raw?.notesFormat === "plain" ? "plain" : "legacy");
+      const storedNotes = String(raw?.notes || "");
+      const notes = notesFormat === "mathlive"
+        ? repairTextifiedMathNote(storedNotes)
+        : storedNotes;
 
       return {
         number,
@@ -3803,8 +3972,8 @@
         incorrectAttempts: Math.max(0, Number(raw?.incorrectAttempts ?? raw?.wrongAttempts) || 0),
         partialAttempts: Math.max(0, Number(raw?.partialAttempts) || 0),
         skippedAttempts: Math.max(0, Number(raw?.skippedAttempts) || 0),
-        notes: String(raw?.notes || ""),
-        notesFormat: raw?.notesFormat === "mathlive" ? "mathlive" : (raw?.notesFormat === "plain" ? "plain" : "legacy"),
+        notes,
+        notesFormat,
         updatedAt: String(raw?.updatedAt || raw?.lastAttempt || "")
       };
     }
@@ -5157,14 +5326,32 @@
     function getFilteredQuestions() {
       const section = currentSection();
       const search = $("searchInput").value.trim().toLowerCase();
+      const questionNumberMatch = search.match(/^(?:(?:question|q)\s*)?#?\s*(\d+)$/i);
+      const searchedQuestionNumber = questionNumberMatch
+        ? Number(questionNumberMatch[1])
+        : null;
       const status = $("statusFilter").value;
       const domain = $("domainFilter").value;
       const skill = $("skillFilter").value;
 
       return section.questions.filter(q => {
-        const searchable = [q.number, q.questionId, q.domain, q.skill, q.notes].join(" ").toLowerCase();
+        const searchable = [
+          q.number,
+          `#${q.number}`,
+          `q${q.number}`,
+          `question ${q.number}`,
+          `question #${q.number}`,
+          q.questionId,
+          q.domain,
+          q.skill,
+          q.notes
+        ].join(" ").toLowerCase();
+        const matchesSearch = !search
+          || (searchedQuestionNumber !== null
+            ? q.number === searchedQuestionNumber
+            : searchable.includes(search));
 
-        return (!search || searchable.includes(search))
+        return matchesSearch
           && (!status || q.status === status)
           && (!domain || q.domain === domain)
           && (!skill || q.skill === skill);
@@ -5385,6 +5572,50 @@
       renderStats();
       renderTable();
       updateUndoUi();
+      updateFilterMenuButton();
+    }
+
+    function compactFilterLayoutActive() {
+      const panel = $("filterPanel");
+      return Boolean(panel && panel.clientWidth <= 1339);
+    }
+
+    function activeFilterCount() {
+      return ["statusFilter", "domainFilter", "skillFilter"]
+        .filter(id => Boolean($(id)?.value)).length;
+    }
+
+    function updateFilterMenuButton() {
+      const button = $("filterMenuBtn");
+      const panel = $("filterPanel");
+      if (!button || !panel) return;
+      const count = activeFilterCount();
+      const open = panel.classList.contains("filter-menu-open");
+      button.classList.toggle("has-active", count > 0);
+      button.setAttribute(
+        "aria-label",
+        `${open ? "Close" : "Open"} filters${count ? `, ${count} active` : ""}`
+      );
+      button.title = count ? `${count} active filter${count === 1 ? "" : "s"}` : "Filters";
+    }
+
+    function setFilterMenuOpen(open) {
+      const panel = $("filterPanel");
+      const button = $("filterMenuBtn");
+      const controls = $("filterControls");
+      if (!panel || !button || !controls) return;
+      const compact = compactFilterLayoutActive();
+      const shouldOpen = Boolean(open && compact);
+      panel.classList.toggle("filter-menu-open", shouldOpen);
+      button.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+      if (compact) {
+        controls.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+        controls.toggleAttribute("inert", !shouldOpen);
+      } else {
+        controls.removeAttribute("aria-hidden");
+        controls.removeAttribute("inert");
+      }
+      updateFilterMenuButton();
     }
 
     function switchSection(sectionKey) {
@@ -5407,6 +5638,7 @@
         populateFilters();
         renderTable();
       }
+      updateFilterMenuButton();
     }
 
     function getQuestion(number) {
@@ -5527,6 +5759,43 @@
       return String(value || "").replace(/[\\{}%#&_$]/g, character => replacements[character]);
     }
 
+    function repairTextifiedMathNote(value) {
+      const text = String(value || "");
+      const textifiedLatex = /\\textbackslash\s*(?:displaylines|text|textbackslash)|\\textbrace(?:left|right)/;
+      if (!textifiedLatex.test(text)) return text;
+
+      let decoded = text
+        .replace(/\r\n?/g, "\n")
+        .replace(/\$\$/g, " ");
+      for (let pass = 0; pass < 4; pass++) {
+        const next = decoded
+          .replace(/\\textbackslash\s*/g, "\\")
+          .replace(/\\textbraceleft\s*/g, "{")
+          .replace(/\\textbraceright\s*/g, "}");
+        if (next === decoded) break;
+        decoded = next;
+      }
+
+      const readable = decoded
+        .replace(/\\\\\s*/g, "\n")
+        .replace(/\\(?:displaylines|text)\b/g, " ")
+        .replace(/\\([%#&_$])/g, "$1")
+        .replace(/\\[a-zA-Z]+\b/g, " ")
+        .replace(/[{}\\]/g, "")
+        .split("\n")
+        .map(line => line.replace(/[ \t]+/g, " ").trim())
+        .join("\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+
+      if (!readable) return "";
+      const lines = readable
+        .split("\n")
+        .map(line => `\\text{${escapeLatexText(line)}}`)
+        .join(" \\\\ ");
+      return `\\displaylines{${lines}}`;
+    }
+
     function legacyNoteToMathLive(value) {
       const text = String(value || "").replace(/\r\n?/g, "\n");
       if (!text) return "";
@@ -5551,13 +5820,15 @@
     }
 
     function normalizeStoredMathNote(value) {
-      const text = String(value || "");
+      const text = String(value || "").replace(/\r\n?/g, "\n");
       if (/^\\displaylines\{\s*\}$/.test(text.trim())) return "";
       return text;
     }
 
     function notePreviewText(question) {
-      let text = String(question?.notes || "");
+      let text = question?.notesFormat === "mathlive"
+        ? repairTextifiedMathNote(question?.notes)
+        : String(question?.notes || "");
       if (question?.notesFormat === "mathlive") {
         const match = text.match(/^\\displaylines\{([\s\S]*)\}$/);
         if (match) text = match[1];
@@ -5595,11 +5866,15 @@
       mathField.classList.toggle("hidden", !isMath);
       textField.classList.toggle("hidden", isMath);
       $("notesModeBtn").classList.toggle("hidden", !isMath);
+      if (isMath) {
+        mathNotesInputMode = "math";
+        mathField.executeCommand?.(["switch-mode", "math"]);
+      }
       updateMathNotesModeUi();
 
       if (isMath) {
         const value = ensureMathNoteMultiline(question.notesFormat === "mathlive"
-          ? question.notes
+          ? repairTextifiedMathNote(question.notes)
           : legacyNoteToMathLive(question.notes));
         if (typeof mathField.setValue === "function") {
           mathField.setValue(value, { silenceNotifications: true });
@@ -5619,7 +5894,7 @@
       const value = String(typeof field.getValue === "function"
         ? field.getValue("latex")
         : field.value || "");
-      return normalizeStoredMathNote(value);
+      return repairTextifiedMathNote(normalizeStoredMathNote(value));
     }
 
     function editorNotesFormat() {
@@ -6968,16 +7243,39 @@
       $(id).addEventListener("input", () => {
         state.page = 1;
         renderTable();
+        updateFilterMenuButton();
       });
 
       $(id).addEventListener("change", () => {
         state.page = 1;
         if (id === "domainFilter") populateFilters();
         renderTable();
+        updateFilterMenuButton();
       });
     });
 
-    $("clearFiltersBtn").addEventListener("click", () => clearFilters(true));
+    $("filterMenuBtn").addEventListener("click", event => {
+      event.stopPropagation();
+      setFilterMenuOpen(!$("filterPanel").classList.contains("filter-menu-open"));
+    });
+
+    $("clearFiltersBtn").addEventListener("click", () => {
+      clearFilters(true);
+      setFilterMenuOpen(false);
+    });
+
+    document.addEventListener("click", event => {
+      if ($("filterPanel").classList.contains("filter-menu-open")
+        && !event.target.closest("#filterPanel")) {
+        setFilterMenuOpen(false);
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") setFilterMenuOpen(false);
+    });
+
+    window.addEventListener("resize", () => setFilterMenuOpen(false));
 
     $("pageSize").addEventListener("change", () => {
       state.pageSize = Number($("pageSize").value);
@@ -7232,6 +7530,7 @@
 
     applyAppSettings();
     setMobileOverflowOpen(false);
+    setFilterMenuOpen(false);
     populateSettingsUi();
     load();
     state.pageSize = Number($("pageSize").value);
