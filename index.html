@@ -1012,7 +1012,10 @@
     .drive-actions {
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
       gap: 8px;
+      width: 100%;
       margin-top: 12px;
     }
 
@@ -2278,10 +2281,10 @@
         right: 0;
         bottom: calc(100% + 10px);
         left: auto;
-        width: min(218px, calc(100vw - 28px));
+        width: min(242px, calc(100vw - 28px));
         display: grid;
         grid-template-columns: minmax(0, 1fr);
-        gap: 7px;
+        gap: 9px;
         padding: 0;
         opacity: 0;
         visibility: hidden;
@@ -2309,15 +2312,15 @@
         width: 100%;
         min-width: 0 !important;
         max-width: none !important;
-        min-height: 38px;
-        padding: 9px 14px;
+        min-height: 46px;
+        padding: 12px 18px;
         border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
         border-radius: 999px;
         background: color-mix(in srgb, var(--glass) 84%, transparent);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
         backdrop-filter: blur(22px) saturate(160%);
         -webkit-backdrop-filter: blur(22px) saturate(160%);
-        font-size: 0.8rem;
+        font-size: 0.84rem;
         opacity: 0;
         transform: translateY(12px) scale(0.9);
         transform-origin: right center;
@@ -2409,7 +2412,7 @@
 
       .filter-panel .android-search-bar {
         display: grid;
-        grid-template-columns: 22px minmax(0, 1fr) 42px;
+        grid-template-columns: 24px minmax(0, 1fr) 42px;
         align-items: center;
         gap: 8px;
         min-height: 54px;
@@ -2422,6 +2425,18 @@
       .filter-panel .search-icon {
         position: relative;
         display: block;
+        width: 24px;
+        height: 24px;
+        justify-self: center;
+        border: 0;
+        transform: none;
+      }
+
+      .filter-panel .search-icon::before {
+        content: "";
+        position: absolute;
+        top: 1px;
+        left: 1px;
         width: 17px;
         height: 17px;
         border: 2px solid var(--secondary);
@@ -2431,8 +2446,8 @@
       .filter-panel .search-icon::after {
         content: "";
         position: absolute;
-        right: -5px;
-        bottom: -3px;
+        top: 17px;
+        left: 17px;
         width: 7px;
         height: 2px;
         border-radius: 999px;
@@ -2727,6 +2742,404 @@
       }
     }
 
+    /* Tahoe-style surfaces: a soft highlight and inner edge give controls
+       depth without reintroducing a heavy grey bezel. */
+    html[data-theme="light"],
+    html[data-theme="system"] {
+      --page: #f5f5f7;
+      --glass: rgba(255, 255, 255, 0.88);
+      --surface: #ffffff;
+      --surface-2: #f2f2f6;
+      --surface-3: #e7e7ec;
+      --control: #e8e8ed;
+      --control-hover: #dedee4;
+      --field: #f0f0f3;
+      --field-focus: #ffffff;
+      --table-alt: rgba(118, 118, 128, 0.055);
+      --tahoe-control-fill: linear-gradient(145deg,
+        color-mix(in srgb, var(--blue) 4%, #ffffff),
+        color-mix(in srgb, var(--blue) 6%, #e9e9ee));
+      --tahoe-field-fill: linear-gradient(145deg,
+        color-mix(in srgb, var(--blue) 2.5%, #ffffff),
+        color-mix(in srgb, var(--blue) 3.5%, #f0f0f4));
+      --tahoe-widget-fill: linear-gradient(145deg,
+        color-mix(in srgb, var(--blue) 5%, #ffffff),
+        color-mix(in srgb, var(--blue) 7%, #eeeef3));
+      --tahoe-frame-fill: linear-gradient(145deg,
+        color-mix(in srgb, var(--blue) 3%, #ffffff),
+        color-mix(in srgb, var(--blue) 5%, #ededf2));
+      --tahoe-outline: rgba(60, 60, 67, 0.2);
+      --tahoe-highlight: rgba(255, 255, 255, 0.88);
+      --tahoe-shadow: 0 1px 1px rgba(17, 24, 39, 0.07), 0 7px 18px rgba(17, 24, 39, 0.08);
+      --tahoe-soft-shadow: 0 1px 1px rgba(17, 24, 39, 0.055), 0 4px 10px rgba(17, 24, 39, 0.055);
+      --tahoe-selected-fill: var(--blue);
+      --tahoe-control-hover-fill: linear-gradient(145deg,
+        color-mix(in srgb, var(--blue) 8%, #ffffff),
+        color-mix(in srgb, var(--blue) 12%, var(--control-hover)));
+    }
+
+    html[data-theme="dark"] {
+      --blue: var(--scheme-accent, #0071e3);
+      --blue-hover: var(--scheme-accent-hover, #0077ed);
+      --page: #000000;
+      --glass: rgba(22, 22, 24, 0.9);
+      --surface: #18181a;
+      --surface-2: #242426;
+      --surface-3: #303033;
+      --control: #1a1a1d;
+      --control-hover: #242427;
+      --field: #151517;
+      --field-focus: #1d1d20;
+      --table-alt: rgba(235, 235, 245, 0.045);
+      --tahoe-control-fill: linear-gradient(145deg,
+        color-mix(in srgb, var(--blue) 3%, #232326),
+        color-mix(in srgb, var(--blue) 4%, #151518));
+      --tahoe-field-fill: linear-gradient(145deg,
+        color-mix(in srgb, var(--blue) 2%, #1b1b1e),
+        color-mix(in srgb, var(--blue) 3%, #121214));
+      --tahoe-widget-fill: linear-gradient(145deg,
+        color-mix(in srgb, var(--blue) 5%, #343438),
+        color-mix(in srgb, var(--blue) 6%, #222225));
+      --tahoe-frame-fill: linear-gradient(145deg,
+        color-mix(in srgb, var(--blue) 4%, #2e2e32),
+        color-mix(in srgb, var(--blue) 5%, #1d1d20));
+      --tahoe-outline: rgba(255, 255, 255, 0.13);
+      --tahoe-highlight: rgba(255, 255, 255, 0.09);
+      --tahoe-shadow: 0 1px 1px rgba(0, 0, 0, 0.32), 0 8px 20px rgba(0, 0, 0, 0.28);
+      --tahoe-soft-shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 4px 12px rgba(0, 0, 0, 0.2);
+      --tahoe-selected-fill: var(--blue);
+      --tahoe-control-hover-fill: linear-gradient(145deg,
+        color-mix(in srgb, var(--blue) 12%, #46464d),
+        color-mix(in srgb, var(--blue) 14%, #333338));
+    }
+
+    @media (prefers-color-scheme: dark) {
+      html[data-theme="system"] {
+        --blue: var(--scheme-accent, #0071e3);
+        --blue-hover: var(--scheme-accent-hover, #0077ed);
+        --page: #000000;
+        --glass: rgba(22, 22, 24, 0.9);
+        --surface: #18181a;
+        --surface-2: #242426;
+        --surface-3: #303033;
+        --control: #1a1a1d;
+        --control-hover: #242427;
+        --field: #151517;
+        --field-focus: #1d1d20;
+        --table-alt: rgba(235, 235, 245, 0.045);
+        --tahoe-control-fill: linear-gradient(145deg,
+          color-mix(in srgb, var(--blue) 3%, #232326),
+          color-mix(in srgb, var(--blue) 4%, #151518));
+        --tahoe-field-fill: linear-gradient(145deg,
+          color-mix(in srgb, var(--blue) 2%, #1b1b1e),
+          color-mix(in srgb, var(--blue) 3%, #121214));
+        --tahoe-widget-fill: linear-gradient(145deg,
+          color-mix(in srgb, var(--blue) 5%, #343438),
+          color-mix(in srgb, var(--blue) 6%, #222225));
+        --tahoe-frame-fill: linear-gradient(145deg,
+          color-mix(in srgb, var(--blue) 4%, #2e2e32),
+          color-mix(in srgb, var(--blue) 5%, #1d1d20));
+        --tahoe-outline: rgba(255, 255, 255, 0.13);
+        --tahoe-highlight: rgba(255, 255, 255, 0.09);
+        --tahoe-shadow: 0 1px 1px rgba(0, 0, 0, 0.32), 0 8px 20px rgba(0, 0, 0, 0.28);
+        --tahoe-soft-shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 4px 12px rgba(0, 0, 0, 0.2);
+        --tahoe-selected-fill: var(--blue);
+        --tahoe-control-hover-fill: linear-gradient(145deg,
+          color-mix(in srgb, var(--blue) 12%, #46464d),
+          color-mix(in srgb, var(--blue) 14%, #333338));
+      }
+    }
+
+    html[data-theme="light"] :is(
+      button.secondary,
+      .button.secondary,
+      .segmented,
+      .status,
+      .keyboard,
+      .toggle-row,
+      .settings-section,
+      .settings-preview,
+      .card,
+      .table-wrap,
+      .filter-panel .android-search-bar,
+      .filter-panel .filter-controls,
+      .mobile-question-chevron
+    ),
+    html[data-theme="system"] :is(
+      button.secondary,
+      .button.secondary,
+      .segmented,
+      .status,
+      .keyboard,
+      .toggle-row,
+      .settings-section,
+      .settings-preview,
+      .card,
+      .table-wrap,
+      .filter-panel .android-search-bar,
+      .filter-panel .filter-controls,
+      .mobile-question-chevron
+    ),
+    html[data-theme="dark"] :is(
+      button.secondary,
+      .button.secondary,
+      .segmented,
+      .status,
+      .keyboard,
+      .toggle-row,
+      .settings-section,
+      .settings-preview,
+      .card,
+      .table-wrap,
+      .filter-panel .android-search-bar,
+      .filter-panel .filter-controls,
+      .mobile-question-chevron
+    ) {
+      background: var(--tahoe-control-fill);
+      box-shadow:
+        inset 0 1px 0 var(--tahoe-highlight),
+        inset 0 0 0 1px var(--tahoe-outline),
+        var(--tahoe-soft-shadow);
+    }
+
+    html[data-theme="light"] :is(input, select, textarea),
+    html[data-theme="system"] :is(input, select, textarea),
+    html[data-theme="dark"] :is(input, select, textarea) {
+      background: var(--tahoe-field-fill);
+      box-shadow:
+        inset 0 1px 0 var(--tahoe-highlight),
+        inset 0 0 0 1px var(--tahoe-outline);
+    }
+
+    html[data-theme="light"] :is(input, select, textarea):focus,
+    html[data-theme="system"] :is(input, select, textarea):focus,
+    html[data-theme="dark"] :is(input, select, textarea):focus {
+      background: var(--field-focus);
+      box-shadow:
+        inset 0 1px 0 var(--tahoe-highlight),
+        inset 0 0 0 1px color-mix(in srgb, var(--blue) 68%, var(--tahoe-outline)),
+        0 0 0 3px color-mix(in srgb, var(--blue) 20%, transparent),
+        var(--tahoe-soft-shadow);
+    }
+
+    html[data-theme="light"] :is(button.secondary, .button.secondary):hover,
+    html[data-theme="system"] :is(button.secondary, .button.secondary):hover,
+    html[data-theme="dark"] :is(button.secondary, .button.secondary):hover {
+      background: var(--tahoe-control-hover-fill);
+      box-shadow:
+        inset 0 1px 0 var(--tahoe-highlight),
+        inset 0 0 0 1px var(--tahoe-outline),
+        var(--tahoe-shadow);
+    }
+
+    html[data-theme="light"] :is(button:not(.secondary), .button:not(.secondary)),
+    html[data-theme="system"] :is(button:not(.secondary), .button:not(.secondary)),
+    html[data-theme="dark"] :is(button:not(.secondary), .button:not(.secondary)) {
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.34),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+        0 4px 10px color-mix(in srgb, currentColor 16%, transparent);
+    }
+
+    html[data-theme="light"] :is(.segmented button, .mobile-question-summary),
+    html[data-theme="system"] :is(.segmented button, .mobile-question-summary),
+    html[data-theme="dark"] :is(.segmented button, .mobile-question-summary) {
+      box-shadow: none;
+    }
+
+    html[data-theme="light"] .question-list-panel tbody tr,
+    html[data-theme="system"] .question-list-panel tbody tr,
+    html[data-theme="dark"] .question-list-panel tbody tr {
+      box-shadow:
+        inset 0 1px 0 var(--tahoe-highlight),
+        inset 0 0 0 1px var(--tahoe-outline),
+        0 4px 11px rgba(17, 24, 39, 0.055);
+    }
+
+    .segmented {
+      gap: 4px;
+      padding: 4px;
+    }
+
+    .segmented::before {
+      top: 4px;
+      right: auto;
+      bottom: 4px;
+      left: 4px;
+      width: calc((100% - 12px) / 2);
+      background: var(--tahoe-selected-fill, var(--surface));
+      box-shadow:
+        inset 0 1px 0 var(--tahoe-highlight, rgba(255, 255, 255, 0.4)),
+        inset 0 0 0 1px var(--tahoe-outline, var(--line)),
+        var(--tahoe-soft-shadow, var(--small-shadow));
+    }
+
+    .segmented[data-active="rw"]::before {
+      transform: translateX(calc(100% + 4px));
+    }
+
+    .segmented button.active { color: #ffffff; }
+
+    html[data-theme] .card {
+      background: var(--tahoe-widget-fill);
+    }
+
+    html[data-theme] :is(
+      .drive-status-card,
+      .drive-meta-item,
+      .drive-preferences > label,
+      .range-card,
+      .timer-dialog-current,
+      .notice:not(.drive-conflict):not(.result-notice)
+    ) {
+      background: var(--tahoe-widget-fill);
+      box-shadow:
+        inset 0 1px 0 var(--tahoe-highlight),
+        inset 0 0 0 1px var(--tahoe-outline),
+        var(--tahoe-soft-shadow);
+    }
+
+    html[data-theme] dialog {
+      background: var(--tahoe-frame-fill);
+      box-shadow:
+        inset 0 1px 0 var(--tahoe-highlight),
+        inset 0 0 0 1px var(--tahoe-outline),
+        0 28px 100px rgba(0, 0, 0, 0.34);
+    }
+
+    html[data-theme] .dialog-head {
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      box-shadow: inset 0 -1px 0 var(--tahoe-outline);
+    }
+
+    html[data-theme] .dialog-foot {
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      box-shadow: inset 0 1px 0 var(--tahoe-outline);
+    }
+
+    html[data-theme] .timer-dialog-current {
+      background: var(--surface-2);
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--tahoe-highlight) 42%, transparent),
+        0 8px 18px rgba(0, 0, 0, 0.16);
+    }
+
+    html[data-theme] .timer-float {
+      border: 0 !important;
+      background: color-mix(in srgb, var(--surface) 96%, transparent);
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--tahoe-outline) 58%, transparent),
+        0 12px 34px rgba(0, 0, 0, 0.32);
+    }
+
+    html[data-theme] .timer-float .timer-tab {
+      background: var(--surface-2);
+      box-shadow: none;
+    }
+
+    html[data-theme] .timer-float .timer-toggle-symbol {
+      background: color-mix(in srgb, var(--page) 78%, var(--surface));
+      box-shadow: none;
+    }
+
+    html[data-theme] .timer-float .timer-display-button {
+      background: color-mix(in srgb, var(--page) 72%, var(--surface));
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tahoe-outline) 45%, transparent);
+    }
+
+    html[data-theme] .timer-float .timer-controls button {
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--tahoe-outline) 54%, transparent),
+        0 4px 10px rgba(0, 0, 0, 0.24);
+    }
+
+    html[data-theme] .timer-float.minimized,
+    html[data-theme] .timer-float.minimized .timer-tab {
+      box-shadow: none;
+    }
+
+    html[data-theme] :is(.progress-panel, .filter-panel, .question-list-panel .table-wrap) {
+      background: var(--tahoe-frame-fill);
+      box-shadow:
+        inset 0 1px 0 var(--tahoe-highlight),
+        inset 0 0 0 1px var(--tahoe-outline),
+        var(--tahoe-shadow);
+    }
+
+    html[data-theme] .progress-track {
+      height: 15px;
+      padding: 2px;
+      background: var(--tahoe-control-fill);
+      box-shadow:
+        inset 0 1px 2px color-mix(in srgb, var(--text) 9%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--tahoe-outline) 66%, transparent);
+    }
+
+    html[data-theme] .progress-bar {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34), 0 1px 4px color-mix(in srgb, var(--blue) 42%, transparent);
+    }
+
+    #correctBtn { --result-action-color: var(--green); }
+    #incorrectBtn { --result-action-color: var(--red); }
+    #partialBtn { --result-action-color: var(--partial); }
+    #skippedBtn { --result-action-color: var(--orange); }
+
+    .result-actions button {
+      background: linear-gradient(145deg,
+        color-mix(in srgb, var(--result-action-color) 82%, #ffffff),
+        color-mix(in srgb, var(--result-action-color) 88%, #000000));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.38),
+        inset 0 0 0 1px color-mix(in srgb, var(--result-action-color) 72%, rgba(0, 0, 0, 0.3)),
+        0 6px 14px color-mix(in srgb, var(--result-action-color) 24%, transparent);
+    }
+
+    .result-actions button:hover {
+      background: linear-gradient(145deg,
+        color-mix(in srgb, var(--result-action-color) 74%, #ffffff),
+        color-mix(in srgb, var(--result-action-color) 92%, #000000));
+    }
+
+    .result-actions button .keyboard {
+      background: color-mix(in srgb, #ffffff 18%, transparent);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+    }
+
+    @media (max-width: 760px), (max-height: 520px) and (pointer: coarse) {
+      .mobile-overflow-menu {
+        padding: 10px;
+        border-radius: 28px;
+        background: var(--tahoe-frame-fill);
+        box-shadow:
+          inset 0 1px 0 var(--tahoe-highlight),
+          inset 0 0 0 1px var(--tahoe-outline),
+          var(--tahoe-shadow);
+        backdrop-filter: blur(24px) saturate(165%);
+        -webkit-backdrop-filter: blur(24px) saturate(165%);
+      }
+    }
+
+    @media (min-width: 761px) {
+      .app-bar-inner {
+        min-height: 72px;
+        padding: 12px 26px;
+      }
+
+      .shell { padding: 32px 26px 56px; }
+      .card { min-height: 104px; padding: 18px; }
+      .card-value { font-size: 1.82rem; }
+      .panel { padding: 18px; }
+      button, .button { min-height: 40px; padding: 9px 16px; }
+      input, select, textarea { min-height: 42px; }
+      .segmented button { min-height: 38px; padding: 7px 19px; }
+    }
+
+    @container (min-width: 1340px) {
+      html[data-theme] .question-list-panel tbody tr {
+        box-shadow: none;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -2799,7 +3212,7 @@
       </div>
     </section>
 
-    <section class="panel">
+    <section class="panel progress-panel">
       <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
       <div class="progress-meta">
         <span id="progressText">0 of 1,756 completed</span>
@@ -2849,7 +3262,7 @@
     </section>
 
     <section class="panel question-list-panel">
-      <div class="table-wrap">
+      <div id="questionTableWrap" class="table-wrap">
         <table>
           <thead>
             <tr>
@@ -3066,7 +3479,7 @@
           </label>
 
           <label>
-            Color scheme
+            Accent color
             <select id="paletteSetting">
               <option value="blue">Blue</option>
               <option value="violet">Violet</option>
@@ -3311,7 +3724,7 @@
     const DRIVE_APP_PROPERTY_VALUE = "v1";
     const DEFAULT_GOOGLE_CLIENT_ID = ""; // Optional: paste your Web OAuth client ID here before publishing.
 
-    const APP_VERSION = "6.6.0";
+    const APP_VERSION = "X";
     const SETTINGS_KEY = "satQuestionBankTracker.settings.v1";
     const TIMER_KEY = "satQuestionBankTracker.timer.v1";
     const DEFAULT_SETTINGS = Object.freeze({
@@ -5556,7 +5969,9 @@
         `;
       }).join("");
 
-      $("emptyState").classList.toggle("hidden", currentSection().targetCount !== 0);
+      const hasQuestionSlots = currentSection().targetCount !== 0;
+      $("questionTableWrap").classList.toggle("hidden", !hasQuestionSlots);
+      $("emptyState").classList.toggle("hidden", hasQuestionSlots);
       $("resultCount").textContent = `${filtered.length.toLocaleString()} ${questionWord(filtered.length)}`;
       $("pageNumberInput").value = state.page;
       $("pageNumberInput").max = totalPages;
