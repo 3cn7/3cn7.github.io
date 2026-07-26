@@ -6370,22 +6370,6 @@
       field.setAttribute("autocomplete", "off");
       field.setAttribute("virtual-keyboard-mode", "manual");
       field.setAttribute("aria-label", "Notes paragraph");
-      if (typeof field.setValue === "function") {
-        field.defaultMode = "text";
-        field.smartMode = false;
-        field.smartFence = true;
-        field.smartSuperscript = true;
-        field.virtualKeyboardMode = "manual";
-        field.inlineShortcutTimeout = 0;
-        if (field.inlineShortcuts) {
-          field.inlineShortcuts = {
-            ...field.inlineShortcuts,
-            sqrt: "\\sqrt{#0}",
-            root: "\\sqrt{#0}"
-          };
-        }
-        if (field.registers) field.registers.jot = "7pt";
-      }
       if (alreadyConfigured) return field;
       field.dataset.notesReady = "true";
 
@@ -6437,14 +6421,45 @@
       return field;
     }
 
+    function initializeNotesParagraphField(field, value = null) {
+      if (!field?.isConnected) return field;
+      configureNotesParagraphField(field);
+
+      if (typeof field.setValue !== "function") {
+        if (value !== null) {
+          field.dataset.pendingNotesValue = String(value || "");
+          field.textContent = String(value || "");
+        }
+        return field;
+      }
+
+      field.defaultMode = "text";
+      field.smartMode = false;
+      field.smartFence = true;
+      field.smartSuperscript = true;
+      field.virtualKeyboardMode = "manual";
+      field.inlineShortcutTimeout = 0;
+      if (field.inlineShortcuts) {
+        field.inlineShortcuts = {
+          ...field.inlineShortcuts,
+          sqrt: "\\sqrt{#0}",
+          root: "\\sqrt{#0}"
+        };
+      }
+      if (field.registers) field.registers.jot = "7pt";
+
+      const pendingValue = value !== null ? String(value || "") : field.dataset.pendingNotesValue;
+      if (pendingValue !== undefined) {
+        field.setValue(pendingValue, { silenceNotifications: true });
+        delete field.dataset.pendingNotesValue;
+      }
+      field.mode = "text";
+      return field;
+    }
+
     function createNotesParagraphField(value = "") {
       const field = configureNotesParagraphField(document.createElement("math-field"));
-      if (typeof field.setValue === "function") {
-        field.setValue(String(value || ""), { silenceNotifications: true });
-        field.mode = "text";
-      } else {
-        field.textContent = String(value || "");
-      }
+      field.dataset.pendingNotesValue = String(value || "");
       return field;
     }
 
@@ -6452,6 +6467,7 @@
       const paragraph = createNotesParagraphField("");
       if (field?.isConnected) field.after(paragraph);
       else $("editNotes").append(paragraph);
+      initializeNotesParagraphField(paragraph);
       activeNotesParagraphField = paragraph;
       mathNotesInputMode = "text";
       paragraph.focus();
@@ -6496,7 +6512,9 @@
         try {
           mathEditor.replaceChildren();
           (paragraphs.length ? paragraphs : [""]).forEach(paragraph => {
-            mathEditor.append(createNotesParagraphField(paragraph));
+            const field = createNotesParagraphField(paragraph);
+            mathEditor.append(field);
+            initializeNotesParagraphField(field);
           });
         } finally {
           queueMicrotask(() => {
@@ -8153,7 +8171,7 @@
       if (globalThis.MathfieldElement) {
         MathfieldElement.fontsDirectory = "https://cdn.jsdelivr.net/npm/mathlive@0.110.0/fonts/";
       }
-      notesParagraphFields().forEach(configureNotesParagraphField);
+      notesParagraphFields().forEach(field => initializeNotesParagraphField(field));
       if (state.activeNumber) {
         const q = getQuestion(state.activeNumber);
         if (q) setEditorNotesValue(q);
