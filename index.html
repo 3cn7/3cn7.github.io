@@ -1631,8 +1631,8 @@
       font-size: 1rem;
       line-height: 1.55;
       --caret-color: var(--blue);
-      --selection-background-color: color-mix(in srgb, var(--blue) 24%, transparent);
-      --contains-highlight-background-color: color-mix(in srgb, var(--blue) 12%, transparent);
+      --selection-background-color: transparent;
+      --contains-highlight-background-color: transparent;
       --smart-fence-color: var(--secondary);
       transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
     }
@@ -4362,13 +4362,17 @@
       const allowedStatus = ["unattempted", "correct", "incorrect", "partial", "skipped"];
       const rawStatus = raw?.status === "partial_correct" ? "partial" : raw?.status;
       const status = allowedStatus.includes(rawStatus) ? rawStatus : "unattempted";
-      const notesFormat = raw?.notesFormat === "mathlive"
+      let notesFormat = raw?.notesFormat === "mathlive"
         ? "mathlive"
         : (raw?.notesFormat === "plain" ? "plain" : "legacy");
       const storedNotes = String(raw?.notes || "");
-      const notes = notesFormat === "mathlive"
-        ? repairTextifiedMathNote(storedNotes)
-        : storedNotes;
+      let notes = storedNotes;
+      if (isTextifiedMathNote(storedNotes)) {
+        notes = mathNoteToReadableText(storedNotes);
+        notesFormat = "plain";
+      } else if (notesFormat === "mathlive") {
+        notes = repairTextifiedMathNote(storedNotes);
+      }
 
       return {
         number,
@@ -6170,41 +6174,59 @@
       return String(value || "").replace(/[\\{}%#&_$]/g, character => replacements[character]);
     }
 
-    function repairTextifiedMathNote(value) {
-      const text = String(value || "");
-      const textifiedLatex = /\\textbackslash\s*(?:displaylines|text|textbackslash)|\\textbrace(?:left|right)/;
-      if (!textifiedLatex.test(text)) return text;
+    function isTextifiedMathNote(value) {
+      return /\\textbackslash\s*(?:displaylines|text|textbackslash)|\\textbrace(?:left|right)/.test(String(value || ""));
+    }
 
-      let decoded = text
+    function decodeTextifiedMathNote(value) {
+      let decoded = String(value || "")
         .replace(/\r\n?/g, "\n")
         .replace(/\$\$/g, " ");
-      for (let pass = 0; pass < 4; pass++) {
+
+      for (let pass = 0; pass < 6; pass++) {
         const next = decoded
-          .replace(/\\textbackslash\s*/g, "\\")
-          .replace(/\\textbraceleft\s*/g, "{")
-          .replace(/\\textbraceright\s*/g, "}");
+          .replace(/\\textbackslash\s*(?:\{\})?/g, "\\")
+          .replace(/\\textbraceleft\s*(?:\{\})?/g, "{")
+          .replace(/\\textbraceright\s*(?:\{\})?/g, "}");
         if (next === decoded) break;
         decoded = next;
       }
 
-      const readable = decoded
+      return decoded;
+    }
+
+    function mathNoteToReadableText(value) {
+      return decodeTextifiedMathNote(value)
         .replace(/\\\\\s*/g, "\n")
-        .replace(/\\(?:displaylines|text)\b/g, " ")
-        .replace(/\\([%#&_$])/g, "$1")
-        .replace(/\\[a-zA-Z]+\b/g, " ")
-        .replace(/[{}\\]/g, "")
+        .replace(/\\(?:displaylines|text)\b/g, "")
+        .replace(/\\([{}%#&_$])/g, "$1")
+        .replace(/[{}]/g, "")
         .split("\n")
         .map(line => line.replace(/[ \t]+/g, " ").trim())
         .join("\n")
         .replace(/\n{3,}/g, "\n\n")
         .trim();
+    }
 
+    function repairTextifiedMathNote(value) {
+      const text = String(value || "");
+      if (!isTextifiedMathNote(text)) return text;
+
+      const readable = mathNoteToReadableText(text);
       if (!readable) return "";
       const lines = readable
         .split("\n")
         .map(line => `\\text{${escapeLatexText(line)}}`)
         .join(" \\\\ ");
       return `\\displaylines{${lines}}`;
+    }
+
+    function plainNoteToMathLive(value) {
+      return String(value || "")
+        .replace(/\r\n?/g, "\n")
+        .split("\n")
+        .map(line => `\\text{${escapeLatexText(line)}}`)
+        .join(" \\\\ ");
     }
 
     function legacyNoteToMathLive(value) {
@@ -6251,6 +6273,7 @@
     }
 
     let mathNotesInputMode = "math";
+    let editorNotesAreLoading = false;
 
     function updateMathNotesModeUi() {
       const button = $("notesModeBtn");
@@ -6268,6 +6291,7 @@
       field.focus();
       field.executeCommand?.(["switch-mode", mathNotesInputMode]);
       updateMathNotesModeUi();
+      scheduleEditorDraftAutosave();
     }
 
     function setEditorNotesValue(question) {
@@ -6277,24 +6301,32 @@
       mathField.classList.toggle("hidden", !isMath);
       textField.classList.toggle("hidden", isMath);
       $("notesModeBtn").classList.toggle("hidden", !isMath);
-      if (isMath) {
-        mathNotesInputMode = "math";
-        mathField.executeCommand?.(["switch-mode", "math"]);
-      }
-      updateMathNotesModeUi();
 
       if (isMath) {
-        const value = ensureMathNoteMultiline(question.notesFormat === "mathlive"
-          ? repairTextifiedMathNote(question.notes)
-          : legacyNoteToMathLive(question.notes));
-        if (typeof mathField.setValue === "function") {
-          mathField.setValue(value, { silenceNotifications: true });
-        } else {
-          mathField.value = value;
+        const regularText = question.notesFormat === "plain" || isTextifiedMathNote(question.notes);
+        mathNotesInputMode = regularText ? "text" : "math";
+        const value = ensureMathNoteMultiline(regularText
+          ? plainNoteToMathLive(mathNoteToReadableText(question.notes))
+          : (question.notesFormat === "mathlive"
+            ? repairTextifiedMathNote(question.notes)
+            : legacyNoteToMathLive(question.notes)));
+        editorNotesAreLoading = true;
+        try {
+          if (typeof mathField.setValue === "function") {
+            mathField.setValue(value, { silenceNotifications: true });
+          } else {
+            mathField.value = value;
+          }
+          mathField.executeCommand?.(["switch-mode", mathNotesInputMode]);
+        } finally {
+          queueMicrotask(() => {
+            editorNotesAreLoading = false;
+          });
         }
       } else {
         textField.value = String(question.notes || "");
       }
+      updateMathNotesModeUi();
     }
 
     function getEditorNotesValue() {
@@ -6305,14 +6337,20 @@
       const value = String(typeof field.getValue === "function"
         ? field.getValue("latex")
         : field.value || "");
-      return repairTextifiedMathNote(normalizeStoredMathNote(value));
+      const normalized = normalizeStoredMathNote(value);
+      return mathNotesInputMode === "text" || isTextifiedMathNote(normalized)
+        ? mathNoteToReadableText(normalized)
+        : repairTextifiedMathNote(normalized);
     }
 
     function editorNotesFormat() {
-      return state.activeSection === "math" ? "mathlive" : "plain";
+      return state.activeSection === "math" && mathNotesInputMode === "math"
+        ? "mathlive"
+        : "plain";
     }
 
     function populateEditor(number) {
+      cancelEditorDraftAutosave();
       const q = getQuestion(number);
       if (!q) return null;
 
@@ -6343,6 +6381,7 @@
     }
 
     function openEditor(number) {
+      if ($("editDialog").open && state.activeNumber !== number && !commitEditor()) return;
       const q = populateEditor(number);
       if (!q) return;
 
@@ -6415,14 +6454,29 @@
 
     let editorDraftTimer = null;
 
-    function scheduleEditorDraftAutosave() {
-      clearTimeout(editorDraftTimer);
-      editorDraftTimer = setTimeout(saveEditorDraft, 400);
-    }
-
-    function saveEditorDraft() {
+    function cancelEditorDraftAutosave() {
       clearTimeout(editorDraftTimer);
       editorDraftTimer = null;
+    }
+
+    function scheduleEditorDraftAutosave() {
+      if (editorNotesAreLoading) return;
+      cancelEditorDraftAutosave();
+      const sectionKey = state.activeSection;
+      const questionNumber = state.activeNumber;
+      editorDraftTimer = setTimeout(() => {
+        editorDraftTimer = null;
+        saveEditorDraft({ sectionKey, questionNumber });
+      }, 400);
+    }
+
+    function saveEditorDraft(expectedContext = null) {
+      cancelEditorDraftAutosave();
+
+      const expectedSection = expectedContext?.sectionKey;
+      const expectedNumber = expectedContext?.questionNumber;
+      if ((expectedSection && expectedSection !== state.activeSection)
+        || (expectedNumber && expectedNumber !== state.activeNumber)) return;
 
       const q = getQuestion(state.activeNumber);
       if (!q || !$("editDialog").open) return;
@@ -6437,6 +6491,7 @@
       }
       const attempts = Math.max(0, Math.floor(Number($("editAttempts").value) || 0));
       const notes = getEditorNotesValue();
+      const notesFormat = editorNotesFormat();
       let changed = false;
 
       if (!id || isValidId(id)) {
@@ -6450,6 +6505,7 @@
       if (validateSkill(state.activeSection, domain, skill) && q.skill !== skill) changed = true;
       if (q.attempts !== attempts) changed = true;
       if (q.notes !== notes) changed = true;
+      if (q.notesFormat !== notesFormat) changed = true;
       if (!changed) return;
 
       captureEditorUndo("question edit");
@@ -6465,7 +6521,7 @@
       if (validateSkill(state.activeSection, domain, skill)) q.skill = skill;
       q.attempts = attempts;
       q.notes = notes;
-      q.notesFormat = editorNotesFormat();
+      q.notesFormat = notesFormat;
       q.updatedAt = new Date().toISOString();
       save(true);
       renderStats();
@@ -6489,6 +6545,7 @@
       }
       const attempts = Math.max(0, Math.floor(Number($("editAttempts").value) || 0));
       const notes = getEditorNotesValue();
+      const notesFormat = editorNotesFormat();
 
       if (id && !isValidId(id)) {
         $("editId").classList.add("invalid");
@@ -6524,7 +6581,8 @@
         || q.domain !== domain
         || q.skill !== skill
         || q.attempts !== attempts
-        || q.notes !== notes;
+        || q.notes !== notes
+        || q.notesFormat !== notesFormat;
 
       if (!changed) return true;
       captureEditorUndo("question edit");
@@ -6534,7 +6592,7 @@
       q.skill = skill;
       q.attempts = attempts;
       q.notes = notes;
-      q.notesFormat = editorNotesFormat();
+      q.notesFormat = notesFormat;
       q.updatedAt = new Date().toISOString();
 
       save(true);
@@ -7780,6 +7838,7 @@
       scheduleEditorDraftAutosave();
     });
     $("editDialog").addEventListener("close", saveEditorDraft);
+    $("editDialog").addEventListener("cancel", saveEditorDraft);
     $("editDialog").addEventListener("close", restoreTimerHome);
     $("timerDialog").addEventListener("close", updateTimerPopupForMenus);
     $("timerEndedDialog").addEventListener("close", updateTimerPopupForMenus);
