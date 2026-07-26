@@ -1,0 +1,146 @@
+/*
+ * Disabled MathLive notes module archive
+ * --------------------------------------
+ * This file is intentionally not loaded by index.html and its .disabled
+ * extension prevents it from running as JavaScript on the site.
+ *
+ * To reuse later:
+ * 1. Rename this file to mathlive-notes-module.js.
+ * 2. Load MathLive before this module:
+ *    https://cdn.jsdelivr.net/npm/mathlive@0.110.0
+ * 3. Import or copy createMathLiveNotesEditor() into the application.
+ *
+ * The module keeps each paragraph in a separate <math-field>, avoiding a
+ * \displaylines{} wrapper. Its serialized value is a versioned JSON object.
+ */
+
+export const MATHLIVE_NOTES_FORMAT = "mathlive-paragraphs";
+
+export const mathLiveNotesCss = `
+  .mathlive-notes-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .mathlive-notes-editor math-field {
+    display: block;
+    width: 100%;
+    min-height: 1.9em;
+    padding: 2px 1px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    --selection-background-color: transparent;
+    --contains-highlight-background-color: transparent;
+  }
+
+  .mathlive-notes-editor math-field::part(virtual-keyboard-toggle),
+  .mathlive-notes-editor math-field::part(menu-toggle) {
+    display: none;
+  }
+`;
+
+function decodeParagraphs(serializedValue) {
+  const text = String(serializedValue || "");
+  if (!text.trim()) return [];
+
+  try {
+    const parsed = JSON.parse(text);
+    const paragraphs = Array.isArray(parsed) ? parsed : parsed?.paragraphs;
+    return Array.isArray(paragraphs)
+      ? paragraphs.map(paragraph => String(paragraph ?? ""))
+      : [];
+  } catch (_) {
+    return [text];
+  }
+}
+
+function encodeParagraphs(paragraphs) {
+  const values = paragraphs.map(paragraph => String(paragraph ?? ""));
+  if (!values.length || values.every(paragraph => !paragraph.trim())) return "";
+  return JSON.stringify({ version: 1, paragraphs: values });
+}
+
+export function createMathLiveNotesEditor(container, options = {}) {
+  if (!(container instanceof HTMLElement)) {
+    throw new TypeError("A container element is required.");
+  }
+
+  const notifyChange = typeof options.onChange === "function"
+    ? options.onChange
+    : () => {};
+  let activeField = null;
+
+  function fieldValue(field) {
+    return String(field?.value || "");
+  }
+
+  function fields() {
+    return [...container.querySelectorAll("math-field")];
+  }
+
+  function configureField(field, value = "") {
+    field.setAttribute("default-mode", "text");
+    field.setAttribute("smart-mode", "false");
+    field.setAttribute("smart-fence", "true");
+    field.setAttribute("spellcheck", "false");
+    field.setAttribute("virtual-keyboard-mode", "manual");
+    field.defaultMode = "text";
+    field.smartMode = false;
+    field.smartFence = true;
+    field.virtualKeyboardMode = "manual";
+    field.setValue(String(value || ""), { silenceNotifications: true });
+    field.mode = "text";
+
+    field.addEventListener("focusin", () => {
+      activeField = field;
+    });
+    field.addEventListener("input", notifyChange);
+    field.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        const nextField = document.createElement("math-field");
+        field.after(nextField);
+        configureField(nextField);
+        nextField.focus();
+        notifyChange();
+      }
+    });
+  }
+
+  function setValue(serializedValue) {
+    container.replaceChildren();
+    const paragraphs = decodeParagraphs(serializedValue);
+    (paragraphs.length ? paragraphs : [""]).forEach(paragraph => {
+      const field = document.createElement("math-field");
+      container.append(field);
+      configureField(field, paragraph);
+    });
+  }
+
+  function getValue() {
+    return encodeParagraphs(fields().map(fieldValue));
+  }
+
+  function toggleInputMode() {
+    const field = activeField?.isConnected ? activeField : fields().at(-1);
+    if (!field) return;
+    field.focus();
+    field.mode = field.mode === "math" ? "text" : "math";
+  }
+
+  container.classList.add("mathlive-notes-editor");
+  setValue(options.value || "");
+
+  return {
+    getValue,
+    setValue,
+    toggleInputMode,
+    destroy() {
+      container.replaceChildren();
+      container.classList.remove("mathlive-notes-editor");
+      activeField = null;
+    }
+  };
+}

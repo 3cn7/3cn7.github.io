@@ -1373,21 +1373,10 @@
     .settings-section h3 { margin-bottom: 12px; }
 
     .notes-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
       margin-bottom: 6px;
       color: var(--secondary);
       font-size: 0.84rem;
       font-weight: 650;
-    }
-
-    .notes-mode-button {
-      min-height: 30px;
-      padding: 4px 9px;
-      font-size: 0.76rem;
-      white-space: nowrap;
     }
 
     .settings-section select,
@@ -1618,49 +1607,6 @@
       text-align: center;
     }
 
-    .notes-math-field {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-      width: 100%;
-      min-height: 126px;
-      padding: 12px 13px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius-sm);
-      outline: none;
-      color: var(--text);
-      background: var(--surface);
-      font-size: 1rem;
-      line-height: 1.55;
-      transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
-    }
-
-    .notes-math-field:focus-within {
-      border-color: var(--blue);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 20%, transparent);
-    }
-
-    math-field.notes-paragraph-field {
-      display: block;
-      width: 100%;
-      min-height: 1.9em;
-      padding: 2px 1px;
-      border: 0;
-      outline: 0;
-      color: var(--text);
-      background: transparent;
-      font-size: 1rem;
-      line-height: 1.55;
-      --caret-color: var(--blue);
-      --selection-background-color: transparent !important;
-      --contains-highlight-background-color: transparent !important;
-      --smart-fence-color: var(--secondary);
-    }
-
-    math-field.notes-paragraph-field::part(virtual-keyboard-toggle),
-    math-field.notes-paragraph-field::part(menu-toggle) {
-      display: none;
-    }
 
     .timer-float {
       position: fixed;
@@ -1845,8 +1791,6 @@
       font-size: .78rem;
     }
 
-    .notes-editor.hidden { display: none !important; }
-
     textarea.notes-text-field {
       min-height: 150px;
       font-family: "Open Sans", Arial, sans-serif;
@@ -1855,31 +1799,6 @@
       color: var(--text) !important;
       background: var(--field) !important;
       opacity: 1 !important;
-    }
-
-    .notes-math-field {
-      color: var(--text) !important;
-      background-color: var(--field) !important;
-      opacity: 1 !important;
-    }
-
-    math-field.notes-paragraph-field {
-      color: var(--text) !important;
-      background: transparent !important;
-      --primary: var(--blue);
-      --placeholder-color: var(--secondary);
-      --selection-color: var(--text);
-    }
-
-    math-field.notes-paragraph-field::part(content) {
-      color: var(--text) !important;
-      background: transparent !important;
-      text-shadow: none !important;
-    }
-
-    math-field.notes-paragraph-field::part(content)::selection {
-      color: inherit;
-      background: transparent;
     }
 
     /* The timer is a manual popover so it stays above question-card dialogs. */
@@ -3446,18 +3365,11 @@
       <div id="editNotesLabel" style="margin-top:11px">
         <div class="notes-heading">
           <span>Notes</span>
-          <button id="notesModeBtn" class="secondary notes-mode-button" type="button" title="Toggle math and regular text input (Ctrl + Shift + M)">Math input</button>
         </div>
-        <div
-          id="editNotes"
-          class="notes-math-field notes-editor"
-          role="group"
-          aria-label="Mixed text and math notes"
-        ></div>
         <textarea
-          id="editNotesText"
-          class="notes-text-field notes-editor hidden"
-          aria-label="Reading and Writing notes"
+          id="editNotes"
+          class="notes-text-field"
+          aria-label="Question notes"
           placeholder="Notes"
         ></textarea>
       </div>
@@ -3732,7 +3644,6 @@
   <div id="skillDropdown" class="skill-dropdown" role="listbox" aria-label="Skill options" popover="manual"></div>
   <div id="toastRegion" class="toast-region" aria-live="polite" popover="manual"></div>
 
-  <script defer src="https://cdn.jsdelivr.net/npm/mathlive@0.110.0"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.min.js" onload="window.dispatchEvent(new Event('suncalcready'))"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
@@ -4319,7 +4230,7 @@
         partialAttempts: 0,
         skippedAttempts: 0,
         notes: "",
-        notesFormat: "mathlive-paragraphs",
+        notesFormat: "plain",
         updatedAt: ""
       };
     }
@@ -4395,10 +4306,8 @@
           ? "mathlive"
           : (raw?.notesFormat === "plain" ? "plain" : "legacy"));
       const storedNotes = String(raw?.notes || "");
-      const notesFormat = sectionKey === "math" ? "mathlive-paragraphs" : "plain";
-      const notes = sectionKey === "math"
-        ? encodeMathNoteParagraphs(decodeMathNoteParagraphs(storedNotes, storedNotesFormat))
-        : (isTextifiedMathNote(storedNotes) ? mathNoteToReadableText(storedNotes) : storedNotes);
+      const notesFormat = "plain";
+      const notes = legacyStoredNoteToPlainText(storedNotes, storedNotesFormat);
 
       return {
         number,
@@ -4478,6 +4387,7 @@
             { length: state.sections.rw.targetCount },
             (_, index) => normalizeQuestion(saved.sections.rw.questions?.[index], index + 1, "rw")
           );
+          save(false);
           return;
         }
       } catch (_) {}
@@ -6186,25 +6096,11 @@
       }
     }
 
-    function escapeLatexText(value) {
-      const replacements = {
-        "\\": "\\textbackslash{}",
-        "{": "\\{",
-        "}": "\\}",
-        "%": "\\%",
-        "#": "\\#",
-        "&": "\\&",
-        "_": "\\_",
-        "$": "\\$"
-      };
-      return String(value || "").replace(/[\\{}%#&_$]/g, character => replacements[character]);
-    }
-
-    function isTextifiedMathNote(value) {
+    function isLegacyTextifiedNote(value) {
       return /\\textbackslash\s*(?:displaylines|text|textbackslash)|\\textbrace(?:left|right)/.test(String(value || ""));
     }
 
-    function decodeTextifiedMathNote(value) {
+    function decodeLegacyTextifiedNote(value) {
       let decoded = String(value || "")
         .replace(/\r\n?/g, "\n")
         .replace(/\$\$/g, " ");
@@ -6221,8 +6117,8 @@
       return decoded;
     }
 
-    function mathNoteToReadableText(value) {
-      return decodeTextifiedMathNote(value)
+    function legacyTextifiedNoteToPlainText(value) {
+      return decodeLegacyTextifiedNote(value)
         .replace(/\\\\\s*/g, "\n")
         .replace(/\\(?:displaylines|text)\b/g, " ")
         .replace(/\\([{}%#&_$])/g, "$1")
@@ -6234,30 +6130,7 @@
         .trim();
     }
 
-    function plainNoteToMathLive(value) {
-      return String(value || "")
-        .replace(/\r\n?/g, "\n")
-        .split("\n")
-        .map(line => `\\text{${escapeLatexText(line)}}`)
-        .join(" \\\\ ");
-    }
-
-    function legacyNoteToMathLive(value) {
-      const text = String(value || "").replace(/\r\n?/g, "\n");
-      if (!text) return "";
-      if (/\\[a-zA-Z]+|[\^_{}]/.test(text)) {
-        return text
-          .replace(/\\\((.*?)\\\)/gs, "$1")
-          .replace(/\\\[(.*?)\\\]/gs, "$1")
-          .replace(/\n/g, " \\\\ ");
-      }
-      return text
-        .split("\n")
-        .map(line => `\\text{${escapeLatexText(line)}}`)
-        .join(" \\\\ ");
-    }
-
-    function splitMathLiveRows(value) {
+    function splitLegacyNoteRows(value) {
       const text = String(value || "").replace(/\r\n?/g, "\n").trim();
       if (!text || /^\\displaylines\{\s*\}$/.test(text)) return [];
 
@@ -6295,247 +6168,65 @@
       return rows;
     }
 
-    function decodeMathNoteParagraphs(value, format = "mathlive") {
+    function legacyNoteParagraphToPlainText(value) {
+      let text = String(value || "").replace(/\r\n?/g, "\n").trim();
+      if (!text) return "";
+      if (isLegacyTextifiedNote(text)) return legacyTextifiedNoteToPlainText(text);
+
+      for (let pass = 0; pass < 4; pass++) {
+        const next = text
+          .replace(/\\textbackslash\s*(?:\{\})?/g, "\\")
+          .replace(/\\textbraceleft\s*(?:\{\})?/g, "{")
+          .replace(/\\textbraceright\s*(?:\{\})?/g, "}")
+          .replace(/^\\text\{([\s\S]*)\}$/, "$1");
+        if (next === text) break;
+        text = next;
+      }
+
+      return text
+        .replace(/\\([{}%#&_$])/g, "$1")
+        .replace(/\\\((.*?)\\\)/gs, "$1")
+        .replace(/\\\[(.*?)\\\]/gs, "$1")
+        .trim();
+    }
+
+    function legacyStoredNoteToPlainText(value, format = "plain") {
       const text = String(value || "").replace(/\r\n?/g, "\n");
-      if (!text.trim()) return [];
+      if (!text.trim()) return "";
+      if (format === "plain") return text;
 
       if (format === "mathlive-paragraphs") {
         try {
           const parsed = JSON.parse(text);
           const paragraphs = Array.isArray(parsed) ? parsed : parsed?.paragraphs;
           if (Array.isArray(paragraphs)) {
-            return paragraphs.map(paragraph => String(paragraph ?? "").replace(/\r\n?/g, "\n"));
+            return paragraphs
+              .map(legacyNoteParagraphToPlainText)
+              .join("\n");
           }
         } catch (_) {}
       }
 
-      if (isTextifiedMathNote(text)) {
-        return mathNoteToReadableText(text)
-          .split("\n")
-          .map(paragraph => plainNoteToMathLive(paragraph));
-      }
-
-      if (format === "plain") {
-        return text.split("\n").map(paragraph => plainNoteToMathLive(paragraph));
-      }
-
-      if (format === "legacy") {
-        return splitMathLiveRows(legacyNoteToMathLive(text));
-      }
-
-      return splitMathLiveRows(text);
-    }
-
-    function encodeMathNoteParagraphs(paragraphs) {
-      const values = (Array.isArray(paragraphs) ? paragraphs : [])
-        .map(paragraph => String(paragraph ?? "").replace(/\r\n?/g, "\n"));
-      if (!values.length || values.every(paragraph => !paragraph.trim())) return "";
-      return JSON.stringify({ version: 1, paragraphs: values });
+      if (isLegacyTextifiedNote(text)) return legacyTextifiedNoteToPlainText(text);
+      return splitLegacyNoteRows(text)
+        .map(legacyNoteParagraphToPlainText)
+        .join("\n");
     }
 
     function notePreviewText(question) {
-      if (question?.notesFormat === "mathlive-paragraphs"
-        || question?.notesFormat === "mathlive") {
-        return decodeMathNoteParagraphs(question?.notes, question.notesFormat)
-          .map(paragraph => mathNoteToReadableText(paragraph))
-          .join("\n");
-      }
       return String(question?.notes || "");
     }
 
-    let mathNotesInputMode = "text";
-    let editorNotesAreLoading = false;
-    let activeNotesParagraphField = null;
-
-    function notesParagraphValue(field) {
-      if (!field) return "";
-      return String(field.value ?? (typeof field.getValue === "function"
-        ? field.getValue("latex")
-        : field.textContent || ""));
-    }
-
-    function notesParagraphFields() {
-      return [...$("editNotes").querySelectorAll("math-field.notes-paragraph-field")];
-    }
-
-    function configureNotesParagraphField(field) {
-      if (!field) return field;
-      const alreadyConfigured = field.dataset.notesReady === "true";
-      field.classList.add("notes-paragraph-field");
-      field.setAttribute("default-mode", "text");
-      field.setAttribute("smart-mode", "false");
-      field.setAttribute("smart-fence", "true");
-      field.setAttribute("spellcheck", "false");
-      field.setAttribute("autocorrect", "off");
-      field.setAttribute("autocomplete", "off");
-      field.setAttribute("virtual-keyboard-mode", "manual");
-      field.setAttribute("aria-label", "Notes paragraph");
-      if (alreadyConfigured) return field;
-      field.dataset.notesReady = "true";
-
-      field.addEventListener("focusin", () => {
-        activeNotesParagraphField = field;
-        mathNotesInputMode = field.mode === "math" ? "math" : "text";
-        updateMathNotesModeUi();
-      });
-
-      field.addEventListener("mode-change", event => {
-        const mode = (typeof event.detail === "string" ? event.detail : event.detail?.mode) || field.mode;
-        if (field === activeNotesParagraphField && (mode === "math" || mode === "text")) {
-          mathNotesInputMode = mode;
-          updateMathNotesModeUi();
-        }
-      });
-
-      field.addEventListener("input", scheduleEditorDraftAutosave);
-      field.addEventListener("keydown", event => {
-        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "m") {
-          event.preventDefault();
-          event.stopPropagation();
-          toggleMathNotesInputMode();
-          return;
-        }
-
-        if (event.key === "Enter" && !event.ctrlKey && !event.metaKey && !event.altKey) {
-          event.preventDefault();
-          event.stopPropagation();
-          insertNotesParagraphAfter(field);
-          return;
-        }
-
-        if (event.key === "Backspace"
-          && !notesParagraphValue(field).trim()
-          && notesParagraphFields().length > 1) {
-          event.preventDefault();
-          const fields = notesParagraphFields();
-          const index = fields.indexOf(field);
-          const nextField = fields[index - 1] || fields[index + 1];
-          field.remove();
-          activeNotesParagraphField = nextField || null;
-          nextField?.focus();
-          nextField?.executeCommand?.("moveToMathfieldEnd");
-          scheduleEditorDraftAutosave();
-        }
-      });
-
-      return field;
-    }
-
-    function initializeNotesParagraphField(field, value = null) {
-      if (!field?.isConnected) return field;
-      configureNotesParagraphField(field);
-
-      if (typeof field.setValue !== "function") {
-        if (value !== null) {
-          field.dataset.pendingNotesValue = String(value || "");
-          field.textContent = String(value || "");
-        }
-        return field;
-      }
-
-      field.defaultMode = "text";
-      field.smartMode = false;
-      field.smartFence = true;
-      field.smartSuperscript = true;
-      field.virtualKeyboardMode = "manual";
-      field.inlineShortcutTimeout = 0;
-      if (field.inlineShortcuts) {
-        field.inlineShortcuts = {
-          ...field.inlineShortcuts,
-          sqrt: "\\sqrt{#0}",
-          root: "\\sqrt{#0}"
-        };
-      }
-      if (field.registers) field.registers.jot = "7pt";
-
-      const pendingValue = value !== null ? String(value || "") : field.dataset.pendingNotesValue;
-      if (pendingValue !== undefined) {
-        field.setValue(pendingValue, { silenceNotifications: true });
-        delete field.dataset.pendingNotesValue;
-      }
-      field.mode = "text";
-      return field;
-    }
-
-    function createNotesParagraphField(value = "") {
-      const field = configureNotesParagraphField(document.createElement("math-field"));
-      field.dataset.pendingNotesValue = String(value || "");
-      return field;
-    }
-
-    function insertNotesParagraphAfter(field) {
-      const paragraph = createNotesParagraphField("");
-      if (field?.isConnected) field.after(paragraph);
-      else $("editNotes").append(paragraph);
-      initializeNotesParagraphField(paragraph);
-      activeNotesParagraphField = paragraph;
-      mathNotesInputMode = "text";
-      paragraph.focus();
-      updateMathNotesModeUi();
-      scheduleEditorDraftAutosave();
-    }
-
-    function updateMathNotesModeUi() {
-      const button = $("notesModeBtn");
-      if (!button) return;
-      const regularText = mathNotesInputMode === "text";
-      button.textContent = regularText ? "Regular text" : "Math input";
-      button.title = "Toggle math and regular text input (Ctrl + Shift + M)";
-      button.setAttribute("aria-label", `${regularText ? "Regular text" : "Math input"} mode. Press Control Shift M to toggle.`);
-    }
-
-    function toggleMathNotesInputMode() {
-      if (state.activeSection !== "math") return;
-      const field = activeNotesParagraphField?.isConnected
-        ? activeNotesParagraphField
-        : notesParagraphFields().at(-1);
-      if (!field) return;
-      mathNotesInputMode = mathNotesInputMode === "math" ? "text" : "math";
-      field.focus();
-      field.mode = mathNotesInputMode;
-      updateMathNotesModeUi();
-    }
-
     function setEditorNotesValue(question) {
-      const isMath = state.activeSection === "math";
-      const mathEditor = $("editNotes");
-      const textField = $("editNotesText");
-      mathEditor.classList.toggle("hidden", !isMath);
-      textField.classList.toggle("hidden", isMath);
-      $("notesModeBtn").classList.toggle("hidden", !isMath);
-
-      if (isMath) {
-        mathNotesInputMode = "text";
-        activeNotesParagraphField = null;
-        const paragraphs = decodeMathNoteParagraphs(question.notes, question.notesFormat);
-        editorNotesAreLoading = true;
-        try {
-          mathEditor.replaceChildren();
-          (paragraphs.length ? paragraphs : [""]).forEach(paragraph => {
-            const field = createNotesParagraphField(paragraph);
-            mathEditor.append(field);
-            initializeNotesParagraphField(field);
-          });
-        } finally {
-          queueMicrotask(() => {
-            editorNotesAreLoading = false;
-          });
-        }
-      } else {
-        textField.value = String(question.notes || "");
-      }
-      updateMathNotesModeUi();
+      $("editNotes").value = String(question?.notes || "");
     }
 
     function getEditorNotesValue() {
-      if (state.activeSection === "rw") {
-        return String($("editNotesText").value || "").replace(/\r\n?/g, "\n");
-      }
-      return encodeMathNoteParagraphs(notesParagraphFields().map(notesParagraphValue));
+      return String($("editNotes").value || "").replace(/\r\n?/g, "\n");
     }
 
     function editorNotesFormat() {
-      return state.activeSection === "math" ? "mathlive-paragraphs" : "plain";
+      return "plain";
     }
 
     function populateEditor(number) {
@@ -6664,7 +6355,6 @@
     }
 
     function scheduleEditorDraftAutosave() {
-      if (editorNotesAreLoading) return;
       cancelEditorDraftAutosave();
       const sectionKey = state.activeSection;
       const questionNumber = state.activeNumber;
@@ -8024,14 +7714,7 @@
         saveEditorDraft();
       });
     });
-    $("editNotesText").addEventListener("input", scheduleEditorDraftAutosave);
-    $("notesModeBtn").addEventListener("click", toggleMathNotesInputMode);
-    $("editNotes").addEventListener("click", event => {
-      if (event.target !== event.currentTarget) return;
-      const field = notesParagraphFields().at(-1);
-      activeNotesParagraphField = field || null;
-      field?.focus();
-    });
+    $("editNotes").addEventListener("input", scheduleEditorDraftAutosave);
     $("editId").addEventListener("input", scheduleEditorDraftAutosave);
     $("editAttempts").addEventListener("input", event => {
       event.target.value = String(Math.max(0, Math.floor(Number(event.target.value) || 0)));
@@ -8114,7 +7797,7 @@
       }
 
       const tag = document.activeElement?.tagName;
-      const typing = ["INPUT", "TEXTAREA", "SELECT", "MATH-FIELD"].includes(tag);
+      const typing = ["INPUT", "TEXTAREA", "SELECT"].includes(tag);
       if (typing) return;
 
       if (event.key.toLowerCase() === "c") submitResult("correct");
@@ -8165,17 +7848,6 @@
         unlockMainFrameScroll();
         requestAnimationFrame(() => refreshFloatingTimerVisibility({ bringToFront: true }));
       });
-    });
-
-    customElements.whenDefined("math-field").then(() => {
-      if (globalThis.MathfieldElement) {
-        MathfieldElement.fontsDirectory = "https://cdn.jsdelivr.net/npm/mathlive@0.110.0/fonts/";
-      }
-      notesParagraphFields().forEach(field => initializeNotesParagraphField(field));
-      if (state.activeNumber) {
-        const q = getQuestion(state.activeNumber);
-        if (q) setEditorNotesValue(q);
-      }
     });
 
     matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => {
