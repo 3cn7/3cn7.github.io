@@ -2751,7 +2751,8 @@
       --tahoe-frame-fill: linear-gradient(145deg,
         color-mix(in srgb, var(--blue) 4%, #2e2e32),
         color-mix(in srgb, var(--blue) 5%, #1d1d20));
-      --tahoe-outline: rgba(255, 255, 255, 0.13);
+      --tahoe-outline: transparent;
+      --tahoe-edge: rgba(255, 255, 255, 0.16);
       --tahoe-highlight: transparent;
       --tahoe-shadow: 0 1px 1px rgba(0, 0, 0, 0.32), 0 8px 20px rgba(0, 0, 0, 0.28);
       --tahoe-soft-shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -2787,7 +2788,8 @@
         --tahoe-frame-fill: linear-gradient(145deg,
           color-mix(in srgb, var(--blue) 4%, #2e2e32),
           color-mix(in srgb, var(--blue) 5%, #1d1d20));
-        --tahoe-outline: rgba(255, 255, 255, 0.13);
+        --tahoe-outline: transparent;
+        --tahoe-edge: rgba(255, 255, 255, 0.16);
         --tahoe-highlight: transparent;
         --tahoe-shadow: 0 1px 1px rgba(0, 0, 0, 0.32), 0 8px 20px rgba(0, 0, 0, 0.28);
         --tahoe-soft-shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -3091,6 +3093,40 @@
       -webkit-backdrop-filter: none !important;
     }
 
+    /* A uniform perimeter line replaces glossy inset highlights in dark mode. */
+    html[data-theme] :is(
+      button,
+      .button,
+      input,
+      select,
+      textarea,
+      .segmented,
+      .status,
+      .keyboard,
+      .toggle-row,
+      .settings-section,
+      .settings-preview,
+      .card,
+      .panel,
+      .table-wrap,
+      .filter-panel .android-search-bar,
+      .filter-panel .filter-controls,
+      .drive-status-card,
+      .drive-meta-item,
+      .drive-preferences > label,
+      .range-card,
+      .timer-dialog-current,
+      .notice,
+      dialog,
+      .skill-dropdown,
+      .mobile-overflow-menu,
+      .timer-float,
+      .progress-track
+    ) {
+      outline: 1px solid var(--tahoe-edge, transparent);
+      outline-offset: -1px;
+    }
+
     /* Dark frames use one uninterrupted black surface. White edge lighting is
        reserved for the animated subject toggle. */
     html[data-theme="dark"] dialog,
@@ -3171,10 +3207,16 @@
 
     @media (max-width: 760px), (max-height: 520px) and (pointer: coarse) {
       /* Compact question rows are one clean surface, without a nested bezel. */
-      .question-list-panel tbody tr,
-      .mobile-question-summary {
+      .question-list-panel tbody tr {
         border: 0 !important;
         outline: 0 !important;
+        box-shadow: none !important;
+      }
+
+      .mobile-question-summary {
+        border: 0 !important;
+        outline: 1px solid var(--tahoe-edge, transparent) !important;
+        outline-offset: -1px;
         box-shadow: none !important;
       }
 
