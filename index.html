@@ -3169,6 +3169,41 @@
       }
     }
 
+    @media (max-width: 760px), (max-height: 520px) and (pointer: coarse) {
+      /* Compact question rows are one clean surface, without a nested bezel. */
+      .question-list-panel tbody tr,
+      .mobile-question-summary {
+        border: 0 !important;
+        outline: 0 !important;
+        box-shadow: none !important;
+      }
+
+      .mobile-question-summary :is(
+        .mobile-question-title strong,
+        .mobile-question-id.is-empty,
+        .mobile-question-taxonomy,
+        .mobile-question-note,
+        .mobile-question-note.is-empty,
+        .mobile-question-attempts,
+        .mobile-question-chevron,
+        .status.unattempted
+      ) {
+        color: var(--text);
+      }
+
+      /* The overflow actions float inside a blurred glass boundary instead of
+         a solid menu panel. */
+      html[data-theme] .mobile-overflow-menu {
+        padding: 10px !important;
+        border: 1px solid color-mix(in srgb, var(--line) 52%, transparent);
+        background: color-mix(in srgb, var(--page) 46%, transparent) !important;
+        background-image: none !important;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28) !important;
+        backdrop-filter: blur(28px) saturate(125%) !important;
+        -webkit-backdrop-filter: blur(28px) saturate(125%) !important;
+      }
+    }
+
     @media (max-width: 760px), (max-height: 620px) {
       #editDialog .dialog-foot {
         display: grid;
