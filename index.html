@@ -2752,7 +2752,7 @@
         color-mix(in srgb, var(--blue) 4%, #2e2e32),
         color-mix(in srgb, var(--blue) 5%, #1d1d20));
       --tahoe-outline: rgba(255, 255, 255, 0.13);
-      --tahoe-highlight: rgba(255, 255, 255, 0.09);
+      --tahoe-highlight: transparent;
       --tahoe-shadow: 0 1px 1px rgba(0, 0, 0, 0.32), 0 8px 20px rgba(0, 0, 0, 0.28);
       --tahoe-soft-shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 4px 12px rgba(0, 0, 0, 0.2);
       --tahoe-selected-fill: var(--blue);
@@ -2788,7 +2788,7 @@
           color-mix(in srgb, var(--blue) 4%, #2e2e32),
           color-mix(in srgb, var(--blue) 5%, #1d1d20));
         --tahoe-outline: rgba(255, 255, 255, 0.13);
-        --tahoe-highlight: rgba(255, 255, 255, 0.09);
+        --tahoe-highlight: transparent;
         --tahoe-shadow: 0 1px 1px rgba(0, 0, 0, 0.32), 0 8px 20px rgba(0, 0, 0, 0.28);
         --tahoe-soft-shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 4px 12px rgba(0, 0, 0, 0.2);
         --tahoe-selected-fill: var(--blue);
@@ -3089,6 +3089,84 @@
       box-shadow: none !important;
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
+    }
+
+    /* Dark frames use one uninterrupted black surface. White edge lighting is
+       reserved for the animated subject toggle. */
+    html[data-theme="dark"] dialog,
+    html[data-theme="dark"] dialog > :is(.dialog-head, .dialog-body, .dialog-foot),
+    html[data-theme="dark"] :is(.skill-dropdown, .mobile-overflow-menu, .timer-float) {
+      background: #000000 !important;
+      background-color: #000000 !important;
+      background-image: none !important;
+    }
+
+    html[data-theme="dark"] .segmented {
+      --tahoe-highlight: rgba(255, 255, 255, 0.13);
+    }
+
+    html[data-theme="dark"] :is(button:not(.secondary), .button:not(.secondary)) {
+      box-shadow:
+        inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+        0 4px 10px color-mix(in srgb, currentColor 16%, transparent);
+    }
+
+    html[data-theme="dark"] .segmented button {
+      box-shadow: none;
+    }
+
+    html[data-theme="dark"] .progress-bar {
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--blue) 42%, transparent);
+    }
+
+    html[data-theme="dark"] .result-actions button {
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--result-action-color) 72%, rgba(0, 0, 0, 0.3)),
+        0 6px 14px color-mix(in srgb, var(--result-action-color) 24%, transparent);
+    }
+
+    html[data-theme="dark"] .result-actions button .keyboard {
+      background: rgba(0, 0, 0, 0.16);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      html[data-theme="system"] dialog,
+      html[data-theme="system"] dialog > :is(.dialog-head, .dialog-body, .dialog-foot),
+      html[data-theme="system"] :is(.skill-dropdown, .mobile-overflow-menu, .timer-float) {
+        background: #000000 !important;
+        background-color: #000000 !important;
+        background-image: none !important;
+      }
+
+      html[data-theme="system"] .segmented {
+        --tahoe-highlight: rgba(255, 255, 255, 0.13);
+      }
+
+      html[data-theme="system"] :is(button:not(.secondary), .button:not(.secondary)) {
+        box-shadow:
+          inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+          0 4px 10px color-mix(in srgb, currentColor 16%, transparent);
+      }
+
+      html[data-theme="system"] .segmented button {
+        box-shadow: none;
+      }
+
+      html[data-theme="system"] .progress-bar {
+        box-shadow: 0 1px 4px color-mix(in srgb, var(--blue) 42%, transparent);
+      }
+
+      html[data-theme="system"] .result-actions button {
+        box-shadow:
+          inset 0 0 0 1px color-mix(in srgb, var(--result-action-color) 72%, rgba(0, 0, 0, 0.3)),
+          0 6px 14px color-mix(in srgb, var(--result-action-color) 24%, transparent);
+      }
+
+      html[data-theme="system"] .result-actions button .keyboard {
+        background: rgba(0, 0, 0, 0.16);
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+      }
     }
 
     @media (max-width: 760px), (max-height: 620px) {
