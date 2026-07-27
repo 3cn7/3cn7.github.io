@@ -2754,6 +2754,8 @@
       --tahoe-outline: transparent;
       --tahoe-edge: rgba(255, 255, 255, 0.16);
       --tahoe-highlight: transparent;
+      --question-title-color: #ffffff;
+      --question-detail-color: #e5e5ea;
       --tahoe-shadow: 0 1px 1px rgba(0, 0, 0, 0.32), 0 8px 20px rgba(0, 0, 0, 0.28);
       --tahoe-soft-shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 4px 12px rgba(0, 0, 0, 0.2);
       --tahoe-selected-fill: var(--blue);
@@ -2791,6 +2793,8 @@
         --tahoe-outline: transparent;
         --tahoe-edge: rgba(255, 255, 255, 0.16);
         --tahoe-highlight: transparent;
+        --question-title-color: #ffffff;
+        --question-detail-color: #e5e5ea;
         --tahoe-shadow: 0 1px 1px rgba(0, 0, 0, 0.32), 0 8px 20px rgba(0, 0, 0, 0.28);
         --tahoe-soft-shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 4px 12px rgba(0, 0, 0, 0.2);
         --tahoe-selected-fill: var(--blue);
@@ -3093,38 +3097,14 @@
       -webkit-backdrop-filter: none !important;
     }
 
-    /* A uniform perimeter line replaces glossy inset highlights in dark mode. */
-    html[data-theme] :is(
-      button,
-      .button,
-      input,
-      select,
-      textarea,
-      .segmented,
-      .status,
-      .keyboard,
-      .toggle-row,
-      .settings-section,
-      .settings-preview,
-      .card,
-      .panel,
-      .table-wrap,
-      .filter-panel .android-search-bar,
-      .filter-panel .filter-controls,
-      .drive-status-card,
-      .drive-meta-item,
-      .drive-preferences > label,
-      .range-card,
-      .timer-dialog-current,
-      .notice,
-      dialog,
-      .skill-dropdown,
-      .mobile-overflow-menu,
-      .timer-float,
-      .progress-track
-    ) {
+    /* Edge lines are reserved for the subject toggle and mobile bar controls. */
+    html[data-theme] .segmented {
       outline: 1px solid var(--tahoe-edge, transparent);
       outline-offset: -1px;
+    }
+
+    html[data-theme] .segmented button {
+      outline: 0;
     }
 
     /* Dark frames use one uninterrupted black surface. White edge lighting is
@@ -3215,13 +3195,15 @@
 
       .mobile-question-summary {
         border: 0 !important;
-        outline: 1px solid var(--tahoe-edge, transparent) !important;
-        outline-offset: -1px;
+        outline: 0 !important;
         box-shadow: none !important;
       }
 
+      .mobile-question-title strong {
+        color: var(--question-title-color, var(--text));
+      }
+
       .mobile-question-summary :is(
-        .mobile-question-title strong,
         .mobile-question-id.is-empty,
         .mobile-question-taxonomy,
         .mobile-question-note,
@@ -3230,14 +3212,24 @@
         .mobile-question-chevron,
         .status.unattempted
       ) {
-        color: var(--text);
+        color: var(--question-detail-color, var(--secondary));
+      }
+
+      html[data-theme] .app-bar-inner :is(button, .button) {
+        outline: 1px solid var(--tahoe-edge, transparent);
+        outline-offset: -1px;
+      }
+
+      html[data-theme] .app-bar-inner .segmented button {
+        outline: 0;
       }
 
       /* The overflow actions float inside a blurred glass boundary instead of
          a solid menu panel. */
       html[data-theme] .mobile-overflow-menu {
         padding: 10px !important;
-        border: 1px solid color-mix(in srgb, var(--line) 52%, transparent);
+        border: 0;
+        outline: 0;
         background: color-mix(in srgb, var(--page) 46%, transparent) !important;
         background-image: none !important;
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28) !important;
