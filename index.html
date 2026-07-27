@@ -2511,23 +2511,23 @@
       }
 
       .question-list-panel tbody tr.result-unattempted {
-        background: color-mix(in srgb, #ffffff 12%, var(--surface-2));
+        background: var(--question-unattempted-bg, var(--surface-2));
       }
 
       .question-list-panel tbody tr.result-correct {
-        background: color-mix(in srgb, var(--green) 24%, var(--surface-2));
+        background: var(--question-correct-bg, color-mix(in srgb, var(--green) 18%, var(--surface-2)));
       }
 
       .question-list-panel tbody tr.result-incorrect {
-        background: color-mix(in srgb, var(--red) 24%, var(--surface-2));
+        background: var(--question-incorrect-bg, color-mix(in srgb, var(--red) 18%, var(--surface-2)));
       }
 
       .question-list-panel tbody tr.result-partial {
-        background: color-mix(in srgb, var(--partial) 24%, var(--surface-2));
+        background: var(--question-partial-bg, color-mix(in srgb, var(--partial) 18%, var(--surface-2)));
       }
 
       .question-list-panel tbody tr.result-skipped {
-        background: color-mix(in srgb, var(--orange) 24%, var(--surface-2));
+        background: var(--question-skipped-bg, color-mix(in srgb, var(--orange) 18%, var(--surface-2)));
       }
 
       .question-list-panel tbody td { display: none; }
@@ -2704,6 +2704,11 @@
       --field: #f0f0f3;
       --field-focus: #ffffff;
       --table-alt: rgba(118, 118, 128, 0.055);
+      --question-unattempted-bg: #f2f2f6;
+      --question-correct-bg: color-mix(in srgb, var(--green) 18%, #ffffff);
+      --question-incorrect-bg: color-mix(in srgb, var(--red) 18%, #ffffff);
+      --question-partial-bg: color-mix(in srgb, var(--partial) 18%, #ffffff);
+      --question-skipped-bg: color-mix(in srgb, var(--orange) 18%, #ffffff);
       --tahoe-control-fill: linear-gradient(145deg,
         color-mix(in srgb, var(--blue) 4%, #ffffff),
         color-mix(in srgb, var(--blue) 6%, #e9e9ee));
@@ -2716,8 +2721,9 @@
       --tahoe-frame-fill: linear-gradient(145deg,
         color-mix(in srgb, var(--blue) 3%, #ffffff),
         color-mix(in srgb, var(--blue) 5%, #ededf2));
-      --tahoe-outline: rgba(60, 60, 67, 0.2);
-      --tahoe-highlight: rgba(255, 255, 255, 0.88);
+      --tahoe-outline: transparent;
+      --tahoe-edge: rgba(60, 60, 67, 0.16);
+      --tahoe-highlight: transparent;
       --tahoe-shadow: 0 1px 1px rgba(17, 24, 39, 0.07), 0 7px 18px rgba(17, 24, 39, 0.08);
       --tahoe-soft-shadow: 0 1px 1px rgba(17, 24, 39, 0.055), 0 4px 10px rgba(17, 24, 39, 0.055);
       --tahoe-selected-fill: var(--blue);
@@ -2756,6 +2762,11 @@
       --tahoe-highlight: transparent;
       --question-title-color: #ffffff;
       --question-detail-color: #e5e5ea;
+      --question-unattempted-bg: color-mix(in srgb, #ffffff 22%, var(--surface-2));
+      --question-correct-bg: color-mix(in srgb, var(--green) 38%, var(--surface-2));
+      --question-incorrect-bg: color-mix(in srgb, var(--red) 38%, var(--surface-2));
+      --question-partial-bg: color-mix(in srgb, var(--partial) 38%, var(--surface-2));
+      --question-skipped-bg: color-mix(in srgb, var(--orange) 38%, var(--surface-2));
       --tahoe-shadow: 0 1px 1px rgba(0, 0, 0, 0.32), 0 8px 20px rgba(0, 0, 0, 0.28);
       --tahoe-soft-shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 4px 12px rgba(0, 0, 0, 0.2);
       --tahoe-selected-fill: var(--blue);
@@ -2795,6 +2806,11 @@
         --tahoe-highlight: transparent;
         --question-title-color: #ffffff;
         --question-detail-color: #e5e5ea;
+        --question-unattempted-bg: color-mix(in srgb, #ffffff 22%, var(--surface-2));
+        --question-correct-bg: color-mix(in srgb, var(--green) 38%, var(--surface-2));
+        --question-incorrect-bg: color-mix(in srgb, var(--red) 38%, var(--surface-2));
+        --question-partial-bg: color-mix(in srgb, var(--partial) 38%, var(--surface-2));
+        --question-skipped-bg: color-mix(in srgb, var(--orange) 38%, var(--surface-2));
         --tahoe-shadow: 0 1px 1px rgba(0, 0, 0, 0.32), 0 8px 20px rgba(0, 0, 0, 0.28);
         --tahoe-soft-shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 4px 12px rgba(0, 0, 0, 0.2);
         --tahoe-selected-fill: var(--blue);
@@ -2889,10 +2905,7 @@
     html[data-theme="light"] :is(button:not(.secondary), .button:not(.secondary)),
     html[data-theme="system"] :is(button:not(.secondary), .button:not(.secondary)),
     html[data-theme="dark"] :is(button:not(.secondary), .button:not(.secondary)) {
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.34),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.14),
-        0 4px 10px color-mix(in srgb, currentColor 16%, transparent);
+      box-shadow: 0 4px 10px color-mix(in srgb, currentColor 16%, transparent);
     }
 
     html[data-theme="light"] :is(.segmented button, .mobile-question-summary),
@@ -3026,7 +3039,7 @@
     }
 
     html[data-theme] .progress-bar {
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34), 0 1px 4px color-mix(in srgb, var(--blue) 42%, transparent);
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--blue) 42%, transparent);
     }
 
     #correctBtn { --result-action-color: var(--green); }
@@ -3038,10 +3051,7 @@
       background: linear-gradient(145deg,
         color-mix(in srgb, var(--result-action-color) 82%, #ffffff),
         color-mix(in srgb, var(--result-action-color) 88%, #000000));
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.38),
-        inset 0 0 0 1px color-mix(in srgb, var(--result-action-color) 72%, rgba(0, 0, 0, 0.3)),
-        0 6px 14px color-mix(in srgb, var(--result-action-color) 24%, transparent);
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--result-action-color) 24%, transparent);
     }
 
     .result-actions button:hover {
@@ -3052,7 +3062,7 @@
 
     .result-actions button .keyboard {
       background: color-mix(in srgb, #ffffff 18%, transparent);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+      box-shadow: none;
     }
 
     @media (max-width: 760px), (max-height: 520px) and (pointer: coarse) {
@@ -3071,7 +3081,7 @@
 
     /* Menu frames stay flat and neutral; accent color is reserved for actions. */
     html[data-theme] dialog {
-      border: 1px solid var(--line) !important;
+      border: 0 !important;
       background: var(--surface) !important;
       background-image: none !important;
       box-shadow: none !important;
@@ -3095,6 +3105,22 @@
       box-shadow: none !important;
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
+    }
+
+    html[data-theme] :is(
+      button.secondary,
+      .button.secondary,
+      .card,
+      .panel,
+      .table-wrap,
+      .status,
+      .range-card
+    ) {
+      border-color: transparent;
+    }
+
+    html[data-theme] :is(input, select, textarea):not(:focus) {
+      border-color: transparent;
     }
 
     /* Edge lines are reserved for the subject toggle and mobile bar controls. */
@@ -3122,9 +3148,7 @@
     }
 
     html[data-theme="dark"] :is(button:not(.secondary), .button:not(.secondary)) {
-      box-shadow:
-        inset 0 -1px 0 rgba(0, 0, 0, 0.14),
-        0 4px 10px color-mix(in srgb, currentColor 16%, transparent);
+      box-shadow: 0 4px 10px color-mix(in srgb, currentColor 16%, transparent);
     }
 
     html[data-theme="dark"] .segmented button {
@@ -3136,14 +3160,12 @@
     }
 
     html[data-theme="dark"] .result-actions button {
-      box-shadow:
-        inset 0 0 0 1px color-mix(in srgb, var(--result-action-color) 72%, rgba(0, 0, 0, 0.3)),
-        0 6px 14px color-mix(in srgb, var(--result-action-color) 24%, transparent);
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--result-action-color) 24%, transparent);
     }
 
     html[data-theme="dark"] .result-actions button .keyboard {
       background: rgba(0, 0, 0, 0.16);
-      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+      box-shadow: none;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -3160,9 +3182,7 @@
       }
 
       html[data-theme="system"] :is(button:not(.secondary), .button:not(.secondary)) {
-        box-shadow:
-          inset 0 -1px 0 rgba(0, 0, 0, 0.14),
-          0 4px 10px color-mix(in srgb, currentColor 16%, transparent);
+        box-shadow: 0 4px 10px color-mix(in srgb, currentColor 16%, transparent);
       }
 
       html[data-theme="system"] .segmented button {
@@ -3174,14 +3194,12 @@
       }
 
       html[data-theme="system"] .result-actions button {
-        box-shadow:
-          inset 0 0 0 1px color-mix(in srgb, var(--result-action-color) 72%, rgba(0, 0, 0, 0.3)),
-          0 6px 14px color-mix(in srgb, var(--result-action-color) 24%, transparent);
+        box-shadow: 0 6px 14px color-mix(in srgb, var(--result-action-color) 24%, transparent);
       }
 
       html[data-theme="system"] .result-actions button .keyboard {
         background: rgba(0, 0, 0, 0.16);
-        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+        box-shadow: none;
       }
     }
 
