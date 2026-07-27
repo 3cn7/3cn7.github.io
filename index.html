@@ -3063,6 +3063,72 @@
       }
     }
 
+    /* Menu frames stay flat and neutral; accent color is reserved for actions. */
+    html[data-theme] dialog {
+      border: 1px solid var(--line) !important;
+      background: var(--surface) !important;
+      background-image: none !important;
+      box-shadow: none !important;
+    }
+
+    html[data-theme] dialog > :is(.dialog-head, .dialog-body, .dialog-foot) {
+      background: var(--surface) !important;
+      background-image: none !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+    html[data-theme] dialog > :is(.dialog-head, .dialog-foot) {
+      background: var(--surface-2) !important;
+    }
+
+    html[data-theme] :is(.skill-dropdown, .mobile-overflow-menu, .timer-float) {
+      background: var(--surface-2) !important;
+      background-image: none !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+    @media (max-width: 760px), (max-height: 620px) {
+      #editDialog .dialog-foot {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: stretch;
+      }
+
+      #editDialog .dialog-foot > :is(
+        #backQuestionBtn,
+        #addBlankBelowBtn,
+        #clearQuestionBtn,
+        #saveNextBtn
+      ) {
+        width: 100%;
+        min-width: 0;
+        min-height: 44px;
+        padding: 8px 10px;
+        justify-content: center;
+      }
+
+      #editDialog #saveNextBtn .keyboard { display: none; }
+      #editDialog #cardUndoBtn.is-visible {
+        grid-column: 1 / -1;
+        width: 100%;
+        max-width: none;
+      }
+    }
+
+    @media (min-width: 561px) and (max-height: 620px) {
+      #editDialog .dialog-foot {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      #editDialog #cardUndoBtn.is-visible {
+        grid-column: 1 / -1;
+      }
+    }
+
     @media (min-width: 761px) {
       .app-bar-inner {
         min-height: 72px;
@@ -3323,7 +3389,7 @@
     </div>
   </dialog>
 
-  <dialog id="editDialog">
+  <dialog id="editDialog" tabindex="-1">
     <div class="dialog-head">
       <h2 id="editTitle">Question 1</h2>
       <button class="secondary" data-close="editDialog">Close</button>
@@ -3389,7 +3455,7 @@
       <button id="cardUndoBtn" class="secondary undo-button" aria-hidden="true" tabindex="-1">Undo</button>
       <button id="addBlankBelowBtn" class="secondary">Add blank below</button>
       <button id="clearQuestionBtn" class="secondary">Clear slot</button>
-      <button id="saveNextBtn">Save and next <span class="keyboard">Ctrl + Enter</span></button>
+      <button id="saveNextBtn">Next <span class="keyboard">Ctrl + Enter</span></button>
     </div>
   </dialog>
 
@@ -6259,24 +6325,34 @@
 
     function focusEditor(q, delay = 30) {
       setTimeout(() => {
-        if (!q || !$('editDialog').open) return;
-        if (!q.questionId) $("editId").focus();
-        else $("editSkill").focus();
+        const dialog = $("editDialog");
+        if (!q || !dialog.open) return;
+        closeSkillDropdown({ immediate: true });
+        dialog.focus({ preventScroll: true });
       }, delay);
     }
 
     function openEditor(number) {
-      if ($("editDialog").open && state.activeNumber !== number && !commitEditor()) return;
+      const dialog = $("editDialog");
+      if (!dialog.open) editorBackHistory.length = 0;
+      setMobileOverflowOpen(false);
+      setFilterMenuOpen(false);
+      closeSkillDropdown({ immediate: true });
+      if (dialog.open && state.activeNumber !== number && !commitEditor()) return;
       const q = populateEditor(number);
       if (!q) return;
 
-      if (!$("editDialog").open) openDialog($("editDialog"));
+      if (!dialog.open) openDialog(dialog);
       focusEditor(q, 180);
     }
 
     async function switchEditorQuestion(number, direction = 1) {
       closeSkillDropdown({ immediate: true });
       const dialog = $("editDialog");
+      const departingNumber = state.activeNumber;
+      if (direction > 0 && departingNumber && departingNumber !== number) {
+        if (editorBackHistory.at(-1) !== departingNumber) editorBackHistory.push(departingNumber);
+      }
       if (!dialog.open || appSettings.reduceMotion || typeof dialog.animate !== "function") {
         openEditor(number);
         return;
@@ -6333,7 +6409,7 @@
         `${q.correctAttempts} correct · ${q.incorrectAttempts} incorrect · ` +
         `${q.partialAttempts || 0} partial · ${q.skippedAttempts} skipped`;
 
-      $("backQuestionBtn").disabled = !previousNumberBefore(q.number);
+      $("backQuestionBtn").disabled = !editorBackHistory.length && !previousNumberBefore(q.number);
       updateUndoUi();
     }
 
@@ -6341,6 +6417,7 @@
     let editorContextToken = 0;
     let editorLoadedSection = null;
     let editorLoadedNumber = null;
+    const editorBackHistory = [];
 
     function editorContextMatches(sectionKey = state.activeSection, questionNumber = state.activeNumber) {
       return editorLoadedSection === sectionKey
@@ -6522,7 +6599,12 @@
     function moveToPrevious() {
       const currentNumber = state.activeNumber;
       if (!commitEditor()) return;
-      const previousNumber = previousNumberBefore(currentNumber);
+      let previousNumber = null;
+      while (editorBackHistory.length && !previousNumber) {
+        const candidate = editorBackHistory.pop();
+        if (candidate !== currentNumber && getQuestion(candidate)) previousNumber = candidate;
+      }
+      previousNumber ||= previousNumberBefore(currentNumber);
       if (!previousNumber) return;
       switchEditorQuestion(previousNumber, -1);
     }
