@@ -2511,7 +2511,7 @@
       }
 
       .question-list-panel tbody tr.result-unattempted {
-        background: var(--surface-2);
+        background: color-mix(in srgb, #ffffff 12%, var(--surface-2));
       }
 
       .question-list-panel tbody tr.result-correct {
@@ -2519,15 +2519,15 @@
       }
 
       .question-list-panel tbody tr.result-incorrect {
-        background: color-mix(in srgb, var(--red) 12%, var(--surface));
+        background: color-mix(in srgb, var(--red) 24%, var(--surface-2));
       }
 
       .question-list-panel tbody tr.result-partial {
-        background: color-mix(in srgb, var(--partial) 12%, var(--surface));
+        background: color-mix(in srgb, var(--partial) 24%, var(--surface-2));
       }
 
       .question-list-panel tbody tr.result-skipped {
-        background: color-mix(in srgb, var(--orange) 12%, var(--surface));
+        background: color-mix(in srgb, var(--orange) 24%, var(--surface-2));
       }
 
       .question-list-panel tbody td { display: none; }
@@ -3224,6 +3224,11 @@
         outline: 0;
       }
 
+      html[data-theme] .mobile-overflow-menu > button {
+        border: 0 !important;
+        outline: 0 !important;
+      }
+
       /* The overflow actions float inside a blurred glass boundary instead of
          a solid menu panel. */
       html[data-theme] .mobile-overflow-menu {
@@ -3247,6 +3252,7 @@
 
       #editDialog .dialog-foot > :is(
         #backQuestionBtn,
+        #cardUndoBtn,
         #addBlankBelowBtn,
         #clearQuestionBtn,
         #saveNextBtn
@@ -3259,10 +3265,17 @@
       }
 
       #editDialog #saveNextBtn .keyboard { display: none; }
+      #editDialog #cardUndoBtn:not(.is-visible) { display: none; }
       #editDialog #cardUndoBtn.is-visible {
-        grid-column: 1 / -1;
+        grid-column: auto;
         width: 100%;
         max-width: none;
+      }
+
+      #editDialog .dialog-foot:has(#cardUndoBtn.is-visible) #saveNextBtn {
+        grid-column: 1 / -1;
+        width: calc((100% - 8px) / 2);
+        justify-self: center;
       }
     }
 
@@ -3272,7 +3285,11 @@
       }
 
       #editDialog #cardUndoBtn.is-visible {
-        grid-column: 1 / -1;
+        grid-column: auto;
+      }
+
+      #editDialog .dialog-foot:has(#cardUndoBtn.is-visible) #saveNextBtn {
+        width: calc((100% - 24px) / 4);
       }
     }
 
