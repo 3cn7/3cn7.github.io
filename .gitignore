@@ -1,0 +1,11 @@
+dist/
+legacy_reference/
+node_modules/
+.env
+.env.*
+!.env.example
+companion/.venv/
+companion/models/
+companion/private_data/
+__pycache__/
+test-results/

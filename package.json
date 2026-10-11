@@ -1,0 +1,1 @@
+{"name":"sat-study-platform","private":true,"version":"1.0.0","type":"module","scripts":{"build":"node scripts/build.mjs","test":"node --test tests/*.test.mjs","dev":"python3 scripts/serve.py"},"engines":{"node":">=22"}}

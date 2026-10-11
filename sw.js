@@ -1,0 +1,6 @@
+// Only public application files are cached. OAuth, Drive, provider responses, and audio are never cached here.
+const CACHE='studyroom-v1-20261010';
+const FILES=['./','./index.html','./sat.html','./assets/app.css','./assets/favicon.svg','./assets/core.js','./assets/grading.js','./assets/engine.js','./assets/persistence.js','./assets/sync.js','./assets/ui.js','./assets/app.js','./assets/study-ui.js','./assets/transcription.js','./assets/transcript-ui.js'];
+self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES))));
+self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('studyroom-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(event.request.method!=='GET'||url.origin!==self.location.origin||!FILES.some(file=>new URL(file,self.location).pathname===url.pathname))return;event.respondWith(fetch(event.request).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));}return response;}).catch(()=>caches.match(event.request)));});

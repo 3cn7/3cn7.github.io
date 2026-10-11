@@ -1,0 +1,22 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/dist": true,
+      "**/legacy_reference": false,
+      "**/companion/models": true,
+      "**/companion/private_data": true
+    },
+    "search.exclude": {
+      "**/legacy_reference": true,
+      "**/dist": true,
+      "**/companion/models": true,
+      "**/companion/private_data": true
+    },
+    "explorer.excludeGitIgnore": false
+  }
+}
