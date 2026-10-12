@@ -380,6 +380,15 @@ export function createTranscriptUI(ctx) {
   // Newest first by default; the choice is remembered (the library lists transcripts the same way).
   const newestFirst = () =>
     localStorage.getItem("studyPlatform.transcriptSort") !== "oldest";
+  // The script's order: chronological by default, or newest (latest in the recording) first.
+  const segmentsNewestFirst = () =>
+    localStorage.getItem("studyPlatform.segmentSort") === "newest";
+  const orderedSegments = (segments = []) => {
+    const list = [...segments].sort((a, b) => (a.start || 0) - (b.start || 0));
+    return segmentsNewestFirst() ? list.reverse() : list;
+  };
+  const segmentSortLabel = () =>
+    segmentsNewestFirst() ? "↓ Newest first" : "↑ Oldest first";
   async function view(transcriptId) {
     selectedId = transcriptId || jobId;
     const t = selectedId ? store.get(selectedId) : null;
@@ -423,7 +432,7 @@ export function createTranscriptUI(ctx) {
       t.segments?.some((s) => s.translatedText || s.targetLanguage);
     return `<section class="transcript-editor stack" aria-label="Transcript editor"><div class="row between"><div><h2>${esc(t.title)}</h2><small>Saved · ${date(t.updatedAt)}</small></div><div class="row">${button("Create flashcards", "draft-cards", `data-id="${t.id}"`, "primary")}<details class="action-menu"><summary>More</summary><div>${button("Rename", "rename-transcript", `data-id="${t.id}"`)}${button("Move to folder…", "move-transcript", `data-id="${t.id}"`)}${button("Export", "export-transcript", `data-id="${t.id}"`)}${button("Copy original", "copy-transcript", `data-id="${t.id}"`)}${button("Copy translation", "copy-translation", `data-id="${t.id}"`)}${button("Translate saved segments", "translate-saved", `data-id="${t.id}"`)}${button(translationPaused ? "Resume translation" : "Pause translation", "pause-translation")}${button("Stop translation", "stop-translation")}${button("Move to trash", "delete-transcript", `data-id="${t.id}"`, "danger")}${audioURL ? button("Delete local audio…", "delete-audio", `data-id="${t.id}"`, "danger") : ""}</div></details></div></div>
       ${audioURL ? `<audio class="audio-player" id="transcriptAudio" controls src="${audioURL}"></audio>` : ""}
-      <div class="toolbar transcript-toolbar"><input type="search" id="transcriptSearch" aria-label="Search transcript" placeholder="Search transcript">${button("Find next", "find-transcript")}<label class="transcript-display" ${hasSegments && hasTranslation ? "" : "hidden"}>View<select id="transcriptDisplay" aria-label="Transcript view">${options(
+      <div class="toolbar transcript-toolbar"><input type="search" id="transcriptSearch" aria-label="Search transcript" placeholder="Search transcript">${button("Find next", "find-transcript")}${button(segmentSortLabel(), "sort-segments", `aria-label="Script order: ${segmentsNewestFirst() ? "newest to oldest" : "oldest to newest"}. Change order" title="Change the order of the script"`)}<label class="transcript-display" ${hasSegments && hasTranslation ? "" : "hidden"}>View<select id="transcriptDisplay" aria-label="Transcript view">${options(
         [
           ["both", "Original + translation"],
           ["original", "Original only"],
@@ -431,7 +440,15 @@ export function createTranscriptUI(ctx) {
         ],
         settings.display,
       )}</select></label></div>
-      <div id="liveSegments" class="stack">${hasSegments ? t.segments.map((s) => segmentPair(s, t.id)).join("") : waitingForSpeech ? `<div class="empty" data-awaiting-speech>${capturing ? "Listening…" : "Transcribing…"}</div>` : `<label>Transcript<textarea id="editedTranscript" class="transcript-text" data-id="${t.id}">${esc(t.editedText ?? t.rawText ?? "")}</textarea></label>`}</div>
+      <div id="liveSegments" class="stack">${
+        hasSegments
+          ? orderedSegments(t.segments)
+              .map((s) => segmentPair(s, t.id))
+              .join("")
+          : waitingForSpeech
+            ? `<div class="empty" data-awaiting-speech>${capturing ? "Listening…" : "Transcribing…"}</div>`
+            : `<label>Transcript<textarea id="editedTranscript" class="transcript-text" data-id="${t.id}">${esc(t.editedText ?? t.rawText ?? "")}</textarea></label>`
+      }</div>
       <div class="row"><small id="transcriptSaveStatus">Changes save automatically</small>${button("Save transcript", "save-transcript", `data-id="${t.id}"`, "small")}</div>
       <details class="transcript-history"><summary>Original text & edit history</summary><pre>${esc(t.rawText || "No speech recognized yet.")}</pre>${(
         t.editHistory || []
@@ -792,7 +809,10 @@ export function createTranscriptUI(ctx) {
     for (const s of t.segments || []) {
       const row = container.querySelector(`[data-segment-pair="${s.id}"]`);
       if (!row) {
-        container.insertAdjacentHTML("beforeend", segmentPair(s, t.id));
+        container.insertAdjacentHTML(
+          segmentsNewestFirst() ? "afterbegin" : "beforeend",
+          segmentPair(s, t.id),
+        );
         continue;
       }
       if (
@@ -1124,8 +1144,90 @@ export function createTranscriptUI(ctx) {
       );
     }
   }
+  // While the recording plays, the word being spoken is highlighted in the original (Italian)
+  // card. Segment times come from the recogniser and words are placed proportionally inside
+  // them, so the highlight is an approximation.
+  let reading = null,
+    frame = 0;
+  function stopReading() {
+    if (!reading) return;
+    reading.view.remove();
+    reading.area.hidden = false;
+    reading = null;
+  }
+  function highlightAt(time) {
+    const t = store.get(selectedId),
+      segments = (t?.segments || []).filter((x) => x.end > x.start);
+    const current = segments.find((x) => time >= x.start && time < x.end);
+    if (!current) return;
+    const area = document.querySelector(
+      `textarea[data-segment-edit="${CSS.escape(current.id)}"][data-field="text"]`,
+    );
+    if (!area) return;
+    if (reading?.id !== current.id) {
+      stopReading();
+      const view = document.createElement("div");
+      view.className = "reading-view";
+      view.setAttribute("aria-hidden", "true");
+      area.after(view);
+      area.hidden = true;
+      reading = { id: current.id, area, view };
+      view.closest(".segment-pair")?.classList.add("is-playing");
+      view.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    const text = area.value,
+      progress = Math.min(
+        0.9999,
+        Math.max(0, (time - current.start) / (current.end - current.start)),
+      ),
+      at = Math.floor(progress * text.length);
+    // Find the word under `at` (or the next word when it falls on a gap).
+    const words = [...text.matchAll(/\S+/g)];
+    const hit =
+      words.find((w) => at < w.index + w[0].length) || words.at(-1) || null;
+    const html = [];
+    let cursor = 0;
+    for (const w of words) {
+      html.push(esc(text.slice(cursor, w.index)));
+      html.push(w === hit ? `<mark>${esc(w[0])}</mark>` : esc(w[0]));
+      cursor = w.index + w[0].length;
+    }
+    html.push(esc(text.slice(cursor)));
+    reading.view.innerHTML = html.join("");
+  }
+  function bindPlayback() {
+    stopReading();
+    cancelAnimationFrame(frame);
+    const audio = $("#transcriptAudio");
+    if (!audio) return;
+    const tick = () => {
+      highlightAt(audio.currentTime);
+      if (!audio.paused && !audio.ended) frame = requestAnimationFrame(tick);
+    };
+    audio.addEventListener("play", () => {
+      cancelAnimationFrame(frame);
+      tick();
+    });
+    audio.addEventListener("seeked", () => audio.paused || tick());
+    audio.addEventListener("pause", () => {
+      cancelAnimationFrame(frame);
+      // Editing is possible again as soon as the recording is paused.
+      stopReading();
+      document
+        .querySelectorAll(".segment-pair.is-playing")
+        .forEach((n) => n.classList.remove("is-playing"));
+    });
+    audio.addEventListener("ended", () => {
+      cancelAnimationFrame(frame);
+      stopReading();
+      document
+        .querySelectorAll(".segment-pair.is-playing")
+        .forEach((n) => n.classList.remove("is-playing"));
+    });
+  }
   function bind() {
     bindEditors();
+    bindPlayback();
     updateSetup();
     const form = $("#captureSettings");
     if (form)
@@ -1243,9 +1345,8 @@ export function createTranscriptUI(ctx) {
       container = $("#liveSegments");
     if (!t?.segments?.length || !container) return;
     await saveAll();
-    container.innerHTML = store
-      .get(selectedId)
-      .segments.map((s) => segmentPair(s, t.id))
+    container.innerHTML = orderedSegments(store.get(selectedId).segments)
+      .map((s) => segmentPair(s, t.id))
       .join("");
     const display = $("#transcriptDisplay")?.closest("label");
     if (display)
@@ -1335,6 +1436,7 @@ export function createTranscriptUI(ctx) {
       "cancel-setup",
       "diagnose-model",
       "sort-transcripts",
+      "sort-segments",
       "save-model-host",
       "reset-model-host",
       "offer-high",
@@ -1419,6 +1521,21 @@ export function createTranscriptUI(ctx) {
         },
         { submitLabel: "Download model" },
       );
+    } else if (action === "sort-segments") {
+      localStorage.setItem(
+        "studyPlatform.segmentSort",
+        segmentsNewestFirst() ? "oldest" : "newest",
+      );
+      await refreshDisplay();
+      const sort = document.querySelector('[data-action="sort-segments"]');
+      if (sort) {
+        sort.textContent = segmentSortLabel();
+        sort.setAttribute(
+          "aria-label",
+          `Script order: ${segmentsNewestFirst() ? "newest to oldest" : "oldest to newest"}. Change order`,
+        );
+        sort.focus();
+      }
     } else if (action === "sort-transcripts") {
       localStorage.setItem(
         "studyPlatform.transcriptSort",

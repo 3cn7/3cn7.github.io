@@ -182,7 +182,7 @@ assert.equal(await page.locator(".resume-row").count(), 1);
 assert.match(await page.locator(".resume-row").innerText(), /Other/);
 // ----- version serial
 assert.match(
-  await page.locator("#appVersion").textContent(),
+  (await page.locator("#appVersion").textContent()).trim(),
   /^Version v\d+\.\d+\.\d+ · build [0-9a-f]{8}$/,
 );
 assert.deepEqual(errors, []);

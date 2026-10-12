@@ -2492,3 +2492,76 @@ html[data-theme="dark"] {
     gap: 2px;
   }
 }
+
+/* Highlighter that follows the audio in the original card */
+:root {
+  --highlight: #fde047;
+  --on-highlight: #1c1917;
+}
+html[data-theme="dark"] {
+  --highlight: #ca8a04;
+  --on-highlight: #fff;
+}
+.reading-view {
+  min-height: 120px;
+  padding: 8px 0;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.reading-view mark {
+  background: var(--highlight);
+  color: var(--on-highlight);
+  border-radius: 4px;
+  padding: 1px 3px;
+  box-decoration-break: clone;
+}
+.segment-pair.is-playing > .segment-card:first-child {
+  border-color: var(--highlight);
+  box-shadow: 0 0 0 2px var(--highlight);
+}
+
+/* Padlock */
+html.locked .sidebar,
+html.locked .app-shell,
+html.locked #timerPanel {
+  display: none;
+}
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--bg);
+}
+.lock-card {
+  display: grid;
+  gap: 16px;
+  width: min(420px, 100%);
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.lock-card h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.lock-card p {
+  margin: 0;
+  color: var(--muted);
+}
+.lock-card label {
+  text-align: left;
+}
+.lock-icon {
+  font-size: 2.5rem;
+}
+.lock-error {
+  color: var(--red) !important;
+  font-weight: 600;
+}

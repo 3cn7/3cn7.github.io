@@ -1,4 +1,5 @@
 import { Store } from "./persistence.js";
+import { unlockSite } from "./gate.js";
 import { DriveSync } from "./sync.js";
 import { GoogleAuth } from "./google-auth.js";
 import { prepareStudyOnly } from "./migration.js";
@@ -44,6 +45,7 @@ import { createStudyUI } from "./study-ui.js";
 import { createTranscriptUI } from "./transcript-ui.js";
 import { createLibraryUI } from "./library-ui.js";
 import { accentBar, needsAccents } from "./accents.js";
+await unlockSite();
 const store = await new Store().open().catch((error) => {
   $("#view").innerHTML = empty("Local storage could not open", error.message);
   throw error;

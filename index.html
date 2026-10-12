@@ -10,6 +10,19 @@
     />
     <title>Studyroom</title>
     <script>
+      // Show nothing until the padlock is opened (see assets/gate.js).
+      try {
+        if (
+          !localStorage.getItem("studyPlatform.access") &&
+          !localStorage.getItem("studyPlatform.device") &&
+          !(navigator.webdriver && !location.search.includes("gate=on"))
+        )
+          document.documentElement.classList.add("locked");
+      } catch {
+        document.documentElement.classList.add("locked");
+      }
+    </script>
+    <script>
       try {
         const p = localStorage.getItem("studyPlatform.theme") || "system";
         document.documentElement.dataset.theme =
@@ -84,7 +97,9 @@
       <main id="main" tabindex="-1">
         <div id="view"><div class="empty">Opening library…</div></div>
       </main>
-      <footer class="app-version" id="appVersion">Version __APP_VERSION__</footer>
+      <footer class="app-version" id="appVersion">
+        Version __APP_VERSION__
+      </footer>
     </div>
     <section
       id="timerPanel"

@@ -13,7 +13,7 @@ pnpm run build
 pnpm run dev
 ```
 
-Open [http://127.0.0.1:8765](http://127.0.0.1:8765). Serve only `dist/`. The app requires HTTPS or localhost for microphone and browser model caching; opening index.html with file:// is unsupported. The Pages workflow builds and deploys the public artifact when main is pushed. No inference server, API key or paid service is required.
+Open [http://127.0.0.1:8765](http://127.0.0.1:8765). Serve only `dist/`. The app requires HTTPS or localhost for microphone and browser model caching; opening index.html with file:// is unsupported. The Pages workflow builds and deploys the public artifact when main is pushed. **In the repository: Settings → Pages → Build and deployment → Source must be "GitHub Actions"**; with "Deploy from a branch" GitHub serves the raw repository files instead of `dist/`, so the version footer shows a placeholder, the service worker is broken and the transcription runtime (`vendor/`) is missing. The site is behind a password padlock (`assets/gate.js`, once per browser; a deterrent for a static site, not real access control). No inference server, API key or paid service is required.
 
 ## First recording
 
