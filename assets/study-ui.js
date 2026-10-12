@@ -569,7 +569,10 @@ export function createStudyUI(ctx) {
   }
   function phaseLabel() {
     if (!dualRound(active)) return "";
-    const recognition = (active.roundPhase || "recognition") === "recognition",
+    const phase = active.roundPhase || "recognition";
+    if (active.current?.retry)
+      return `<span class="badge review-badge">Review · ${phase === "opening" ? "missed earlier" : active.current.retry.slot === "B" ? "last chance this round" : "missed this round"}</span>`;
+    const recognition = phase === "recognition",
       done = recognition
         ? active.phaseKeys?.length || 0
         : active.phaseDone?.length || 0,
@@ -578,6 +581,17 @@ export function createStudyUI(ctx) {
         : active.phaseKeys?.length || 0,
       n = Math.min(total || 1, done + (active.feedback ? 0 : 1));
     return `<span class="badge">${recognition ? "Multiple choice" : "Typing"} · ${n} of ${total || n}</span>`;
+  }
+  // Tells the learner where a missed question will come back.
+  function comesBack(a) {
+    const e = active.retryQueue?.find((x) => x.attemptId === a.id);
+    if (!e || a.effectiveCorrect) return "";
+    const when = {
+      A: "scattered among this round's typed questions",
+      B: "at the end of this round",
+      C: "at the start of the next round",
+    }[e.slot];
+    return `<p class="muted">You'll see this term again ${when}${e.fails % 4 === 0 ? ", starting over as multiple choice" : ""}.</p>`;
   }
   function learnView() {
     const stats = learnStats(active);
@@ -590,7 +604,7 @@ export function createStudyUI(ctx) {
     if (active.roundSummary) return learnSummary(stats, false);
     const a = active.feedback,
       q = active.current;
-    return `<div class="study-layout">${header("Learn")}<div class="study-metrics"><span>${stats.mastered}/${stats.total} mastered</span><span>${stats.notStudied} not studied</span><span>${stats.learning} learning</span><span>${Math.round(stats.accuracy)}% accuracy</span><span>${stats.streak} answer streak</span><span>Round ${active.round}</span>${phaseLabel()}</div><div class="progress" style="margin-bottom:24px"><div style="width:${stats.percent}%"></div></div>${questionForm(q, { response: a ? a.response || "" : active.draft?.answer || "" })}${a ? `<div class="feedback ${a.effectiveCorrect ? "good" : "bad"}" role="status"><h3>${a.effectiveCorrect ? "✓ Correct" : "↻ Let’s revisit this term"}</h3><p>Your answer: ${esc(a.response || "Don't know")}</p><p><strong>Correct answer: ${esc(q.type === "tf" ? (q.correctAnswer === "true" ? "True" : "False") : q.correctAnswer)}</strong></p>${active.config.explanations && q.explanation ? `<p>${esc(q.explanation)}</p>` : ""}${a.override ? "<small>Original grade preserved; you marked this response correct.</small>" : ""}${!a.effectiveCorrect ? button("I was correct", "learn-override", "", "small") : ""}${!a.effectiveCorrect && active.config.retype ? `<form id="retypeForm" style="margin-top:15px"><label>Type the correct answer to reinforce it<input name="answer" autocomplete="off" value="${attr(active.draft?.retype || "")}"></label>${accents(q, false, "#retypeForm input")}<button style="margin-top:10px" type="submit">Check retyping</button><span id="retypeStatus" class="muted"></span></form><small>Retyping does not count as an independent recall.</small>` : ""}<div style="margin-top:18px">${button("Continue →", "learn-continue", 'aria-keyshortcuts="Enter"', "primary")}<span class="shortcut-hint inline">or press <kbd>Enter</kbd></span></div></div>` : ""}</div>`;
+    return `<div class="study-layout">${header("Learn")}<div class="study-metrics"><span>${stats.mastered}/${stats.total} mastered</span><span>${stats.notStudied} not studied</span><span>${stats.learning} learning</span><span>${Math.round(stats.accuracy)}% accuracy</span><span>${stats.streak} answer streak</span><span>Round ${active.round}</span>${phaseLabel()}</div><div class="progress" style="margin-bottom:24px"><div style="width:${stats.percent}%"></div></div>${questionForm(q, { response: a ? a.response || "" : active.draft?.answer || "" })}${a ? `<div class="feedback ${a.effectiveCorrect ? "good" : "bad"}" role="status"><h3>${a.effectiveCorrect ? "✓ Correct" : "↻ Let’s revisit this term"}</h3><p>Your answer: ${esc(a.response || "Don't know")}</p><p><strong>Correct answer: ${esc(q.type === "tf" ? (q.correctAnswer === "true" ? "True" : "False") : q.correctAnswer)}</strong></p>${active.config.explanations && q.explanation ? `<p>${esc(q.explanation)}</p>` : ""}${comesBack(a)}${a.override ? "<small>Original grade preserved; you marked this response correct.</small>" : ""}${!a.effectiveCorrect ? button("I was correct", "learn-override", "", "small") : ""}${!a.effectiveCorrect && active.config.retype ? `<form id="retypeForm" style="margin-top:15px"><label>Type the correct answer to reinforce it<input name="answer" autocomplete="off" value="${attr(active.draft?.retype || "")}"></label>${accents(q, false, "#retypeForm input")}<button style="margin-top:10px" type="submit">Check retyping</button><span id="retypeStatus" class="muted"></span></form><small>Retyping does not count as an independent recall.</small>` : ""}<div style="margin-top:18px">${button("Continue →", "learn-continue", 'aria-keyshortcuts="Enter"', "primary")}<span class="shortcut-hint inline">or press <kbd>Enter</kbd></span></div></div>` : ""}</div>`;
   }
   function learnSummary(stats, complete) {
     const round = active.attempts.slice(active.roundStart),

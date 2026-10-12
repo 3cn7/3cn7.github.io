@@ -75,6 +75,7 @@ export function blankMastery(card, direction) {
     lastSeenAt: null,
     nextEligible: 0,
     masteredAt: null,
+    recogOk: false,
   };
 }
 export function applyAttempt(state, attempt, config) {
@@ -99,10 +100,23 @@ export function applyAttempt(state, attempt, config) {
   }
   const written = config.types.some((t) => ["written", "spelling"].includes(t)),
     recognition = config.types.some((t) => ["mc", "tf"].includes(t));
-  const mastered = written
-    ? s.consecutiveCorrect >= THRESHOLDS.recall &&
-      s.streakRecall >= (recognition ? 1 : THRESHOLDS.recall)
-    : s.consecutiveCorrect >= THRESHOLDS.recognition;
+  // With both kinds of question: a correct multiple-choice answer followed by a correct typed
+  // answer (with no mistake in between) masters the term; later correct answers keep it.
+  // A typed fallback stands in for a multiple-choice question that could not be built (tiny pool).
+  s.recogOk = attempt.effectiveCorrect
+    ? isRecall && !attempt.fallback
+      ? state.recogOk
+      : true
+    : false;
+  const recognitionBefore = state.recogOk ?? state.streakRecognition > 0;
+  const mastered =
+    written && recognition
+      ? attempt.effectiveCorrect &&
+        ((isRecall && recognitionBefore) || state.status === "MASTERED")
+      : written
+        ? s.consecutiveCorrect >= THRESHOLDS.recall &&
+          s.streakRecall >= THRESHOLDS.recall
+        : s.consecutiveCorrect >= THRESHOLDS.recognition;
   s.status = mastered ? "MASTERED" : "LEARNING";
   s.masteredAt = mastered ? attempt.at : null;
   s.nextEligible =
@@ -267,23 +281,158 @@ const phaseOf = (session) => {
   session.roundPhase ??= "recognition";
   session.phaseKeys ??= [];
   session.phaseDone ??= [];
+  session.rr ??= 1;
+  session.retryQueue ??= [];
+  session.plan ??= [];
+  session.planIndex ??= 0;
+  session.opening ??= [];
+  session.openingIndex ??= 0;
   return session.roundPhase;
 };
+/*
+ * Missed questions come back on a ladder. Slots: A = scattered inside this round's typed
+ * section, B = the end of this round's typed section, C = the start of the next round.
+ *   missed multiple choice  -> A (as multiple choice) -> B -> C -> A -> ...
+ *   missed typed answer     -> C -> A -> B -> C -> ...
+ * Retries are typed except the first retry of a missed multiple-choice question and every
+ * fourth failed attempt: the term then goes back to "not studied", is asked as multiple choice
+ * and progresses through typing and the ladder again. Each slot holds at most half a round.
+ */
+const NEXT_SLOT = { A: "B", B: "C", C: "A" };
+const slotCap = (session) =>
+  Math.max(1, Math.ceil(session.config.roundSize / 2));
+const retryFormat = (e) =>
+  e.followUp
+    ? "typed"
+    : e.fails % 4 === 0 || (e.fails === 1 && e.origin === "mc")
+      ? "mc"
+      : "typed";
+function queueRetry(session, e) {
+  const planned =
+    e.slot === "B" && e.round === session.rr && session.roundPhase === "recall";
+  e.inPlan = false;
+  if (
+    planned &&
+    session.plan.filter((i) => i.retry && i.slot === "B").length <
+      slotCap(session)
+  ) {
+    e.inPlan = true;
+    session.plan.push({ key: e.key, retry: true, slot: "B" });
+  }
+  session.retryQueue.push(e);
+}
+function scheduleMiss(session, e, fromSlot) {
+  if (fromSlot === null) {
+    e.slot = e.origin === "mc" ? "A" : "C";
+    e.round = e.origin === "mc" ? session.rr : session.rr + 1;
+  } else {
+    e.slot = NEXT_SLOT[fromSlot];
+    e.round = fromSlot === "B" ? session.rr + 1 : session.rr;
+  }
+  e.followUp = false;
+  queueRetry(session, e);
+}
+// The entries due for a slot, at most half a round of them; the rest wait for the next round.
+function takeDue(session, slot) {
+  const due = session.retryQueue
+    .filter((e) => e.slot === slot && e.round <= session.rr && !e.inPlan)
+    .sort((x, y) => x.round - y.round || y.fails - x.fails);
+  for (const e of due.slice(slotCap(session))) e.round = session.rr + 1;
+  const taken = due.slice(0, slotCap(session));
+  taken.forEach((e) => (e.inPlan = true));
+  return taken;
+}
+function shuffled(list, rng) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+function buildPlan(session) {
+  const rng = seededRandom(session.seed + session.rr * 7919);
+  const plan = session.phaseKeys.map((key) => ({ key }));
+  // A: scattered at random places inside the typed section, never next to the same term.
+  for (const e of shuffled(takeDue(session, "A"), rng)) {
+    let at = Math.floor(rng() * (plan.length + 1));
+    for (let tries = 0; tries < 8; tries++) {
+      if (plan[at - 1]?.key !== e.key && plan[at]?.key !== e.key) break;
+      at = Math.floor(rng() * (plan.length + 1));
+    }
+    plan.splice(at, 0, { key: e.key, retry: true, slot: "A" });
+  }
+  // B: the end of the typed section.
+  for (const e of shuffled(takeDue(session, "B"), rng))
+    plan.push({ key: e.key, retry: true, slot: "B" });
+  session.plan = plan;
+  session.planIndex = 0;
+  session.planBuilt = true;
+}
 /** True once the current round has asked everything it should. */
 export function roundDone(session) {
   if (!dualRound(session))
     return session.position - session.roundStart >= session.config.roundSize;
+  phaseOf(session);
   return (
-    phaseOf(session) === "recall" &&
-    session.phaseKeys.length > 0 &&
-    session.phaseKeys.every((k) => session.phaseDone.includes(k))
+    session.roundPhase === "recall" &&
+    !!session.planBuilt &&
+    session.planIndex >= session.plan.length
   );
 }
-/** Start the next round: multiple choice again, typed answers afterwards. */
+/** Start the next round: missed questions first, then multiple choice, then typed answers. */
 export function startRound(session) {
-  session.roundPhase = "recognition";
+  phaseOf(session);
+  session.rr++;
   session.phaseKeys = [];
   session.phaseDone = [];
+  session.plan = [];
+  session.planIndex = 0;
+  session.planBuilt = false;
+  const rng = seededRandom(session.seed + session.rr * 104729);
+  session.opening = shuffled(takeDue(session, "C"), rng).map((e) => ({
+    key: e.key,
+    slot: "C",
+  }));
+  session.openingIndex = 0;
+  session.roundPhase = session.opening.length ? "opening" : "recognition";
+}
+// Never ask the same card twice in a row when anything else is waiting.
+function avoidRepeat(list, index, lastCardId) {
+  const card = (item) => item.key.split(":")[0];
+  if (list[index] && card(list[index]) === lastCardId) {
+    const j = list.findIndex((it, i) => i > index && card(it) !== lastCardId);
+    if (j > 0) [list[index], list[j]] = [list[j], list[index]];
+  }
+}
+function retryQuestion(session, item, cards, available) {
+  const e = session.retryQueue.find(
+    (x) => x.key === item.key && x.slot === item.slot && x.inPlan,
+  );
+  if (!e) return "skip";
+  const [cardId, direction] = e.key.split(":"),
+    card = available.get(cardId);
+  if (!card || !directions(session.config).includes(direction)) {
+    session.retryQueue.splice(session.retryQueue.indexOf(e), 1);
+    return "skip";
+  }
+  const format = retryFormat(e),
+    types = session.config.types,
+    type =
+      format === "mc"
+        ? types.find((t) => RECOGNITION.includes(t))
+        : types.find((t) => RECALL.includes(t));
+  const q = generateQuestion(
+    card,
+    cards,
+    type,
+    direction,
+    seededRandom(session.seed + session.position + 17),
+    types,
+  );
+  q.retry = { key: e.key, slot: e.slot, fails: e.fails, format };
+  if (format === "mc" && RECALL.includes(q.type)) q.fallback = true;
+  return q;
 }
 export function selectNextQuestion(session, cards) {
   const available = new Map(cards.map((c) => [c.id, c]));
@@ -307,35 +456,75 @@ export function selectNextQuestion(session, cards) {
   const dual = dualRound(session);
   let pool = states;
   if (dual) {
+    phaseOf(session);
     if (roundDone(session)) startRound(session);
-    if (
-      phaseOf(session) === "recognition" &&
-      session.phaseKeys.length >= session.config.roundSize
-    )
-      session.roundPhase = "recall";
-    if (session.roundPhase === "recognition") {
-      pool = states.filter(
-        (s) => !session.phaseKeys.includes(`${s.cardId}:${s.direction}`),
-      );
-      // Nothing new is left for this round: go on to the typed answers.
-      if (!pool.length && session.phaseKeys.length) session.roundPhase = "recall";
-    }
-    if (session.roundPhase === "recall") {
-      const key = session.phaseKeys.find((k) => !session.phaseDone.includes(k)),
-        s = key && session.states[key],
-        card = s && available.get(s.cardId);
-      if (card)
-        return generateQuestion(
+    for (let guard = 0; guard < 500; guard++) {
+      if (session.roundPhase === "opening") {
+        avoidRepeat(session.opening, session.openingIndex, session.lastCardId);
+        const item = session.opening[session.openingIndex];
+        if (!item) {
+          session.roundPhase = "recognition";
+          continue;
+        }
+        const q = retryQuestion(session, item, cards, available);
+        if (q === "skip") {
+          session.openingIndex++;
+          continue;
+        }
+        q.fromOpening = true;
+        return q;
+      }
+      if (session.roundPhase === "recall") {
+        if (!session.planBuilt) buildPlan(session);
+        avoidRepeat(session.plan, session.planIndex, session.lastCardId);
+        const item = session.plan[session.planIndex];
+        if (!item) return null; // round finished; roundDone() tells the caller
+        if (item.retry) {
+          const q = retryQuestion(session, item, cards, available);
+          if (q === "skip") {
+            session.planIndex++;
+            continue;
+          }
+          q.fromPlan = true;
+          return q;
+        }
+        const st = session.states[item.key],
+          card = st && available.get(st.cardId);
+        if (!card) {
+          session.planIndex++;
+          continue;
+        }
+        const q = generateQuestion(
           card,
           cards,
           session.config.types.find((t) => RECALL.includes(t)),
-          s.direction,
+          st.direction,
           seededRandom(session.seed + session.position),
           session.config.types,
         );
-      // Remembered terms were removed: begin a fresh round.
-      startRound(session);
-      pool = states;
+        q.fromPlan = true;
+        return q;
+      }
+      // Multiple-choice section: new terms only; terms waiting in the retry queue come back on the ladder.
+      const queued = new Set(session.retryQueue.map((e) => e.key));
+      const fresh = states.filter(
+        (s) => !session.phaseKeys.includes(`${s.cardId}:${s.direction}`),
+      );
+      pool = fresh.filter((s) => !queued.has(`${s.cardId}:${s.direction}`));
+      if (!pool.length) pool = fresh;
+      if (
+        session.phaseKeys.length >= session.config.roundSize ||
+        (!pool.length && session.phaseKeys.length)
+      ) {
+        session.roundPhase = "recall";
+        continue;
+      }
+      if (!pool.length) {
+        // Only retries are left: skip straight to the typed section.
+        session.roundPhase = "recall";
+        continue;
+      }
+      break;
     }
   }
   let eligible = pool.filter((s) => s.nextEligible <= session.position);
@@ -382,7 +571,7 @@ export function selectNextQuestion(session, cards) {
     type =
       types.find((t) => ["written", "spelling"].includes(t)) ||
       types[session.position % types.length];
-  return generateQuestion(
+  const question = generateQuestion(
     card,
     cards,
     type,
@@ -390,6 +579,70 @@ export function selectNextQuestion(session, cards) {
     seededRandom(session.seed + session.position),
     types,
   );
+  if (dual) {
+    question.section = "recognition";
+    if (RECALL.includes(question.type)) question.fallback = true;
+  }
+  return question;
+}
+const FAILS_BEFORE_RESET = 4;
+// Moves the question through the retry ladder after it was answered.
+function trackLadder(session, q, a) {
+  phaseOf(session);
+  const key = `${q.cardId}:${q.direction}`;
+  if (q.fromOpening) session.openingIndex++;
+  if (q.fromPlan) session.planIndex++;
+  if (q.retry) {
+    const at = session.retryQueue.findIndex(
+      (e) => e.key === q.retry.key && e.slot === q.retry.slot,
+    );
+    const e = at >= 0 ? session.retryQueue.splice(at, 1)[0] : null;
+    if (!e) return;
+    if (a.effectiveCorrect) {
+      // A multiple-choice retry after four failures leads on into typing again.
+      if (q.retry.format === "mc" && e.fails >= FAILS_BEFORE_RESET) {
+        const next = { ...e, followUp: true, attemptId: a.id };
+        next.slot = NEXT_SLOT[e.slot];
+        next.round = e.slot === "B" ? session.rr + 1 : session.rr;
+        queueRetry(session, next);
+      }
+    } else {
+      e.fails++;
+      e.attemptId = a.id;
+      if (e.fails % FAILS_BEFORE_RESET === 0) {
+        // After the fourth failed attempt the term starts over as "not studied".
+        const old = session.states[key];
+        session.states[key] = {
+          ...old,
+          status: "NOT_STUDIED",
+          consecutiveCorrect: 0,
+          streakRecall: 0,
+          streakRecognition: 0,
+          recogOk: false,
+          masteredAt: null,
+        };
+      }
+      scheduleMiss(session, e, q.retry.slot);
+    }
+    return;
+  }
+  const recognitionSection = q.section
+    ? q.section === "recognition"
+    : RECOGNITION.includes(q.type);
+  if (recognitionSection) {
+    if (!session.phaseKeys.includes(key)) session.phaseKeys.push(key);
+  } else if (!session.phaseDone.includes(key)) session.phaseDone.push(key);
+  if (!a.effectiveCorrect)
+    scheduleMiss(
+      session,
+      {
+        key,
+        origin: recognitionSection ? "mc" : "typed",
+        fails: 1,
+        attemptId: a.id,
+      },
+      null,
+    );
 }
 export function recordAttempt(session, response, { override = false } = {}) {
   if (!session.current || session.feedback)
@@ -414,6 +667,7 @@ export function recordAttempt(session, response, { override = false } = {}) {
     at: now(),
     position: session.position,
     config: clone(session.config),
+    ...(q.fallback ? { fallback: true } : {}),
   };
   session.states[`${q.cardId}:${q.direction}`] = applyAttempt(
     session.states[`${q.cardId}:${q.direction}`],
@@ -421,14 +675,7 @@ export function recordAttempt(session, response, { override = false } = {}) {
     session.config,
   );
   session.attempts.push(a);
-  if (dualRound(session)) {
-    phaseOf(session);
-    const key = `${q.cardId}:${q.direction}`;
-    const list = RECOGNITION.includes(q.type)
-      ? session.phaseKeys
-      : session.phaseDone;
-    if (!list.includes(key)) list.push(key);
-  }
+  if (dualRound(session)) trackLadder(session, q, a);
   session.feedback = a;
   session.lastCardId = q.cardId;
   session.position++;
@@ -440,6 +687,16 @@ export function overrideLearn(session, cards) {
   a.effectiveCorrect = true;
   a.override = true;
   a.overrideAt = now();
+  if (session.retryQueue) {
+    session.retryQueue = session.retryQueue.filter((e) => e.attemptId !== a.id);
+    session.plan = (session.plan || []).filter((i, idx) => {
+      const gone =
+        i.retry &&
+        idx >= session.planIndex &&
+        !session.retryQueue.some((e) => e.key === i.key && e.slot === i.slot);
+      return !gone;
+    });
+  }
   const card = cards.find((c) => c.id === a.cardId);
   const key = `${a.cardId}:${a.direction}`;
   const prior = session.states[key];

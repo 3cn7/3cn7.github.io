@@ -47,14 +47,31 @@ await page.waitForFunction(() =>
 );
 await page.getByRole("button", { name: "Continue →", exact: true }).click();
 await page.waitForSelector("#writtenAnswer:not([disabled])");
-for (let i = 0; i < 2; i++) {
-  await page.locator("#writtenAnswer").fill("sovereignty");
-  await page
-    .getByRole("button", { name: "Submit answer", exact: true })
-    .click();
-  await page.waitForSelector(".feedback.good");
-  await page.getByRole("button", { name: "Continue →", exact: true }).click();
-  if (i === 0) await page.waitForSelector("#writtenAnswer:not([disabled])");
+// The missed question also comes back on the retry ladder, so the number of answers varies:
+// keep answering correctly until the term is mastered.
+const deadline = Date.now() + 40000;
+while (Date.now() < deadline) {
+  if (
+    await page
+      .getByRole("heading", { name: "All terms mastered.", exact: true })
+      .count()
+  )
+    break;
+  const more = page.getByRole("button", { name: "Continue learning →" });
+  if (await more.count()) {
+    await more.click(); // a round can end before the term is mastered
+  } else if (
+    (await page.locator("#writtenAnswer:not([disabled])").count()) &&
+    !(await page.locator(".feedback").count())
+  ) {
+    await page.locator("#writtenAnswer").fill("sovereignty");
+    await page
+      .getByRole("button", { name: "Submit answer", exact: true })
+      .click();
+    await page.waitForSelector(".feedback.good");
+    await page.getByRole("button", { name: "Continue →", exact: true }).click();
+  }
+  await page.waitForTimeout(80);
 }
 await page
   .getByRole("heading", { name: "All terms mastered.", exact: true })
@@ -74,9 +91,8 @@ const data = await page.evaluate(async () => {
   };
 });
 assert.equal(data.mastery.status, "MASTERED");
-assert.equal(data.mastery.attempts, 3);
-assert.equal(data.mastery.correct, 2);
-assert.equal(data.attempts.length, 3);
+assert(data.mastery.attempts >= 3 && data.mastery.correct >= 2);
+assert.equal(data.attempts.length, data.mastery.attempts);
 assert.equal(data.session.finishedAt !== null, true);
 await page.reload();
 await page.waitForSelector(".study-layout");

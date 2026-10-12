@@ -2332,3 +2332,49 @@ kbd {
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
+
+.mastered-overview {
+  margin: 8px 0 20px;
+  padding: 4px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.mastered-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.mastered-list li {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(140px, 2fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.mastered-term {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.mastered-def {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.mastered-dirs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.review-badge {
+  background: var(--color-warning-surface);
+  color: var(--color-warning);
+}
+@media (max-width: 760px) {
+  .mastered-list li {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}

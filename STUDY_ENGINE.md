@@ -64,3 +64,16 @@ Reset Learn progress exists for everything (Settings) and for one set (**More se
 ## Rounds (October 2026)
 
 When a Learn session allows both recognition (multiple choice, true/false) and typed questions, a round is **N recognition questions, then the same terms asked again as typed answers** (N = "Questions per round"). The next round starts with multiple choice on the next terms. A term answered wrongly in the first half is still asked typed, and weak terms are preferred in the following round. Sessions with only one kind of question count N questions per round as before. Changing direction, question types, grading or round size from **Settings** during a session applies to the same session: attempts, mastery (including the other direction's) and the round are kept. The Italian letter buttons (à è é ì ò ó ù, with a capital-letters toggle) appear under typed answers in Italian and in the card editor.
+
+## Missed questions: the retry ladder
+
+With multiple choice and typing both on, each round is: **missed terms from earlier** (slot C), then **N multiple-choice questions**, then **the same terms typed**, with retries mixed in. Slots: **A** = scattered at random places inside this round's typed section (never right after the same term), **B** = the end of this round's typed section, **C** = the start of the next round.
+
+| Missed | Comes back at |
+|---|---|
+| a multiple-choice question | A (as multiple choice) → B (typed) → C (typed) → A … |
+| a typed answer | C (typed) → A (typed) → B (typed) → C … |
+
+Each slot takes at most half a round (rounded up); extra terms wait for the next round. A correct retry leaves the queue. After the **fourth failed attempt** a term goes back to **not studied**, the next retry is **multiple choice**, and after a correct answer it moves on into typing and the ladder again. A retry replaces the term's normal question in the next round, and the same card is never asked twice in a row while anything else is waiting. "I was correct" removes the retry that the corrected answer created. The queue, plan and positions are saved in the session, so resuming restores the same order. Retries are labelled **Review** and the feedback says where the term will come back.
+
+**Mastery** (with both kinds of question on) is: a correct multiple-choice answer, then a correct typed answer, with no mistake between. Later correct answers keep it; a wrong answer ends it. When a pool is too small to build multiple-choice options, a typed answer stands in for the multiple-choice one. Typed-only sessions need two typed answers in a row, and multiple-choice-only sessions need three correct in a row. The set page lists the mastered terms with the direction(s) mastered.

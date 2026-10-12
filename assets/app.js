@@ -242,8 +242,43 @@ function setView() {
         ),
       set.subject || "STUDY SET",
     ) +
-    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered → definition</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div>${editing && (needsAccents(set.termLanguage) || needsAccents(set.definitionLanguage)) ? `<div class="accent-editor">${accentBar("", "Italian letters for the focused card field")}</div>` : ""}<div id="cardList">${page.map((c, i) => cardRow(c, cardsFor(set.id).indexOf(c) + 1)).join("") || empty("Add your first card", "A term on one side. A definition, translation, or explanation on the other.")}</div>${filtered.length > 40 ? `<div class="pagination">${button("← Previous", "card-prev", cardPage ? "" : "disabled")}<span>${cardPage + 1} / ${Math.ceil(filtered.length / 40)}</span>${button("Next →", "card-next", (cardPage + 1) * 40 >= filtered.length ? "disabled" : "")}</div>` : ""}`
+    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered → definition</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div>${editing && (needsAccents(set.termLanguage) || needsAccents(set.definitionLanguage)) ? `<div class="accent-editor">${accentBar("", "Italian letters for the focused card field")}</div>` : ""}${masteredOverview(set)}<div id="cardList">${page.map((c, i) => cardRow(c, cardsFor(set.id).indexOf(c) + 1)).join("") || empty("Add your first card", "A term on one side. A definition, translation, or explanation on the other.")}</div>${filtered.length > 40 ? `<div class="pagination">${button("← Previous", "card-prev", cardPage ? "" : "disabled")}<span>${cardPage + 1} / ${Math.ceil(filtered.length / 40)}</span>${button("Next →", "card-next", (cardPage + 1) * 40 >= filtered.length ? "disabled" : "")}</div>` : ""}`
   );
+}
+// An overview of the terms that are mastered, in each direction, for this set.
+function masteredOverview(set) {
+  const cards = new Map(cardsFor(set.id).map((c) => [c.id, c])),
+    byCard = new Map();
+  for (const m of store.list("learning")) {
+    const c = cards.get(m.cardId);
+    if (
+      !c ||
+      m.status !== "MASTERED" ||
+      m.contentRevision !== c.contentRevision
+    )
+      continue;
+    if (!byCard.has(c.id)) byCard.set(c.id, []);
+    byCard.get(c.id).push(m);
+  }
+  const rows = [...byCard].sort(
+    (a, b) => cards.get(a[0]).order - cards.get(b[0]).order,
+  );
+  return `<details class="mastered-overview" open><summary>Mastered terms (${rows.length} of ${cards.size})</summary>${
+    rows.length
+      ? `<ul class="mastered-list">${rows
+          .map(([cid, states]) => {
+            const c = cards.get(cid);
+            return `<li><span class="mastered-term">${esc(c.term)}</span><span class="mastered-def">${esc(c.definition)}</span><span class="mastered-dirs">${states
+              .sort((x, y) => x.direction.localeCompare(y.direction))
+              .map(
+                (m) =>
+                  `<small class="tag" title="Mastered ${attr(date(m.masteredAt))}">${m.direction === "forward" ? "term → definition" : "definition → term"}</small>`,
+              )
+              .join("")}</span></li>`;
+          })
+          .join("")}</ul>`
+      : '<p class="muted">Nothing is mastered yet. A term is mastered when you answer it correctly in multiple choice and then by typing it.</p>'
+  }</details>`;
 }
 function cardRow(c, index) {
   return `<article class="card-row" id="card-${attr(c.id)}"><span class="card-number">${index}</span><div>${editing ? `<label>Term<textarea data-card-field="term" data-id="${attr(c.id)}">${esc(c.term)}</textarea></label>` : `<small>TERM</small><p>${esc(c.term)}</p>`}</div><div class="definition">${editing ? `<label>Definition<textarea data-card-field="definition" data-id="${attr(c.id)}">${esc(c.definition)}</textarea></label>` : `<small>DEFINITION</small><p>${esc(c.definition)}</p>`}</div><div class="card-star">${star(c)}</div>${editing ? `<details class="card-details"><summary>Accepted answers, notes, and extras</summary><div class="form-grid">${["acceptedAnswers", "termAnswers", "tags"].map((key) => `<label>${key === "acceptedAnswers" ? "Accepted definition answers" : key === "termAnswers" ? "Accepted term answers" : "Tags"} (one per line)<textarea data-card-field="${key}" data-id="${attr(c.id)}">${esc((c[key] || []).join("\n"))}</textarea></label>`).join("")}${["notes", "explanation", "imageRef"].map((key) => `<label>${esc(key)}<textarea data-card-field="${key}" data-id="${attr(c.id)}">${esc(c[key])}</textarea></label>`).join("")}</div></details>` : c.notes ? `<div class="card-details muted"><small>${esc(c.notes)}</small></div>` : ""}<div class="card-tools">${c.provenance?.transcriptId ? `<a class="button small" href="#transcripts/${attr(c.provenance.transcriptId)}${Number.isFinite(c.provenance.timestamp) ? "/" + c.provenance.timestamp : ""}">Source transcript${Number.isFinite(c.provenance.timestamp) ? " · " + duration(c.provenance.timestamp * 1000) : ""}</a>` : ""}${button("Edit", "edit-card", `data-id="${attr(c.id)}"`, "small")}<details class="context-menu"><summary>More</summary><div>${button("Duplicate", "duplicate-card", `data-id="${attr(c.id)}"`, "small")}${button("↑", "move-card", `data-id="${attr(c.id)}" data-step="-1" aria-label="Move card up"`, "small")}${button("↓", "move-card", `data-id="${attr(c.id)}" data-step="1" aria-label="Move card down"`, "small")}${button("Delete", "delete-card", `data-id="${attr(c.id)}"`, "small danger")}</div></details></div></article>`;
