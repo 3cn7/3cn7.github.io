@@ -1,1 +1,25 @@
-{"name":"sat-study-platform","private":true,"version":"1.0.0","type":"module","scripts":{"build":"node scripts/build.mjs","test":"node --test tests/*.test.mjs","dev":"python3 scripts/serve.py"},"engines":{"node":">=22"}}
+{
+  "name": "studyroom",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node scripts/test-browser.mjs",
+    "dev": "python3 scripts/serve.py",
+    "test:models": "node tests/browser-models.mjs",
+    "verify:models": "node scripts/verify-models.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1",
+    "prettier": "3.6.2"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.25.0"
+}

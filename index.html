@@ -1,33 +1,99 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#335cdd"><meta name="description" content="Your SAT tracker, flashcards, adaptive learning, and class notes in one private study space.">
-<title>Studyroom · SAT & Study Library</title>
-<link rel="icon" href="assets/favicon.svg"><link rel="stylesheet" href="assets/app.css">
-</head>
-<body>
-<a class="skip" href="#main">Skip to content</a>
-<aside class="sidebar">
-<a class="brand" href="#dashboard"><span class="brand-mark">s</span><span>Studyroom<small>YOUR PERSONAL STUDY SPACE</small></span></a>
-<nav aria-label="Main navigation">
-<a href="#dashboard" data-nav="dashboard"><span aria-hidden="true">▦</span> Dashboard</a>
-<a href="#sat" data-nav="sat"><span aria-hidden="true">▤</span> SAT Tracker</a>
-<a href="#library" data-nav="library"><span aria-hidden="true">▱</span> Study Library</a>
-<a href="#transcripts" data-nav="transcripts"><span aria-hidden="true">♬</span> Class Transcriptions</a>
-<a href="#statistics" data-nav="statistics"><span aria-hidden="true">▥</span> Statistics</a>
-<a href="#sync" data-nav="sync"><span aria-hidden="true">↻</span> Google Drive</a>
-<a href="#settings" data-nav="settings"><span aria-hidden="true">⚙</span> Settings</a>
-</nav>
-<div class="sidebar-footer"><span class="status-dot"></span><span id="sidebarSync">Saved on this device</span><small>Your materials, your progress.</small></div>
-</aside>
-<div class="app-shell">
-<header class="topbar"><span id="breadcrumb">Dashboard</span><div class="top-actions"><span id="saveStatus" role="status">Opening local library…</span><button class="icon-btn" data-action="undo" aria-label="Undo last study library change" title="Undo last library change">↶</button><a class="button primary small" href="#library">+ Create / import</a></div></header>
-<main id="main" tabindex="-1"><div id="view" aria-live="off"><div class="empty">Opening your study space…</div></div>
-<section id="satPanel" hidden><iframe id="satFrame" src="sat.html" title="SAT Question Bank Tracker" allow="geolocation" style="width:100%;height:calc(100vh - 95px);border:0"></iframe></section>
-</main></div>
-<dialog id="modal" aria-labelledby="modalTitle"></dialog>
-<div id="toast" role="status" aria-live="polite" hidden></div>
-<script type="module" src="assets/app.js"></script>
-<noscript>This study platform requires JavaScript. Your SAT tracker is available at <a href="sat.html">SAT Tracker</a>.</noscript>
-</body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#4e5bd5" />
+    <meta
+      name="description"
+      content="Flashcards, practice tests, and class transcripts."
+    />
+    <title>Studyroom</title>
+    <script>
+      try {
+        const p = localStorage.getItem("studyPlatform.theme") || "system";
+        document.documentElement.dataset.theme =
+          p === "system"
+            ? matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : p;
+      } catch {}
+    </script>
+    <link rel="icon" href="assets/favicon.svg" />
+    <link rel="stylesheet" href="assets/app.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <aside class="sidebar">
+      <a class="brand" href="#dashboard" aria-label="Studyroom dashboard"
+        ><span class="brand-mark" aria-hidden="true"
+          ><svg viewBox="0 0 64 64" focusable="false">
+            <path
+              d="M43 19H27c-14 0-14 13 0 13h10c14 0 14 13 0 13H21"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            /></svg></span
+        ><span>studyroom</span></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#dashboard" data-nav="dashboard"
+          ><span aria-hidden="true">🏠</span>Dashboard</a
+        >
+        <a href="#library" data-nav="library"
+          ><span aria-hidden="true">📚</span>Study Library</a
+        >
+        <a href="#transcripts" data-nav="transcripts"
+          ><span aria-hidden="true">🎙️</span>Transcripts</a
+        >
+        <a href="#statistics" data-nav="statistics"
+          ><span aria-hidden="true">📊</span>Statistics</a
+        >
+        <a href="#settings" data-nav="settings"
+          ><span aria-hidden="true">⚙️</span>Settings</a
+        >
+      </nav>
+      <div class="sidebar-note">
+        <div class="sidebar-status">
+          <span class="status-dot" aria-hidden="true"></span
+          ><span id="sidebarSync">Saved on this device</span>
+        </div>
+        <a class="sidebar-link" href="#sync">Google Drive sync ↗</a>
+      </div>
+    </aside>
+    <div class="app-shell">
+      <header class="topbar">
+        <span id="breadcrumb">Dashboard</span>
+        <div class="top-actions">
+          <span id="saveStatus" role="status">Opening library…</span
+          ><a id="modelChip" class="model-chip" href="#settings" hidden></a
+          ><button
+            id="timerToggle"
+            aria-label="Open study timer"
+            aria-expanded="false"
+          >
+            ⏱️ <span id="timerMini">Timer</span></button
+          ><button class="primary" data-action="new-set">+ Create</button>
+        </div>
+      </header>
+      <main id="main" tabindex="-1">
+        <div id="view"><div class="empty">Opening library…</div></div>
+      </main>
+    </div>
+    <section
+      id="timerPanel"
+      hidden
+      aria-label="Universal study timer"
+    ></section>
+    <dialog id="modal" aria-labelledby="modalTitle"></dialog>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+    <script type="module" src="assets/app.js"></script>
+    <noscript
+      >This study space needs JavaScript to save and practice your
+      cards.</noscript
+    >
+  </body>
+</html>

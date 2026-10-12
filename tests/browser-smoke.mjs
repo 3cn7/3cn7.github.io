@@ -1,56 +1,92 @@
-import {createRequire} from 'node:module';
-import assert from 'node:assert/strict';
-const require=createRequire(import.meta.url);
-const {chromium}=require(process.env.STUDY_PLAYWRIGHT_PATH||'playwright');
-const browser=await chromium.launch({headless:true,...(process.env.STUDY_CHROME_PATH?{executablePath:process.env.STUDY_CHROME_PATH}:{})});
-const page=await browser.newPage({viewport:{width:1440,height:1050}});const errors=[];page.on('pageerror',error=>errors.push(error.message));
-await page.goto(process.env.STUDY_PREVIEW_URL||'http://127.0.0.1:8765/');
-await page.waitForSelector('h1');
-console.log('Initial:',await page.locator('h1').textContent());
-await page.getByRole('button',{name:'+ New study set',exact:true}).click();
-await page.getByRole('textbox',{name:'Title',exact:true}).fill('AP Italian · Unit 1');
-await page.getByRole('textbox',{name:'Subject',exact:true}).fill('AP Italian');
-await page.locator('#modal button[type=submit]').click();
-await page.waitForURL('**/#set/*');
-await page.getByRole('button',{name:'Import cards',exact:true}).click();
-await page.locator('#importText').fill('ciao\thello\narrivederci\tgoodbye\nil governo\tgovernment\nla sovranità\tsovereignty');
-await page.getByRole('button',{name:'Add imported cards'}).click();
-await page.waitForSelector('.card-row');
-assert.equal(await page.locator('.card-row').count(),4);
-await page.locator('.card-star button').first().click();
-await page.getByRole('button',{name:'Flashcards',exact:true}).click();
-await page.getByRole('button',{name:'Start studying',exact:true}).click();
-await page.waitForSelector('.study-card');
-await page.locator('.study-card').click();
-await page.waitForSelector('.study-card.flipped');
-await page.getByRole('button',{name:'Know ✓'}).click();
-await page.getByRole('button',{name:'Save & exit',exact:true}).click();
-await page.waitForURL('**/#library');
-await page.getByRole('button',{name:'Learn',exact:true}).click();
-await page.getByRole('button',{name:'Start studying',exact:true}).click();
-await page.waitForSelector('.question-prompt');
-console.log('Learn:',await page.locator('.question-prompt').textContent());
-await page.getByRole('button',{name:"Don't know",exact:true}).click();
-await page.waitForSelector('.feedback');
-await page.getByRole('button',{name:'I was correct',exact:true}).click();
-await page.getByRole('button',{name:'Continue →',exact:true}).click();
-await page.getByRole('button',{name:'Save & exit',exact:true}).click();
-await page.waitForURL('**/#library');
-await page.getByRole('button',{name:'Test',exact:true}).click();
-await page.getByRole('button',{name:'Start test',exact:true}).click();
-await page.waitForSelector('.navigator');
-const choicesBefore=await page.locator('.choices').textContent();
-await page.locator('.choices button').first().click();
-await page.reload();await page.waitForSelector('.navigator');
-assert.equal(await page.locator('.choices').textContent(),choicesBefore);
-await page.getByRole('button',{name:'Submit test',exact:true}).click();
-await page.getByRole('button',{name:'Submit anyway',exact:true}).click();
-await page.waitForSelector('.score');
-await page.screenshot({path:'/private/tmp/3cn7-study-platform/test-results/test-review.png',fullPage:true});
-await page.goto('http://127.0.0.1:8765/#statistics');await page.waitForSelector('h1');assert.equal(await page.locator('h1').textContent(),'Study Statistics');
-await page.goto('http://127.0.0.1:8765/#dashboard');await page.waitForSelector('h1');
-await page.screenshot({path:'/private/tmp/3cn7-study-platform/test-results/dashboard.png',fullPage:true});
-await page.setViewportSize({width:390,height:844});await page.screenshot({path:'/private/tmp/3cn7-study-platform/test-results/mobile.png',fullPage:true});
-assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-console.log({runtimeErrors:errors});assert.deepEqual(errors,[]);
-await browser.close();console.log('Browser smoke workflow passed.');
+import { createRequire } from "node:module";
+import assert from "node:assert/strict";
+const require = createRequire(import.meta.url);
+const { chromium } = require(process.env.STUDY_PLAYWRIGHT_PATH || "playwright");
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.STUDY_CHROME_PATH
+    ? { executablePath: process.env.STUDY_CHROME_PATH }
+    : {}),
+});
+const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } });
+const errors = [];
+page.on("pageerror", (error) => errors.push(error.message));
+await page.goto(process.env.STUDY_PREVIEW_URL || "http://127.0.0.1:8765/");
+await page.waitForSelector("h1");
+console.log("Initial:", await page.locator("h1").textContent());
+await page.getByRole("button", { name: "+ Create", exact: true }).click();
+await page
+  .getByRole("textbox", { name: "Title", exact: true })
+  .fill("AP Italian · Unit 1");
+await page
+  .getByRole("textbox", { name: "Subject", exact: true })
+  .fill("AP Italian");
+await page.locator("#modal button[type=submit]").click();
+await page.waitForURL("**/#set/*");
+await page.getByRole("button", { name: "Import cards", exact: true }).click();
+await page
+  .locator("#importText")
+  .fill(
+    "ciao\thello\narrivederci\tgoodbye\nil governo\tgovernment\nla sovranità\tsovereignty",
+  );
+await page.getByRole("button", { name: "Add imported cards" }).click();
+await page.waitForSelector(".card-row");
+assert.equal(await page.locator(".card-row").count(), 4);
+await page.locator(".card-star button").first().click();
+await page.getByRole("button", { name: "Flashcards", exact: true }).click();
+await page.getByRole("button", { name: "Start studying", exact: true }).click();
+await page.waitForSelector(".study-card");
+await page.locator(".study-card").click();
+await page.waitForSelector(".study-card.flipped");
+await page.getByRole("button", { name: "Know ✓" }).click();
+await page.getByRole("button", { name: "Save & exit", exact: true }).click();
+await page.waitForURL("**/#library");
+await page.locator(".context-menu summary").first().click();
+await page.getByRole("button", { name: "Learn", exact: true }).click();
+await page.getByRole("button", { name: "Start studying", exact: true }).click();
+await page.waitForSelector(".question-prompt");
+console.log("Learn:", await page.locator(".question-prompt").textContent());
+await page.getByRole("button", { name: "Don't know", exact: true }).click();
+await page.waitForSelector(".feedback");
+await page.getByRole("button", { name: "I was correct", exact: true }).click();
+await page.getByRole("button", { name: "Continue →", exact: true }).click();
+await page.getByRole("button", { name: "Save & exit", exact: true }).click();
+await page.waitForURL("**/#library");
+await page.locator(".context-menu summary").first().click();
+await page.getByRole("button", { name: "Test", exact: true }).click();
+await page.getByRole("button", { name: "Start test", exact: true }).click();
+await page.waitForSelector(".navigator");
+const choicesBefore = await page.locator(".choices").textContent();
+await page.locator(".choices button").first().click();
+await page.reload();
+await page.waitForSelector(".navigator");
+assert.equal(await page.locator(".choices").textContent(), choicesBefore);
+await page.getByRole("button", { name: "Submit test", exact: true }).click();
+await page.getByRole("button", { name: "Submit anyway", exact: true }).click();
+await page.waitForSelector(".score");
+await page.screenshot({
+  path: "test-results/test-review.png",
+  fullPage: true,
+});
+await page.goto("http://127.0.0.1:8765/#statistics");
+await page.waitForSelector("h1");
+assert.equal(await page.locator("h1").textContent(), "Study Statistics");
+await page.goto("http://127.0.0.1:8765/#dashboard");
+await page.waitForSelector("h1");
+await page.screenshot({
+  path: "test-results/dashboard.png",
+  fullPage: true,
+});
+await page.setViewportSize({ width: 390, height: 844 });
+await page.screenshot({
+  path: "test-results/mobile.png",
+  fullPage: true,
+});
+assert.equal(
+  await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+  true,
+);
+console.log({ runtimeErrors: errors });
+assert.deepEqual(errors, []);
+await browser.close();
+console.log("Browser smoke workflow passed.");

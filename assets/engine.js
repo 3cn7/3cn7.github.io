@@ -40,7 +40,7 @@ export function createLearnSession(cards,progress=[],config={},seed=Date.now()){
   if(!cards.length)throw new Error('No terms match this study pool.');config={...DEFAULT_STUDY,...config};if(!config.types.length)throw new Error('Enable at least one question type.');
   const order=config.shuffle?shuffle(cards.map(c=>c.id),seededRandom(seed)):cards.map(c=>c.id);
   const states={};for(const card of cards)for(const d of directions(config)){const p=progress.find(p=>p.id===`${card.id}:${d}`&&p.contentRevision===card.contentRevision);states[`${card.id}:${d}`]=clone(p||blankMastery(card,d));}
-  return {id:id(),type:'session',mode:'learn',cardIds:order,setIds:[...new Set(cards.map(c=>c.setId))],config,seed,states,position:0,round:1,roundStart:0,attempts:[],lastCardId:null,current:null,feedback:null,startedAt:now(),finishedAt:null};
+  return {id:id(),type:'session',mode:'learn',cardIds:order,setIds:[...new Set(cards.map(c=>c.setId))],config,seed,states,position:0,round:1,roundStart:0,attempts:[],lastCardId:null,current:null,feedback:null,startedAt:now(),finishedAt:null,activeMs:0,days:[]};
 }
 export function selectNextQuestion(session,cards){
   const available=new Map(cards.map(c=>[c.id,c]));const rank=new Map(session.cardIds.map((cid,i)=>[cid,i]));const states=[];
@@ -74,7 +74,7 @@ export function learnStats(session){const liveIds=new Set(session.cardIds);const
 export function learnComplete(session){const s=learnStats(session);return session.config.goal==='quick'?s.attempts>=Number(session.config.budget):s.mastered===s.total;}
 export function createFlashcardSession(cards,config={},seed=Date.now()){
  if(!cards.length)throw new Error('No terms match this study pool.');config={...DEFAULT_STUDY,...config};const rng=seededRandom(seed);const sequence=config.shuffle?shuffle(cards.map(c=>c.id),rng):cards.map(c=>c.id);
- return {id:id(),type:'session',mode:'flashcards',cardIds:cards.map(c=>c.id),setIds:[...new Set(cards.map(c=>c.setId))],sequence,index:0,flipped:false,round:1,assessments:{},reviewed:[],directionByCard:Object.fromEntries(cards.map(c=>[c.id,config.direction==='mixed'?(rng()<.5?'forward':'reverse'):config.direction])),config,seed,startedAt:now(),finishedAt:null};
+ return {id:id(),type:'session',mode:'flashcards',cardIds:cards.map(c=>c.id),setIds:[...new Set(cards.map(c=>c.setId))],sequence,index:0,flipped:false,round:1,assessments:{},reviewed:[],directionByCard:Object.fromEntries(cards.map(c=>[c.id,config.direction==='mixed'?(rng()<.5?'forward':'reverse'):config.direction])),config,seed,startedAt:now(),finishedAt:null,activeMs:0,days:[]};
 }
 export function recordSelfAssessment(session,result){const cid=session.sequence[session.index];if(!session.flipped)throw new Error('Flip the card before assessing it.');session.assessments[cid]=result;session.reviewed=[...new Set([...session.reviewed,cid])];session.sequence.splice(session.index,1);session.index=Math.min(session.index,Math.max(0,session.sequence.length-1));session.flipped=false;}
 export function createTest(cards,config={},seed=Date.now()){
@@ -83,11 +83,11 @@ export function createTest(cards,config={},seed=Date.now()){
  let plannedTypes=[];if(config.typeCounts&&Object.values(config.typeCounts).some(Number)){for(const t of config.types){const amount=Number(config.typeCounts[t]||0);if(!Number.isInteger(amount)||amount<0)throw new Error('Question counts by type must be nonnegative whole numbers.');plannedTypes.push(...Array(amount).fill(t));}if(plannedTypes.length!==count)throw new Error('Question counts by type must add up to the total question count.');}
  const rng=seededRandom(seed),selected=(config.shuffle?shuffle(cards,rng):cards).slice(0,count),questions=[];
  for(let i=0;i<selected.length;i++){const d=config.direction==='mixed'?(rng()<.5?'forward':'reverse'):config.direction;questions.push(generateQuestion(selected[i],cards,plannedTypes[i]||config.types[i%config.types.length],d,rng,config.types,config.shuffleAnswers));}
- const start=now();return {id:id(),type:'test',mode:'test',setIds:[...new Set(cards.map(c=>c.setId))],cardIds:cards.map(c=>c.id),config,seed,questions,answers:{},marked:[],index:0,startedAt:start,deadline:config.timerMinutes>0?Date.parse(start)+config.timerMinutes*60000:null,submittedAt:null,results:[]};
+ const start=now();return {id:id(),type:'test',mode:'test',setIds:[...new Set(cards.map(c=>c.setId))],cardIds:cards.map(c=>c.id),config,seed,questions,answers:{},marked:[],index:0,startedAt:start,deadline:config.timerMinutes>0?Date.parse(start)+config.timerMinutes*60000:null,remainingMs:config.timerMinutes>0?config.timerMinutes*60000:null,activeMs:0,days:[],submittedAt:null,results:[]};
 }
 export function submitTest(test,at=now()){
  if(test.submittedAt)return test;test.submittedAt=at;test.durationMs=Math.max(0,Date.parse(at)-Date.parse(test.startedAt));
  test.results=test.questions.map(q=>{const response=test.answers[q.id]??'',g=gradeAnswer(response,q,test.config);return {questionId:q.id,cardId:q.cardId,response,originalCorrect:g.correct,effectiveCorrect:g.correct,reason:g.reason,unanswered:String(response).trim()===''};});return test;
 }
 export function testScore(test){const earned=test.results.filter(r=>r.effectiveCorrect).length;return {earned,total:test.questions.length,percent:test.questions.length?earned/test.questions.length*100:0,unanswered:test.results.filter(r=>r.unanswered).length};}
-export function retakeTest(test){return {...clone(test),id:id(),clock:{},answers:{},marked:[],index:0,results:[],startedAt:now(),deadline:test.config.timerMinutes>0?Date.now()+test.config.timerMinutes*60000:null,submittedAt:null,retakeOf:test.id};}
+export function retakeTest(test){return {...clone(test),id:id(),clock:{},answers:{},marked:[],index:0,results:[],startedAt:now(),deadline:test.config.timerMinutes>0?Date.now()+test.config.timerMinutes*60000:null,remainingMs:test.config.timerMinutes>0?test.config.timerMinutes*60000:null,timerPaused:false,timerPausedAt:null,submittedBy:null,durationMs:null,activeMs:0,days:[],submittedAt:null,retakeOf:test.id};}

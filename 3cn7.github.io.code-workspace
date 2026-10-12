@@ -1,22 +1,18 @@
 {
-  "folders": [
-    {
-      "path": "."
-    }
-  ],
+  "folders": [{ "path": "." }],
   "settings": {
+    "explorer.excludeGitIgnore": false,
     "files.exclude": {
       "**/dist": true,
       "**/legacy_reference": false,
-      "**/companion/models": true,
-      "**/companion/private_data": true
+      "**/test-results": true,
+      "**/node_modules": true,
     },
     "search.exclude": {
-      "**/legacy_reference": true,
       "**/dist": true,
-      "**/companion/models": true,
-      "**/companion/private_data": true
+      "**/legacy_reference": true,
+      "**/node_modules": true,
+      "**/test-results": true,
     },
-    "explorer.excludeGitIgnore": false
-  }
+  },
 }

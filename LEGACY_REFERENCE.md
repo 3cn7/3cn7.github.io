@@ -1,16 +1,16 @@
-# Original source preservation
+# Historical source archive
 
-The original website was archived **before modifying the application**, on October 10, 2026:
+The original source remains locally readable in VS Code and is excluded from runtime and deployment.
 
-- `legacy_reference/Original_SAT_Tracker.archived.txt`: exact original `index.html`.
-- `legacy_reference/Original_Mathlive_Module.archived.txt`: previously disabled historical notes module.
-- `legacy_reference/README.md`: archive purpose and usage.
+- `legacy_reference/Original_SAT_Tracker.archived.txt`: exact original website HTML.
+- `legacy_reference/Original_Mathlive_Module.archived.txt`: original disabled notes module.
+- `legacy_reference/pre_redesign/Study_Tracker.archived.txt`: the previous active tracker at the refactor checkpoint.
+- `legacy_reference/pre_redesign/Transcription_Client.archived.txt`: previous cloud/client transcription module.
+- `legacy_reference/pre_redesign/Transcription_Interface.archived.txt`: previous transcript interface.
+- `legacy_reference/pre_redesign/Companion_Server.archived.txt`: previous inference server.
 
 Original HTML SHA-256: `7bca2692a234096e6a49d40aae6da9afb0ee7bfae086ab92f77679d46e3be42d`.
-Original executable SAT script SHA-256: `d125050f02f69a9c3c5d4f542eadf92b71539c550eec925630139354330879ca`.
 
-The `.txt` archives cannot launch as another application. No active HTML/JS imports or references them. They are ignored by Git and reside outside `dist/`. The production build copies only its public allowlist, and the Pages workflow uploads only `dist/`. They remain readable in the VS Code folder explorer and must not be deleted or force-added to the public repository.
+The original reference archive predates this refactor. The pre-redesign Git checkpoint is `99f69a0d805327b894bf01b04edf58f0d5222660`. All archived copies use `.txt` extensions; active code never imports or fetches them. `legacy_reference/` is ignored by Git and omitted by the production build. The older tracked `archive/mathlive-notes-module.js.disabled` also remains excluded from the public artifact.
 
-The new active site is `index.html` plus `assets/`. The active SAT section uses `sat.html`: its original script is copied intact with a small appended same-origin bridge. It retains Math/R&W taxonomy and slots, IDs, question status/attempts/notes, filtering/search, editing/autosave, Save-and-next, bulk import, exports/restore, timer, existing local keys, and original OAuth/Drive sync. The archive is reference material; the active tracker runs from its own file.
-
-Open this repository in VS Code, expand `legacy_reference`, and compare the original implementation when maintaining the tracker. Configure VS Code to display ignored files if your personal explorer settings hide them. `3cn7.github.io.code-workspace` opens this repository folder directly.
+Open `3cn7.github.io.code-workspace` in VS Code and expand `legacy_reference`. These files are historical reference material. The active application consists of `index.html`, `assets/`, `sw.js` and the build's local vendor runtime. There is no active tracker iframe, tracker route or inference server.
