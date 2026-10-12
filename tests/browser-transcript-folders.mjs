@@ -60,6 +60,22 @@ assert.equal((await folderOf()).none, true);
 await page.goto("http://127.0.0.1:8765/#library");
 await page.getByRole("button", { name: "Folder tree", exact: true }).click();
 await page.locator("[role=treeitem][data-kind=transcript]").waitFor();
+// A transcript inside a folder stays visible in the tree.
+await page.getByRole("button", { name: "Grid", exact: true }).click();
+await page
+  .locator(".transcript-row")
+  .dragTo(page.locator(".folder-card", { hasText: "Lectures" }));
+await page.waitForFunction(() => !document.querySelector(".transcript-row"));
+await page.getByRole("button", { name: "Folder tree", exact: true }).click();
+const inFolder = page.locator(
+  '[role=treeitem][data-label="Lectures"] [data-kind=transcript]',
+);
+await inFolder.waitFor();
+await inFolder.click();
+await page.getByRole("button", { name: "Move to…" }).click();
+await page.getByLabel("Destination folder").selectOption("");
+await page.getByRole("button", { name: "Move here", exact: true }).click();
+await page.locator("#libraryTree > [data-kind=transcript]").waitFor();
 await page.locator("[role=treeitem][data-kind=transcript]").dblclick();
 await page.waitForURL("**/#transcripts/*");
 await page.getByText("More", { exact: true }).first().click();

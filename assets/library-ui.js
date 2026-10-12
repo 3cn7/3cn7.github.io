@@ -182,9 +182,12 @@ export function createLibraryUI(ctx) {
   const transcriptFolder = (t) =>
     t.folderId && store.get(t.folderId) ? t.folderId : "";
   // Transcripts follow the same scope rules as sets; subject and starred filters do not apply to them.
-  function libraryTranscripts(folderId = state.folderId) {
+  function libraryTranscripts(
+    folderId = state.folderId,
+    { everywhere = false } = {},
+  ) {
     if (state.subject || state.starred) return [];
-    const deep = state.nested || filtering(),
+    const deep = everywhere || state.nested || filtering(),
       folders = folderId
         ? deep
           ? descendantFolders(store.records, folderId)
@@ -356,7 +359,7 @@ export function createLibraryUI(ctx) {
       setsIn.get(key).push(s);
     }
     const trIn = new Map();
-    for (const t of libraryTranscripts(null)) {
+    for (const t of libraryTranscripts(null, { everywhere: true })) {
       const key = transcriptFolder(t);
       if (!trIn.has(key)) trIn.set(key, []);
       trIn.get(key).push(t);

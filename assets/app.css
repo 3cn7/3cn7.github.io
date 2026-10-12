@@ -2272,3 +2272,22 @@ kbd {
   color: var(--ink);
   overflow-wrap: anywhere;
 }
+
+/* The whole folder card opens the folder; Edit and Move stay clickable above the link. */
+.folder-card {
+  position: relative;
+  cursor: pointer;
+}
+.folder-card .folder-name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.folder-card .folder-name:hover {
+  text-decoration: underline;
+}
+.folder-card .row button {
+  position: relative;
+  z-index: 1;
+}
