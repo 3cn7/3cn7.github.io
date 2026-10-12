@@ -9,4 +9,8 @@ print('Preview: http://127.0.0.1:8765', flush=True)
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args): pass
 handler = partial(QuietHandler, directory=str(root))
-http.server.ThreadingHTTPServer(('127.0.0.1', 8765), handler).serve_forever()
+class Server(http.server.ThreadingHTTPServer):
+    # The app loads ~20 module files at once; the default backlog of 5 resets some connections.
+    request_queue_size = 128
+    daemon_threads = True
+Server(('127.0.0.1', 8765), handler).serve_forever()

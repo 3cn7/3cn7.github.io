@@ -2382,32 +2382,67 @@ kbd {
 .status-empty {
   margin: 0 0 14px;
 }
+/* Vibrant status colours: solid fills with white text, tinted group headers. */
+:root {
+  --status-mastered: #15803d;
+  --status-mastered-tint: #dcfce7;
+  --status-learning: #c2410c;
+  --status-learning-tint: #ffedd5;
+  --status-new: #1d4ed8;
+  --status-new-tint: #dbeafe;
+  --status-mastered-bar: #22c55e;
+  --status-learning-bar: #f97316;
+  --status-new-bar: #3b82f6;
+}
+html[data-theme="dark"] {
+  --status-mastered: #16a34a;
+  --status-mastered-tint: #14352a;
+  --status-learning: #ea580c;
+  --status-learning-tint: #432412;
+  --status-new: #2563eb;
+  --status-new-tint: #172a52;
+}
+.status-pill,
+.status-chip {
+  color: #fff;
+  border-color: transparent;
+}
 .status-pill.mastered,
 .status-chip.mastered {
-  background: var(--color-success-surface);
-  color: var(--color-success);
-  border-color: var(--color-success);
+  background: var(--status-mastered);
 }
 .status-pill.learning,
 .status-chip.learning {
-  background: var(--color-warning-surface);
-  color: var(--color-warning);
-  border-color: var(--color-warning);
+  background: var(--status-learning);
 }
 .status-pill.not-studied,
 .status-chip.not-studied {
-  background: var(--color-surface-secondary);
-  color: var(--muted);
-  border-color: var(--color-control-border);
+  background: var(--status-new);
 }
 .status-group.mastered {
-  border-left-color: var(--color-success);
+  border-left-color: var(--status-mastered-bar);
+  border-left-width: 8px;
 }
 .status-group.learning {
-  border-left-color: var(--color-warning);
+  border-left-color: var(--status-learning-bar);
+  border-left-width: 8px;
 }
 .status-group.not-studied {
-  border-left-color: var(--color-control-border);
+  border-left-color: var(--status-new-bar);
+  border-left-width: 8px;
+}
+.status-group.mastered > summary {
+  background: var(--status-mastered-tint);
+}
+.status-group.learning > summary {
+  background: var(--status-learning-tint);
+}
+.status-group.not-studied > summary {
+  background: var(--status-new-tint);
+}
+.status-group > summary {
+  margin: 0 -20px;
+  padding: 12px 20px;
 }
 .status-chip {
   padding: 2px 10px;
