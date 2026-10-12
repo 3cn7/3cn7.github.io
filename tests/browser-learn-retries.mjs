@@ -112,14 +112,19 @@ for (
 }
 await page.getByRole("heading", { name: "Round complete." }).waitFor();
 await page.goto(APP + "#set/" + setId);
-await page.waitForSelector(".mastered-overview");
+await page.waitForSelector(".term-overview");
+assert.equal(await page.locator(".status-pill").count(), 3);
+for (const g of ["not-studied", "learning", "mastered"])
+  assert.equal(await page.locator(".status-group." + g).count(), 1);
 assert.match(
-  await page.locator(".mastered-overview summary").textContent(),
-  /Mastered terms \(\d+ of 6\)/,
+  await page.locator(".status-group.mastered summary").textContent(),
+  /Mastered \(\d+\)/,
 );
-assert((await page.locator(".mastered-list li").count()) >= 2);
+assert((await page.locator(".status-group.mastered li").count()) >= 2);
+// All six terms are listed, each under exactly one status.
+assert.equal(await page.locator(".status-group li").count(), 6);
 assert.deepEqual(errors, []);
 await browser.close();
 console.log(
-  "Missed questions climb the retry ladder with a Review label, and the set page lists mastered terms.",
+  "Missed questions climb the retry ladder with a Review label, and the set page groups every term as not studied, learning or mastered.",
 );
