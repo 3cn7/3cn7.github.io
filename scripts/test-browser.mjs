@@ -11,6 +11,7 @@ const checks = [
   "browser-library.mjs",
   "browser-file-manager.mjs",
   "browser-continue.mjs",
+  "browser-transcript-sort.mjs",
   "browser-library-root.mjs",
   "browser-transcript-trash.mjs",
   "browser-stats-back.mjs",

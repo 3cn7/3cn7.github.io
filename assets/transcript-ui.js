@@ -377,6 +377,9 @@ export function createTranscriptUI(ctx) {
       <div class="capture-status" role="status"><span id="captureState">Ready</span><span id="captureElapsed" hidden>0m 0s</span><span id="captureBacklog" hidden></span>${button("Cancel processing", "cancel-processing", busy() ? "" : "hidden", "small")}</div>${captureError ? `<div class="notice error" id="captureError" role="alert">${esc(captureError)}</div>` : ""}
       <details class="downloaded-models"><summary>Manage downloaded models</summary>${models}</details></section>`;
   }
+  // Newest first by default; the choice is remembered (the library lists transcripts the same way).
+  const newestFirst = () =>
+    localStorage.getItem("studyPlatform.transcriptSort") !== "oldest";
   async function view(transcriptId) {
     selectedId = transcriptId || jobId;
     const t = selectedId ? store.get(selectedId) : null;
@@ -390,13 +393,19 @@ export function createTranscriptUI(ctx) {
     }
     const models = await modelView();
     return `<div class="page-head"><h1>Transcripts</h1>${button("Create cards from notes", "cards-from-notes")}</div><div class="transcription-workspace">${offerHTML()}${captureForm(models)}${t ? transcriptView(t) : ""}
-      <section class="panel saved-transcripts"><div class="row between"><h2>Saved transcripts</h2>${t ? button("New recording", "new-transcript", "", "small") : ""}</div>${
+      <section class="panel saved-transcripts"><div class="row between"><h2>Saved transcripts</h2><div class="row">${button(newestFirst() ? "↓ Newest first" : "↑ Oldest first", "sort-transcripts", `aria-label="Sorted ${newestFirst() ? "newest to oldest" : "oldest to newest"}. Change order" title="Change order"`, "small")}${t ? button("New recording", "new-transcript", "", "small") : ""}</div></div>${
         store
           .list("transcript")
-          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+          .sort(
+            (a, b) =>
+              (newestFirst() ? -1 : 1) *
+              (a.createdAt || a.updatedAt).localeCompare(
+                b.createdAt || b.updatedAt,
+              ),
+          )
           .map(
             (saved) =>
-              `<div class="transcript-list-row ${saved.id === selectedId ? "is-selected" : ""}"><a href="#transcripts/${attr(saved.id)}"><strong>${esc(saved.title)}</strong><small>${date(saved.updatedAt)}</small></a>${button("×", "delete-transcript", `data-id="${attr(saved.id)}" aria-label="Delete ${attr(saved.title)}" title="Delete transcript"`, "icon-btn")}</div>`,
+              `<div class="transcript-list-row ${saved.id === selectedId ? "is-selected" : ""}"><a href="#transcripts/${attr(saved.id)}"><strong>${esc(saved.title)}</strong><small>${date(saved.createdAt || saved.updatedAt)}</small></a>${button("×", "delete-transcript", `data-id="${attr(saved.id)}" aria-label="Delete ${attr(saved.title)}" title="Delete transcript"`, "icon-btn")}</div>`,
           )
           .join("") ||
         '<p class="muted transcript-list-empty">No transcripts yet.</p>'
@@ -454,7 +463,7 @@ export function createTranscriptUI(ctx) {
             s.sourceLanguage || "unknown",
           )}</select></div><label>Original<textarea data-segment-edit="${s.id}" data-transcript="${tid}" data-field="text">${esc(original)}</textarea></label></article>`
         : ""
-    }${display !== "original" ? `<article class="segment-card"><div class="segment-header"><span class="badge">${languageName(s.targetLanguage)}</span><small data-translation-status="${s.id}">${esc(translationStatus(s))}</small></div><label>Translation<textarea data-segment-edit="${s.id}" data-transcript="${tid}" data-field="translatedText" placeholder="${s.translationStatus === "unknown_language" ? "Choose the source language to translate." : "Translation appears here."}">${esc(s.translatedText || "")}</textarea></label>${s.translationError ? `<small class="notice error">${esc(s.translationError)}</small>` : ""}</article>` : ""}</div>`;
+    }${display === "both" ? '<span class="pair-arrow" aria-hidden="true"><svg viewBox="0 0 48 24" width="48" height="24" focusable="false"><path d="M3 12h38M31 3l10 9-10 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : ""}${display !== "original" ? `<article class="segment-card"><div class="segment-header"><span class="badge">${languageName(s.targetLanguage)}</span><small data-translation-status="${s.id}">${esc(translationStatus(s))}</small></div><label>Translation<textarea data-segment-edit="${s.id}" data-transcript="${tid}" data-field="translatedText" placeholder="${s.translationStatus === "unknown_language" ? "Choose the source language to translate." : "Translation appears here."}">${esc(s.translatedText || "")}</textarea></label>${s.translationError ? `<small class="notice error">${esc(s.translationError)}</small>` : ""}</article>` : ""}</div>`;
   }
   function updateStatus(note) {
     const state = $("#captureState");
@@ -1325,6 +1334,7 @@ export function createTranscriptUI(ctx) {
       "download-required",
       "cancel-setup",
       "diagnose-model",
+      "sort-transcripts",
       "save-model-host",
       "reset-model-host",
       "offer-high",
@@ -1409,6 +1419,13 @@ export function createTranscriptUI(ctx) {
         },
         { submitLabel: "Download model" },
       );
+    } else if (action === "sort-transcripts") {
+      localStorage.setItem(
+        "studyPlatform.transcriptSort",
+        newestFirst() ? "oldest" : "newest",
+      );
+      await ctx.render();
+      document.querySelector('[data-action="sort-transcripts"]')?.focus();
     } else if (action === "offer-high") {
       // Choosing this button is the confirmation: the size is stated in the offer.
       navigator.storage?.persist?.().catch(() => {});

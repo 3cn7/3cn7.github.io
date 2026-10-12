@@ -203,7 +203,13 @@ export function createLibraryUI(ctx) {
           (!folders || folders.has(transcriptFolder(t))) &&
           (!q || normalize(t.title + " " + (t.rawText || "")).includes(q)),
       )
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      .sort(
+        (a, b) =>
+          (pref("studyPlatform.transcriptSort") === "oldest" ? 1 : -1) *
+          (a.createdAt || a.updatedAt).localeCompare(
+            b.createdAt || b.updatedAt,
+          ),
+      );
   }
   const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
