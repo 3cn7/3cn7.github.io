@@ -412,7 +412,7 @@ export function createTranscriptUI(ctx) {
     const hasTranslation =
       settings.translate ||
       t.segments?.some((s) => s.translatedText || s.targetLanguage);
-    return `<section class="transcript-editor stack" aria-label="Transcript editor"><div class="row between"><div><h2>${esc(t.title)}</h2><small>Saved · ${date(t.updatedAt)}</small></div><div class="row">${button("Create flashcards", "draft-cards", `data-id="${t.id}"`, "primary")}<details class="action-menu"><summary>More</summary><div>${button("Rename", "rename-transcript", `data-id="${t.id}"`)}${button("Move to folder…", "move-transcript", `data-id="${t.id}"`)}${button("Export", "export-transcript", `data-id="${t.id}"`)}${button("Copy original", "copy-transcript", `data-id="${t.id}"`)}${button("Copy translation", "copy-translation", `data-id="${t.id}"`)}${button("Translate saved segments", "translate-saved", `data-id="${t.id}"`)}${button(translationPaused ? "Resume translation" : "Pause translation", "pause-translation")}${button("Stop translation", "stop-translation")}${audioURL ? button("Delete local audio…", "delete-audio", `data-id="${t.id}"`, "danger") : ""}</div></details></div></div>
+    return `<section class="transcript-editor stack" aria-label="Transcript editor"><div class="row between"><div><h2>${esc(t.title)}</h2><small>Saved · ${date(t.updatedAt)}</small></div><div class="row">${button("Create flashcards", "draft-cards", `data-id="${t.id}"`, "primary")}<details class="action-menu"><summary>More</summary><div>${button("Rename", "rename-transcript", `data-id="${t.id}"`)}${button("Move to folder…", "move-transcript", `data-id="${t.id}"`)}${button("Export", "export-transcript", `data-id="${t.id}"`)}${button("Copy original", "copy-transcript", `data-id="${t.id}"`)}${button("Copy translation", "copy-translation", `data-id="${t.id}"`)}${button("Translate saved segments", "translate-saved", `data-id="${t.id}"`)}${button(translationPaused ? "Resume translation" : "Pause translation", "pause-translation")}${button("Stop translation", "stop-translation")}${button("Move to trash", "delete-transcript", `data-id="${t.id}"`, "danger")}${audioURL ? button("Delete local audio…", "delete-audio", `data-id="${t.id}"`, "danger") : ""}</div></details></div></div>
       ${audioURL ? `<audio class="audio-player" id="transcriptAudio" controls src="${audioURL}"></audio>` : ""}
       <div class="toolbar transcript-toolbar"><input type="search" id="transcriptSearch" aria-label="Search transcript" placeholder="Search transcript">${button("Find next", "find-transcript")}<label class="transcript-display" ${hasSegments && hasTranslation ? "" : "hidden"}>View<select id="transcriptDisplay" aria-label="Transcript view">${options(
         [
@@ -1548,14 +1548,14 @@ export function createTranscriptUI(ctx) {
     else if (action === "delete-transcript")
       confirmAction(
         "Delete transcript?",
-        "The transcript moves to Recently Deleted. Local audio and linked cards are retained.",
+        `The transcript${t.audioId ? " and its recording move" : " moves"} to Recently Deleted, where you can restore ${t.audioId ? "them" : "it"}. Linked cards are kept. Erasing it there permanently removes the recording from this device.`,
         async () => {
           await store.remove(t.id);
           if (selectedId === t.id) selectedId = null;
           if (jobId === t.id) jobId = null;
           ctx.go("transcripts");
         },
-        "Delete",
+        "Move to trash",
       );
     else if (action === "export-transcript") {
       await saveAll();

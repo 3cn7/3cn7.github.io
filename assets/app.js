@@ -610,7 +610,7 @@ function trash() {
   );
   modal(
     "Recently Deleted",
-    `<p>Deleted content stays here until you explicitly erase it. Study history is retained.</p><div class="stack">${deleted.map((r) => `<div class="row between"><span>${esc(r.title || r.name || r.term || r.id)} <small>(${esc(r.type)})</small></span>${button("Restore", "restore-record", `data-id="${attr(r.id)}"`, "small")}${button("Permanently erase", "erase-record", `data-id="${attr(r.id)}"`, "small danger")}</div>`).join("") || '<p class="muted">Nothing deleted.</p>'}</div>`,
+    `<p>Deleted content stays here until you explicitly erase it. Study history is retained.</p><div class="stack">${deleted.map((r) => `<div class="row between"><span>${esc(r.title || r.name || r.term || r.id)} <small>(${esc(r.type)}${r.type === "transcript" && r.audioId ? " with recording" : ""})</small></span>${button("Restore", "restore-record", `data-id="${attr(r.id)}"`, "small")}${button("Permanently erase", "erase-record", `data-id="${attr(r.id)}"`, "small danger")}</div>`).join("") || '<p class="muted">Nothing deleted.</p>'}</div>`,
     false,
   );
 }
@@ -1313,8 +1313,12 @@ document.addEventListener("click", async (e) => {
     } else if (action === "erase-record")
       confirmAction(
         "Permanently erase content?",
-        "Text will be erased from this record. A deletion marker remains to prevent old devices from restoring it. Historical test snapshots are retained.",
+        "Text will be erased from this record (a transcript's recording is deleted from this device too). A deletion marker remains to prevent old devices from restoring it. Historical test snapshots are retained.",
         async () => {
+          // A transcript's recording is erased with it.
+          const doomed = store.records.find((r) => r.id === el.dataset.id);
+          if (doomed?.type === "transcript" && doomed.audioId)
+            await store.deleteAudio(doomed.audioId);
           await store.update(
             el.dataset.id,
             (r) => ({
