@@ -75,13 +75,18 @@ const check = async (hash, expected, target) => {
 await page.goto(APP + "#dashboard");
 await page.waitForSelector("h1");
 assert.equal(await back.isHidden(), true, "nothing is above the dashboard");
-await check("library", "← Dashboard", "dashboard");
+for (const hash of ["library", "statistics", "settings", "transcripts"]) {
+  await page.goto(APP + "#" + hash);
+  await page.waitForSelector("#view h1");
+  assert.equal(
+    await back.isHidden(),
+    true,
+    hash + " has no back-to-dashboard button",
+  );
+}
 await check("folder/" + ids.folder, "← Study Library", "library");
 await check("set/" + ids.set, "← F1", "folder/" + ids.folder);
-await check("statistics", "← Dashboard", "dashboard");
-await check("settings", "← Dashboard", "dashboard");
 await check("sync", "← Settings", "settings");
-await check("transcripts", "← Dashboard", "dashboard");
 // A study session goes back to its set.
 await page.goto(APP + "#set/" + ids.set);
 await page.getByRole("button", { name: "Flashcards", exact: true }).click();

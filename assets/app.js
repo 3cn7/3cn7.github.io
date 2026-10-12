@@ -918,7 +918,7 @@ document.addEventListener("click", (e) => {
   }
   applyNav();
 });
-// Every screen has a Back button that goes to the screen it belongs to.
+// Screens inside something (a folder, a set, a practice, a transcript, Drive) have a Back button; main sections do not.
 function updateBack(parts) {
   const button = $("#backButton"),
     to = (hash, name) => ({ hash, name });
@@ -927,8 +927,7 @@ function updateBack(parts) {
     fid && store.get(fid)
       ? to("folder/" + fid, folderPath(fid))
       : to("library", "Study Library");
-  if (route === "library") target = to("dashboard", "Dashboard");
-  else if (route === "folder") target = inFolder(store.get(folderId)?.parentId);
+  if (route === "folder") target = inFolder(store.get(folderId)?.parentId);
   else if (route === "set") target = inFolder(store.get(setId)?.folderId);
   else if (route === "study" || route === "test") {
     const ids = store.get(parts[1])?.setIds || [];
@@ -937,11 +936,7 @@ function updateBack(parts) {
         ? to("set/" + ids[0], store.get(ids[0]).title)
         : to("library", "Study Library");
   } else if (route === "transcripts")
-    target = parts[1]
-      ? to("transcripts", "Transcripts")
-      : to("dashboard", "Dashboard");
-  else if (["statistics", "settings"].includes(route))
-    target = to("dashboard", "Dashboard");
+    target = parts[1] ? to("transcripts", "Transcripts") : null;
   else if (route === "sync") target = to("settings", "Settings");
   button.hidden = !target;
   if (target) {
