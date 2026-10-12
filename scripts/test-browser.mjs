@@ -11,6 +11,7 @@ const checks = [
   "browser-library.mjs",
   "browser-file-manager.mjs",
   "browser-continue.mjs",
+  "browser-card-click.mjs",
   "browser-delete-selected.mjs",
   "browser-study-state.mjs",
   "browser-interface.mjs",

@@ -2226,3 +2226,26 @@ kbd {
 .model-source {
   margin-top: 12px;
 }
+
+/* The whole set card opens the set: the title link stretches over the card,
+   while the card's own controls stay clickable above it. */
+.set-tile {
+  position: relative;
+  cursor: pointer;
+}
+.set-tile .set-title::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.set-tile .set-title:hover {
+  text-decoration: underline;
+}
+.set-tile .check,
+.set-tile .icon-btn,
+.set-tile .tile-actions button,
+.set-tile .context-menu {
+  position: relative;
+  z-index: 1;
+}

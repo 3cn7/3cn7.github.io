@@ -203,7 +203,7 @@ export function createLibraryUI(ctx) {
             "primary",
           )
         : "";
-    })()}<a class="button${unfinishedFor(set.id) ? "" : " primary"}" href="#set/${attr(set.id)}">Open set →</a>${selectable ? button("➡️ Move", "move-set", `data-id="${attr(set.id)}" aria-label="Move ${attr(set.title)} to a folder…" title="Move to a folder"`, "small") : ""}<details class="context-menu"><summary>Study options</summary><div>${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`)).join("")}</div></details></div></article>`;
+    })()}${selectable ? button("➡️ Move", "move-set", `data-id="${attr(set.id)}" aria-label="Move ${attr(set.title)} to a folder…" title="Move to a folder"`, "small") : ""}<details class="context-menu"><summary>Study options</summary><div>${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`)).join("")}</div></details></div></article>`;
   }
   function searchResults() {
     const sets = librarySets(),
