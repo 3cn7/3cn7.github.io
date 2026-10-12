@@ -43,7 +43,7 @@ for (const width of [360, 390, 768, 1024, 1280, 1440, 1920]) {
 await page.setViewportSize({ width: 1440, height: 1050 });
 await page.goto("http://127.0.0.1:8765/#settings");
 await page.getByLabel("Theme", { exact: true }).selectOption("dark");
-await page.getByRole("button", { name: "Save appearance" }).click();
+await page.getByRole("button", { name: "Save settings" }).click();
 await page.reload();
 await page.waitForSelector("h1");
 assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
@@ -54,7 +54,7 @@ await page.screenshot({
 });
 await page.goto("http://127.0.0.1:8765/#settings");
 await page.getByLabel("Theme", { exact: true }).selectOption("system");
-await page.getByRole("button", { name: "Save appearance" }).click();
+await page.getByRole("button", { name: "Save settings" }).click();
 await page.emulateMedia({ colorScheme: "light" });
 assert.equal(await page.locator("html").getAttribute("data-theme"), "light");
 await page.emulateMedia({ colorScheme: "dark" });

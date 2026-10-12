@@ -15,7 +15,7 @@ page.on("pageerror", (e) => {
   console.error(e.stack);
 });
 await page.goto("http://127.0.0.1:8765/#library");
-await page.getByRole("button", { name: "+ New set", exact: true }).click();
+await page.getByRole("button", { name: "+ Create", exact: true }).click();
 await page
   .getByRole("textbox", { name: "Title", exact: true })
   .fill("One card mastery");

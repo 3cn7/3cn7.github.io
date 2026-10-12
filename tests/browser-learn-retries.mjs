@@ -112,17 +112,17 @@ for (
 }
 await page.getByRole("heading", { name: "Round complete." }).waitFor();
 await page.goto(APP + "#set/" + setId);
-await page.waitForSelector(".term-overview");
+await page.waitForSelector("#termsFrame .status-group");
 assert.equal(await page.locator(".status-pill").count(), 3);
 for (const g of ["not-studied", "learning", "mastered"])
   assert.equal(await page.locator(".status-group." + g).count(), 1);
 assert.match(
-  await page.locator(".status-group.mastered summary").textContent(),
-  /Mastered \(\d+\)/,
+  await page.locator(".status-group.mastered .status-heading").textContent(),
+  /Mastered\s*\d+/,
 );
-assert((await page.locator(".status-group.mastered li").count()) >= 2);
+assert((await page.locator(".status-group.mastered .card-row").count()) >= 2);
 // All six terms are listed, each under exactly one status.
-assert.equal(await page.locator(".status-group li").count(), 6);
+assert.equal(await page.locator(".status-group .card-row").count(), 6);
 assert.deepEqual(errors, []);
 await browser.close();
 console.log(

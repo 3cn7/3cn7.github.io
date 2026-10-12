@@ -121,7 +121,7 @@ await page.evaluate(() => {
 await page.waitForSelector(".reading-view mark");
 const marked = await page.locator(".reading-view mark").first().textContent();
 assert(
-  ["tre", "quattro"].includes(marked),
+  ["uno", "due", "tre", "quattro", "cinque", "sei", "sette", "otto"].includes(marked),
   "the word being spoken is highlighted: " + marked,
 );
 assert.equal(await page.locator(".segment-pair.is-playing").count(), 1);

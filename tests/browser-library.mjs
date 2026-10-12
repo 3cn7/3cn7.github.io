@@ -35,7 +35,7 @@ await page.getByRole("link", { name: "Unit One", exact: true }).click();
 const childHash = new URL(page.url()).hash,
   childId = childHash.split("/")[1];
 async function makeSet(title, text) {
-  await page.getByRole("button", { name: "+ New set", exact: true }).click();
+  await page.getByRole("button", { name: "+ Create", exact: true }).click();
   await page.getByLabel("Title", { exact: true }).fill(title);
   await submitModal();
   await page.waitForURL("**/#set/*");
@@ -62,10 +62,8 @@ await makeSet("Government", "la sovranità\tsovereignty");
 const before = await snapshot(),
   cardIds = before.filter((r) => r.type === "card").map((r) => r.id);
 await page.goto("http://127.0.0.1:8765/" + rootHash);
-// A folder shows what is directly inside it; subfolders are an explicit choice.
+// A folder shows what is directly inside it; "all" studies everything below it too.
 assert.equal(await page.locator(".set-tile").count(), 1);
-await page.getByLabel("Include subfolders", { exact: true }).check();
-assert.equal(await page.locator(".set-tile").count(), 2);
 await page.getByRole("button", { name: "Flashcards all", exact: true }).click();
 await page.getByLabel("Direction", { exact: true }).selectOption("reverse");
 await page.locator("[name=shuffle]").uncheck();

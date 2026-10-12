@@ -79,10 +79,6 @@ assert.deepEqual(
   "the top level shows what is directly in it",
 );
 assert.equal(await page.locator(".folder-card").count(), 3);
-assert(
-  await page.locator("#libraryHint").isVisible(),
-  "dragging and the alternative are explained",
-);
 // Drag one set onto a folder.
 await page
   .locator(".set-tile", { hasText: "Food" })
@@ -209,8 +205,11 @@ await page.waitForFunction(() => document.querySelector(".empty"));
 const unit = await byName("Unit One");
 for (const t of ["Food", "Verbs"])
   assert.equal((await byTitle(t)).folderId, unit.id);
-// "Go to folder" is a plain select.
-await page.locator("#folderJump").selectOption("");
+// The breadcrumb leads back to the top level.
+await page
+  .getByRole("navigation", { name: "Folder path" })
+  .getByRole("link", { name: "All sets" })
+  .click();
 await page.waitForURL("**/#library");
 
 // ---------- Folder tree view ----------

@@ -1,6 +1,7 @@
 import { Store } from "./persistence.js";
 import { unlockSite } from "./gate.js";
 import { VERSION } from "./version.js";
+import { greeting, timeZone, zoneChoices, TIME_ZONE_KEY } from "./greeting.js";
 import { DriveSync } from "./sync.js";
 import { GoogleAuth } from "./google-auth.js";
 import { prepareStudyOnly } from "./migration.js";
@@ -79,8 +80,8 @@ let route = "",
   setId = null,
   folderId = null,
   cardQuery = "",
-  cardPage = 0,
   editing = false,
+  editingSet = null,
   statsSet = "",
   statsFolder = "",
   statsSubject = "",
@@ -316,7 +317,7 @@ function streakCard() {
       : streak.atRisk
         ? `Study today to keep your ${streakLength(streak.days)} going.`
         : "Answer a Learn question, review a flashcard, or submit a test to start a streak.";
-  return `<div class="streak"><div class="eyebrow">STUDY STREAK</div><h2 id="streakValue" aria-label="Study streak: ${attr(streakLength(streak.days))}${weeks ? ", " + attr(weeks) : ""}"><span class="streak-days">${streak.days}</span> ${streak.days === 1 ? "day" : "days"}</h2>${weeks ? `<p class="streak-weeks">${esc(weeks)}</p>` : ""}<p class="streak-status">${esc(status)}</p><ol class="streak-week" aria-label="Last 7 days">${streak.last.map((d) => `<li class="${d.studied ? "studied" : ""}${d.today ? " today" : ""}" aria-label="${attr(new Date(d.key + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" }))}${d.today ? " (today)" : ""}: ${d.studied ? "studied" : "no study"}"><span aria-hidden="true">${esc(new Date(d.key + "T12:00:00").toLocaleDateString(undefined, { weekday: "narrow" }))}</span></li>`).join("")}</ol><details class="streak-help"><summary>How it’s counted</summary><p>One day counts when you answer a Learn question, review a flashcard, answer a test question, or submit a test, using your device’s local calendar day. Several sessions in one day count once. The streak continues through today until midnight, and a day with no study ends it.${streak.best > streak.days ? ` Your best streak is ${esc(streakLength(streak.best))}.` : ""}</p></details></div>`;
+  return `<div class="streak"><p class="greeting" id="greeting" data-period="${greeting().period}">${esc(greeting().text)}</p><div class="eyebrow">STUDY STREAK</div><h2 id="streakValue" aria-label="Study streak: ${attr(streakLength(streak.days))}${weeks ? ", " + attr(weeks) : ""}"><span class="streak-days">${streak.days}</span> ${streak.days === 1 ? "day" : "days"}</h2>${weeks ? `<p class="streak-weeks">${esc(weeks)}</p>` : ""}<p class="streak-status">${esc(status)}</p><ol class="streak-week" aria-label="Last 7 days">${streak.last.map((d) => `<li class="${d.studied ? "studied" : ""}${d.today ? " today" : ""}" aria-label="${attr(new Date(d.key + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" }))}${d.today ? " (today)" : ""}: ${d.studied ? "studied" : "no study"}"><span aria-hidden="true">${esc(new Date(d.key + "T12:00:00").toLocaleDateString(undefined, { weekday: "narrow" }))}</span></li>`).join("")}</ol><details class="streak-help"><summary>How it’s counted</summary><p>One day counts when you answer a Learn question, review a flashcard, answer a test question, or submit a test, using your device’s local calendar day. Several sessions in one day count once. The streak continues through today until midnight, and a day with no study ends it.${streak.best > streak.days ? ` Your best streak is ${esc(streakLength(streak.best))}.` : ""}</p></details></div>`;
 }
 function metric(value, label, mark = "") {
   return `<div class="metric"><span class="mark" aria-hidden="true">${mark}</span><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
@@ -336,8 +337,7 @@ function setView() {
         normalize(c.term + " " + c.definition + " " + c.notes).includes(
           normalize(cardQuery),
         ),
-    ),
-    page = filtered.slice(cardPage * 40, cardPage * 40 + 40);
+    );
   return (
     head(
       set.title,
@@ -351,62 +351,94 @@ function setView() {
         ),
       set.subject || "STUDY SET",
     ) +
-    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered → definition</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div>${editing && (needsAccents(set.termLanguage) || needsAccents(set.definitionLanguage)) ? `<div class="accent-editor">${accentBar("", "Italian letters for the focused card field")}</div>` : ""}<div class="terms-frame" id="termsFrame" tabindex="0" role="region" aria-label="Terms in this set">${termOverview(set)}<div id="cardList">${page.map((c, i) => cardRow(c, cardsFor(set.id).indexOf(c) + 1)).join("") || empty("Add your first card", "A term on one side. A definition, translation, or explanation on the other.")}</div>${filtered.length > 40 ? `<div class="pagination">${button("← Previous", "card-prev", cardPage ? "" : "disabled")}<span>${cardPage + 1} / ${Math.ceil(filtered.length / 40)}</span>${button("Next →", "card-next", (cardPage + 1) * 40 >= filtered.length ? "disabled" : "")}</div>` : ""}</div>`
+    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered → definition</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div>${editing && (needsAccents(set.termLanguage) || needsAccents(set.definitionLanguage)) ? `<div class="accent-editor">${accentBar("", "Italian letters for the focused card field")}</div>` : ""}${statusPills(set, filtered)}${termsFrame(set, filtered)}`
   );
 }
-// Every term of the set grouped as Not studied, Learning or Mastered (a term is only Mastered when
-// every direction that has been studied is mastered).
+// Every term of the set grouped as Not studied, Learning or Mastered.
+//  - Not studied: never answered in any direction.
+//  - Mastered: every direction that has been studied is mastered.
+//  - Learning: everything in between, including terms that started over after four misses.
 const STATUS_GROUPS = [
-  [
-    "NOT_STUDIED",
-    "Not studied",
-    "Not answered yet, or started over after four missed attempts",
-  ],
-  ["LEARNING", "Learning", "Answered, but not yet mastered"],
-  ["MASTERED", "Mastered", "Multiple choice, then typed correctly"],
+  ["NOT_STUDIED", "Not studied"],
+  ["LEARNING", "Learning"],
+  ["MASTERED", "Mastered"],
 ];
-function termOverview(set) {
-  const cards = cardsFor(set.id).filter(
-      (c) => c.term.trim() && c.definition.trim(),
-    ),
-    progress = store.list("learning"),
+const statusClass = (key) => key.toLowerCase().replace("_", "-");
+function termGroups(set, cards) {
+  const progress = store.list("learning"),
     groups = { NOT_STUDIED: [], LEARNING: [], MASTERED: [] };
   for (const c of cards) {
     const states = progress.filter(
       (m) => m.cardId === c.id && m.contentRevision === c.contentRevision,
     );
-    const kinds = states.map((m) => m.status),
-      status =
-        !kinds.length || kinds.every((k) => k === "NOT_STUDIED")
-          ? "NOT_STUDIED"
-          : kinds.every((k) => k === "MASTERED" || k === "NOT_STUDIED") &&
-              kinds.includes("MASTERED") &&
-              !kinds.includes("LEARNING")
-            ? "MASTERED"
-            : "LEARNING";
-    groups[status].push([c, states]);
+    const touched = states.filter(
+      (m) => m.attempts > 0 || m.status !== "NOT_STUDIED",
+    );
+    const status = !touched.length
+      ? "NOT_STUDIED"
+      : touched.every((m) => m.status === "MASTERED")
+        ? "MASTERED"
+        : "LEARNING";
+    groups[status].push([c, touched]);
   }
+  return groups;
+}
+const termMatches = (cards) =>
+  cards.filter(
+    (c) =>
+      c.term.trim() &&
+      c.definition.trim() &&
+      (!cardQuery ||
+        normalize(c.term + " " + c.definition + " " + c.notes).includes(
+          normalize(cardQuery),
+        )),
+  );
+// The three counts; clicking one scrolls the frame to that group.
+function statusPills(set, cards) {
+  if (editing) return "";
+  const groups = termGroups(set, termMatches(cards));
+  return `<div class="status-pills" role="group" aria-label="Jump to a status">${STATUS_GROUPS.map(([key, label]) => `<button type="button" class="status-pill ${statusClass(key)}" data-action="goto-status" data-status="${statusClass(key)}"><strong>${groups[key].length}</strong> ${label}</button>`).join("")}</div>`;
+}
+// All the terms of the set in one scrolling frame: grouped rows to read, or editable rows when editing.
+function termsFrame(set, cards) {
+  const frame = (inner) =>
+    `<div class="terms-frame" id="termsFrame" tabindex="0" role="region" aria-label="Terms in this set">${inner}</div>`;
+  if (editing)
+    return frame(
+      cards.map((c) => cardRow(c, cardsFor(set.id).indexOf(c) + 1)).join("") ||
+        empty(
+          "Add your first card",
+          "A term on one side. A definition, translation, or explanation on the other.",
+        ),
+    );
+  const shown = termMatches(cards),
+    groups = termGroups(set, shown);
+  if (!shown.length)
+    return frame(
+      empty(
+        cards.length ? "No matching terms" : "Add your first card",
+        cards.length
+          ? "Try different words."
+          : "A term on one side. A definition, translation, or explanation on the other.",
+      ),
+    );
   const chip = (m) =>
-    `<small class="status-chip ${m.status.toLowerCase().replace("_", "-")}" title="${attr(m.status === "MASTERED" ? "Mastered " + date(m.masteredAt) : m.status === "LEARNING" ? "Learning" : "Not studied")}">${m.direction === "forward" ? "term → definition" : "definition → term"}</small>`;
-  return `<section class="term-overview" aria-label="Term overview"><div class="status-pills">${STATUS_GROUPS.map(([key, label]) => `<span class="status-pill ${key.toLowerCase().replace("_", "-")}"><strong>${groups[key].length}</strong> ${label}</span>`).join("")}</div>${STATUS_GROUPS.map(
-    ([key, label, hint]) =>
-      `<details class="status-group ${key.toLowerCase().replace("_", "-")}" open><summary><span>${label} (${groups[key].length})</span><small>${hint}</small></summary>${
-        groups[key].length
-          ? `<ul class="status-list ${key === "MASTERED" ? "mastered-list" : ""}">${groups[
-              key
-            ]
-              .map(
-                ([c, states]) =>
-                  `<li><span class="mastered-term">${esc(c.term)}</span><span class="mastered-def">${esc(c.definition)}</span><span class="mastered-dirs">${states
-                    .filter((m) => m.status === key || key === "LEARNING")
-                    .sort((x, y) => x.direction.localeCompare(y.direction))
-                    .map(chip)
-                    .join("")}</span></li>`,
-              )
-              .join("")}</ul>`
-          : '<p class="muted status-empty">No terms here.</p>'
-      }</details>`,
-  ).join("")}</section>`;
+    `<small class="status-chip ${statusClass(m.status)}" title="${attr(m.status === "MASTERED" ? "Mastered " + date(m.masteredAt) : "Learning")}">${m.direction === "forward" ? "term → definition" : "definition → term"}</small>`;
+  return frame(
+    STATUS_GROUPS.map(
+      ([key, label]) =>
+        `<section class="status-group ${statusClass(key)}" id="group-${statusClass(key)}" tabindex="-1" aria-label="${label}"><h2 class="status-heading">${label} <span>${groups[key].length}</span></h2>${
+          groups[key].length
+            ? `<div class="status-list">${groups[key]
+                .map(
+                  ([c, touched]) =>
+                    `<article class="card-row compact" id="card-${attr(c.id)}"><span class="mastered-term">${esc(c.term)}</span><span class="mastered-def">${esc(c.definition)}</span><span class="mastered-dirs">${touched.map(chip).join("")}${c.provenance?.transcriptId ? `<a class="button small" href="#transcripts/${attr(c.provenance.transcriptId)}${Number.isFinite(c.provenance.timestamp) ? "/" + c.provenance.timestamp : ""}">Source transcript${Number.isFinite(c.provenance.timestamp) ? " · " + duration(c.provenance.timestamp * 1000) : ""}</a>` : ""}</span><div class="card-star">${star(c)}</div>${button("Edit", "edit-card", `data-id="${attr(c.id)}" aria-label="Edit ${attr(c.term)}"`, "small")}</article>`,
+                )
+                .join("")}</div>`
+            : '<p class="muted status-empty">No terms here.</p>'
+        }</section>`,
+    ).join(""),
+  );
 }
 function cardRow(c, index) {
   return `<article class="card-row" id="card-${attr(c.id)}"><span class="card-number">${index}</span><div>${editing ? `<label>Term<textarea data-card-field="term" data-id="${attr(c.id)}">${esc(c.term)}</textarea></label>` : `<small>TERM</small><p>${esc(c.term)}</p>`}</div><div class="definition">${editing ? `<label>Definition<textarea data-card-field="definition" data-id="${attr(c.id)}">${esc(c.definition)}</textarea></label>` : `<small>DEFINITION</small><p>${esc(c.definition)}</p>`}</div><div class="card-star">${star(c)}</div>${editing ? `<details class="card-details"><summary>Accepted answers, notes, and extras</summary><div class="form-grid">${["acceptedAnswers", "termAnswers", "tags"].map((key) => `<label>${key === "acceptedAnswers" ? "Accepted definition answers" : key === "termAnswers" ? "Accepted term answers" : "Tags"} (one per line)<textarea data-card-field="${key}" data-id="${attr(c.id)}">${esc((c[key] || []).join("\n"))}</textarea></label>`).join("")}${["notes", "explanation", "imageRef"].map((key) => `<label>${esc(key)}<textarea data-card-field="${key}" data-id="${attr(c.id)}">${esc(c[key])}</textarea></label>`).join("")}</div></details>` : c.notes ? `<div class="card-details muted"><small>${esc(c.notes)}</small></div>` : ""}<div class="card-tools">${c.provenance?.transcriptId ? `<a class="button small" href="#transcripts/${attr(c.provenance.transcriptId)}${Number.isFinite(c.provenance.timestamp) ? "/" + c.provenance.timestamp : ""}">Source transcript${Number.isFinite(c.provenance.timestamp) ? " · " + duration(c.provenance.timestamp * 1000) : ""}</a>` : ""}${button("Edit", "edit-card", `data-id="${attr(c.id)}"`, "small")}<details class="context-menu"><summary>More</summary><div>${button("Duplicate", "duplicate-card", `data-id="${attr(c.id)}"`, "small")}${button("↑", "move-card", `data-id="${attr(c.id)}" data-step="-1" aria-label="Move card up"`, "small")}${button("↓", "move-card", `data-id="${attr(c.id)}" data-step="1" aria-label="Move card down"`, "small")}${button("Delete", "delete-card", `data-id="${attr(c.id)}"`, "small danger")}</div></details></div></article>`;
@@ -432,6 +464,7 @@ function editSet(sid) {
       localStorage.removeItem("studyPlatform.setDraft");
       setId = value.id;
       editing = true;
+      editingSet = value.id;
       go("set/" + value.id);
     },
   );
@@ -820,7 +853,18 @@ async function settings() {
         ["dark", "Dark"],
       ],
       theme,
-    )}<button type="submit" class="primary">Save appearance</button></form><section class="panel"><h2>Google Drive</h2><p class="muted">${esc(sync.state)} · Optional synchronization for saved materials.</p><a class="button" href="#sync">Manage sync →</a></section><section class="panel"><details class="model-settings"><summary>Downloaded models</summary>${await transcripts.modelView()}</details></section><section class="panel stack"><h2>Your device storage</h2><p>${usage.count} recordings · ${(usage.bytes / 1024 / 1024).toFixed(1)} MB</p><p class="muted">Keep a portable backup before clearing browser data. Recordings are never uploaded by sync.</p><div class="row">${button("Keep storage on this device", "persist-storage")}${button("Download backup", "backup")}${button("Recently deleted", "trash")}${button("Download migration backup", "migration-backup")}</div><details><summary>Recover an earlier version</summary><p>The first study-only launch saves all prior study records and local preferences in a local migration backup. Download it before rolling back source through Git. It is retained separately from Google Drive sync.</p>${button("Restore pre-redesign study records…", "migration-restore", "", "danger")}</details></section><section class="panel"><h2>Learning progress</h2><p class="muted">Mastery is separate from stars, self-assessment, and your saved test history.</p>${button("Reset Learn progress…", "reset-progress", "", "danger")}</section><section class="panel"><h2>Statistics</h2><p class="muted">The Statistics page and your study streak are built from your answer history, saved test results and finished study sessions. Resetting erases that history. Sets, cards, stars and unfinished sessions stay.</p>${button("Reset statistics…", "reset-stats", "", "danger")}</section></div>`
+    )}${selectField(
+      "Time zone (for the dashboard greeting)",
+      "timeZone",
+      [
+        [
+          "",
+          `Automatic · this device (${Intl.DateTimeFormat().resolvedOptions().timeZone})`,
+        ],
+        ...zoneChoices().map((z) => [z, z.replaceAll("_", " ")]),
+      ],
+      localStorage.getItem(TIME_ZONE_KEY) || "",
+    )}<button type="submit" class="primary">Save settings</button></form><section class="panel"><h2>Google Drive</h2><p class="muted">${esc(sync.state)} · Optional synchronization for saved materials.</p><a class="button" href="#sync">Manage sync →</a></section><section class="panel"><details class="model-settings"><summary>Downloaded models</summary>${await transcripts.modelView()}</details></section><section class="panel stack"><h2>Your device storage</h2><p>${usage.count} recordings · ${(usage.bytes / 1024 / 1024).toFixed(1)} MB</p><p class="muted">Keep a portable backup before clearing browser data. Recordings are never uploaded by sync.</p><div class="row">${button("Keep storage on this device", "persist-storage")}${button("Download backup", "backup")}${button("Recently deleted", "trash")}${button("Download migration backup", "migration-backup")}</div><details><summary>Recover an earlier version</summary><p>The first study-only launch saves all prior study records and local preferences in a local migration backup. Download it before rolling back source through Git. It is retained separately from Google Drive sync.</p>${button("Restore pre-redesign study records…", "migration-restore", "", "danger")}</details></section><section class="panel"><h2>Learning progress</h2><p class="muted">Mastery is separate from stars, self-assessment, and your saved test history.</p>${button("Reset Learn progress…", "reset-progress", "", "danger")}</section><section class="panel"><h2>Statistics</h2><p class="muted">The Statistics page and your study streak are built from your answer history, saved test results and finished study sessions. Resetting erases that history. Sets, cards, stars and unfinished sessions stay.</p>${button("Reset statistics…", "reset-stats", "", "danger")}</section></div>`
   );
 }
 function applyTheme() {
@@ -912,6 +956,8 @@ async function render() {
   route = parts[0] || "dashboard";
   folderId = route === "folder" ? parts[1] : null;
   setId = route === "set" ? parts[1] : setId;
+  // Edit mode belongs to the set it was switched on for.
+  if (route === "set" && editing && parts[1] !== editingSet) editing = false;
   document
     .querySelectorAll("[data-nav]")
     .forEach((a) =>
@@ -945,8 +991,6 @@ async function render() {
   else if (route === "set") {
     if (parts[2]) {
       cardQuery = "";
-      const index = cardsFor(setId).findIndex((c) => c.id === parts[2]);
-      if (index >= 0) cardPage = Math.floor(index / 40);
     }
     html = setView();
   } else if (route === "study" || route === "test")
@@ -993,6 +1037,9 @@ function bindView() {
       e.preventDefault();
       const fd = new FormData(form);
       localStorage.setItem("studyPlatform.theme", fd.get("theme"));
+      if (fd.get("timeZone"))
+        localStorage.setItem(TIME_ZONE_KEY, fd.get("timeZone"));
+      else localStorage.removeItem(TIME_ZONE_KEY);
       applyTheme();
       await store.put(
         {
@@ -1222,9 +1269,11 @@ document.addEventListener("click", async (e) => {
       render();
     } else if (action === "toggle-edit") {
       editing = !editing;
+      editingSet = setId;
       render();
     } else if (action === "edit-card") {
       editing = true;
+      editingSet = store.get(el.dataset.id).setId;
       go("set/" + store.get(el.dataset.id).setId + "/" + el.dataset.id);
     } else if (action === "add-card") {
       const sid = el.dataset.id;
@@ -1232,7 +1281,7 @@ document.addEventListener("click", async (e) => {
         scope: cardScope(sid),
       });
       editing = true;
-      cardPage = Math.floor((cardsFor(sid).length - 1) / 40);
+      editingSet = sid;
       render();
     } else if (action === "duplicate-card") {
       const c = store.get(el.dataset.id);
@@ -1345,18 +1394,12 @@ document.addEventListener("click", async (e) => {
           ? el.dataset.sets.split(",")
           : selected.size
             ? [...selected]
-            : library.librarySets().map((s) => s.id);
+            : library.librarySets(undefined, { deep: true }).map((s) => s.id);
       study.configure(
         el.dataset.mode,
         setIds,
         el.dataset.filter ? { filter: el.dataset.filter } : {},
       );
-    } else if (action === "card-prev") {
-      cardPage = Math.max(0, cardPage - 1);
-      render();
-    } else if (action === "card-next") {
-      cardPage++;
-      render();
     } else if (action === "undo-card") {
       const scope = cardScope(setId);
       if (!store.canUndo(scope)) {
@@ -1490,7 +1533,18 @@ document.addEventListener("click", async (e) => {
         },
         "Reset mastery",
       );
-    else if (action === "empty-bin") emptyBin();
+    else if (action === "goto-status") {
+      const frame = $("#termsFrame"),
+        group = $("#group-" + el.dataset.status);
+      if (frame && group)
+        frame.scrollTo({
+          top: group.offsetTop - frame.offsetTop - 8,
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+        });
+      group?.focus({ preventScroll: true });
+    } else if (action === "empty-bin") emptyBin();
     else if (action === "reset-stats") resetStatistics();
     else if (action === "reset-set-progress") {
       const set = store.get(el.dataset.id),
@@ -1524,6 +1578,14 @@ store.addEventListener("change", (e) => {
   }
   if (!sync.enabled) $("#sidebarSync").textContent = "Saved on this device";
 });
+setInterval(() => {
+  const el = $("#greeting"),
+    g = greeting();
+  if (el && el.textContent !== g.text) {
+    el.textContent = g.text;
+    el.dataset.period = g.period;
+  }
+}, 60000);
 window.addEventListener("unhandledrejection", (event) => {
   toast("Something could not finish: " + event.reason?.message);
 });

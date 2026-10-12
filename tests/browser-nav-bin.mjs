@@ -115,8 +115,8 @@ assert.equal(
   "visible",
   "no scroll boxes inside the frame",
 );
-assert.equal(await page.locator("#termsFrame .term-overview").count(), 1);
-assert.equal(await page.locator("#termsFrame #cardList").count(), 1);
+assert.equal(await page.locator("#termsFrame .status-group").count(), 3);
+assert.equal(await page.locator("#termsFrame .card-row").count(), 30);
 await page.locator("#termsFrame").evaluate((el) => (el.scrollTop = 600));
 assert((await page.locator("#termsFrame").evaluate((el) => el.scrollTop)) > 0);
 // ----- empty bin

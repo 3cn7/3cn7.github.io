@@ -39,6 +39,48 @@ const setPref = (key, value) => {
     localStorage.setItem(key, value);
   } catch {}
 };
+// Forgiving search: ignores case and accents, matches parts of words, and tolerates small typos,
+// for every word of what was typed.
+const fold = (t) =>
+  String(t ?? "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase();
+const wordsOf = (t) =>
+  fold(t)
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+function within(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return false;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++)
+      row[j] = Math.min(
+        prev[j] + 1,
+        row[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    prev = row;
+  }
+  return prev[b.length] <= max;
+}
+export function fuzzyMatch(text, query) {
+  const tokens = wordsOf(query);
+  if (!tokens.length) return true;
+  const hay = fold(text),
+    words = wordsOf(text);
+  return tokens.every((tok) => {
+    if (hay.includes(tok)) return true;
+    const max = tok.length >= 8 ? 2 : tok.length >= 4 ? 1 : 0;
+    return (
+      max > 0 &&
+      words.some(
+        (w) => within(w, tok, max) || within(w.slice(0, tok.length), tok, max),
+      )
+    );
+  });
+}
 export function createLibraryUI(ctx) {
   const { store } = ctx;
   let storedOpen = null;
@@ -109,14 +151,12 @@ export function createLibraryUI(ctx) {
       percent: eligible.length ? (mastered / eligible.length) * 100 : 0,
     };
   }
-  const filtering = () =>
-    !!(normalize(state.query) || state.subject || state.starred);
+  const filtering = () => !!normalize(state.query);
   // A set whose folder no longer exists counts as unfiled.
   const folderOf = (s) =>
     s.folderId && store.get(s.folderId) ? s.folderId : "";
-  function librarySets(folderId = state.folderId) {
-    // Searching and filtering look through everything below the current folder.
-    const deep = state.nested || filtering();
+  function librarySets(folderId = state.folderId, { deep = filtering() } = {}) {
+    // Searching and studying "all" look through everything below the current folder.
     const folders = folderId
       ? deep
         ? descendantFolders(store.records, folderId)
@@ -130,25 +170,24 @@ export function createLibraryUI(ctx) {
       .filter(
         (s) =>
           (!folders || folders.has(folderOf(s))) &&
-          (!state.subject || s.subject === state.subject) &&
-          (!state.starred || cardsFor(s.id).some((c) => c.starred)) &&
           (!q ||
-            normalize(
-              s.title + " " + s.description + " " + folderPath(s.folderId),
-            ).includes(q) ||
-            cardsFor(s.id).some(
-              (c) =>
-                (!state.starred || c.starred) &&
-                normalize(
-                  [
-                    c.term,
-                    c.definition,
-                    ...(c.acceptedAnswers || []),
-                    ...(c.termAnswers || []),
-                    c.notes,
-                    ...(c.tags || []),
-                  ].join(" "),
-                ).includes(q),
+            fuzzyMatch(
+              [s.title, s.description, s.subject, folderPath(s.folderId)].join(
+                " ",
+              ),
+              state.query,
+            ) ||
+            cardsFor(s.id).some((c) =>
+              normalize(
+                [
+                  c.term,
+                  c.definition,
+                  ...(c.acceptedAnswers || []),
+                  ...(c.termAnswers || []),
+                  c.notes,
+                  ...(c.tags || []),
+                ].join(" "),
+              ).includes(q),
             )),
       );
     const modified = new Map(sets.map((s) => [s.id, s.updatedAt]));
@@ -186,8 +225,7 @@ export function createLibraryUI(ctx) {
     folderId = state.folderId,
     { everywhere = false } = {},
   ) {
-    if (state.subject || state.starred) return [];
-    const deep = everywhere || state.nested || filtering(),
+    const deep = everywhere || filtering(),
       folders = folderId
         ? deep
           ? descendantFolders(store.records, folderId)
@@ -201,7 +239,9 @@ export function createLibraryUI(ctx) {
       .filter(
         (t) =>
           (!folders || folders.has(transcriptFolder(t))) &&
-          (!q || normalize(t.title + " " + (t.rawText || "")).includes(q)),
+          (!q ||
+            fuzzyMatch(t.title, state.query) ||
+            normalize(t.rawText || "").includes(q)),
       )
       .sort(
         (a, b) =>
@@ -246,7 +286,7 @@ export function createLibraryUI(ctx) {
       cards = getEligibleCards(store.records, {
         setIds: sets.map((s) => s.id),
         query: state.query,
-        filter: state.starred ? "starred" : "all",
+        filter: "all",
       }).slice(0, 100);
     return cards.length
       ? `<div class="section-line"><h2>Matching terms</h2><small>Showing up to 100 matches</small></div><div class="panel">${cards.map((c) => `<div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line)"><a href="#set/${attr(c.setId)}/${attr(c.id)}"><strong>${esc(c.term)}</strong><small style="display:block">${esc(c.definition.slice(0, 180))} · ${esc(store.get(c.setId)?.title)}</small></a>${star(c)}</div>`).join("")}</div>`
@@ -286,34 +326,17 @@ export function createLibraryUI(ctx) {
   /* ---------- the page ---------- */
   function view(folderId) {
     state.folderId = folderId;
-    const allSubjects = [
-      ...new Set(
-        store
-          .list("set")
-          .map((s) => s.subject)
-          .filter(Boolean),
-      ),
-    ];
     const sets = librarySets();
+    // A set or folder made inside a folder belongs to that folder; the top level only offers folders.
     const header =
       ctx.head(
         folderId ? folderPath(folderId) : "Study Library",
         "",
         button("+ Folder", "new-folder") +
-          button("+ New set", "new-set", "", "primary"),
+          (folderId ? button("+ New set", "new-set", "", "primary") : ""),
       ) +
       breadcrumb(folderId) +
-      `<div class="row library-tools">${viewSwitch()}<label class="folder-jump">Go to folder<select id="folderJump" aria-label="Go to folder">${options(
-        folderOptions().map(([id, label]) => [id, id ? label : "All sets"]),
-        folderId || "",
-      )}</select></label>${folderId ? button("Edit folder", "edit-folder", `data-id="${attr(folderId)}"`, "small") + button("Delete folder", "delete-folder", `data-id="${attr(folderId)}"`, "small danger") : ""}${button("Import set", "import-set", "", "small")}${folderId ? button("Study starred terms", "configure", 'data-mode="learn" data-source="library" data-filter="starred"', "small") : button("Recently deleted", "trash", "", "small")}</div><div class="toolbar"><input id="librarySearch" type="search" placeholder="Search sets, folders, terms, and notes…" value="${attr(state.query)}" aria-label="Search study library"><select id="librarySort" aria-label="Sort sets">${options(
-        [
-          ["modified", "Recently modified"],
-          ["studied", "Recently studied"],
-          ["title", "Title A–Z"],
-        ],
-        state.sort,
-      )}</select><select id="subjectFilter" aria-label="Filter by subject">${options([["", "All subjects"], ...allSubjects.map((s) => [s, s])], state.subject)}</select><label class="check"><input id="starSearch" type="checkbox" ${state.starred ? "checked" : ""}>Starred only</label>${state.view === "grid" ? `<label class="check"><input id="nestedFolders" type="checkbox" ${state.nested ? "checked" : ""}>Include subfolders</label>` : ""}</div>`;
+      `<div class="search-pill"><span aria-hidden="true">🔍</span><input id="librarySearch" type="search" placeholder="Search" value="${attr(state.query)}" aria-label="Search study library" autocomplete="off"></div><div class="row library-tools">${viewSwitch()}${folderId ? button("Edit folder", "edit-folder", `data-id="${attr(folderId)}"`, "small") + button("Delete folder", "delete-folder", `data-id="${attr(folderId)}"`, "small danger") : ""}${button("Import set", "import-set", "", "small")}${folderId ? button("Study starred terms", "configure", 'data-mode="learn" data-source="library" data-filter="starred"', "small") : button("Recently deleted", "trash", "", "small")}</div>`;
     const body =
       state.view === "tree"
         ? treeView(librarySets(null))
@@ -328,13 +351,13 @@ export function createLibraryUI(ctx) {
           state.query
             ? (!folderId ||
                 descendantFolders(store.records, folderId).has(f.id)) &&
-              normalize(f.name).includes(q)
+              fuzzyMatch(f.name, state.query)
             : f.parentId === (folderId || null),
         )
         .sort((a, b) => a.name.localeCompare(b.name));
     const pickedHere = sets.filter((s) => state.selected.has(s.id)).length,
       picked = state.selected.size;
-    return `<p class="muted library-hint" id="libraryHint">Drag a set onto a folder (or a folder in the path above) to move it. No mouse? Use <strong>Move</strong> on a set, or select sets and choose <strong>Move selected to…</strong>.</p>${
+    return `${
       folders.length
         ? `<section aria-labelledby="folderHeading"><h2 id="folderHeading" class="section-title">Folders</h2><div class="folder-grid">${folders
             .map((f) => {
@@ -472,7 +495,7 @@ export function createLibraryUI(ctx) {
       return `<li role="treeitem" aria-level="${level}" aria-setsize="${size}" aria-posinset="${pos}" ${isFolder ? `aria-expanded="${isOpen}"` : `aria-selected="${picked}"`} tabindex="${tab ? 0 : -1}" data-kind="${node.kind}" data-id="${attr(id)}" data-label="${attr(label)}"${state.folderId === id && isFolder ? ' aria-current="location"' : ""}><div class="tree-row${picked ? " is-selected" : ""}${current ? " is-current" : ""}${isFolder && state.folderId === id ? " is-location" : ""}" draggable="true" data-drag-${node.kind}="${attr(id)}"${isFolder ? ` data-drop-folder="${attr(id)}"` : ""}><span class="tree-toggle" aria-hidden="true">${isFolder ? (isOpen ? "▾" : "▸") : ""}</span><span class="tree-icon" aria-hidden="true">${isFolder ? "📁" : node.kind === "transcript" ? "🎙️" : "📄"}</span><span class="tree-label">${esc(label)}</span><span class="tree-meta">${isFolder ? esc(meta) : meta}</span></div>${isFolder ? `<ul role="group" ${isOpen ? "" : "hidden"}>${node.children.map((c, i) => row(c, level + 1, node.children.length, i + 1)).join("")}</ul>` : ""}</li>`;
     };
     const rootCount = model.length;
-    return `<p class="muted library-hint" id="libraryHint">Tree keys: <kbd>↑</kbd> <kbd>↓</kbd> move, <kbd>→</kbd> <kbd>←</kbd> open or close a folder, <kbd>Enter</kbd> open a set or toggle a folder, <kbd>Space</kbd> select a set, <kbd>Shift</kbd>+<kbd>M</kbd> move, or type a name. Drag rows onto a folder to move them.</p><div class="tree-actions" id="treeActions" role="group" aria-label="Actions for the selected item"></div><div class="tree-wrap"><div class="tree-root-drop" data-drop-folder="" id="treeRoot"><span aria-hidden="true">📄</span> All sets · drop here to move to the top level</div>${rootCount ? `<ul role="tree" id="libraryTree" aria-label="Study library folders and sets" aria-multiselectable="true">${model.map((n, i) => row(n, 1, rootCount, i + 1)).join("")}</ul>` : empty("Nothing to show", filtering() ? "No sets or folders match these filters." : "Create a folder or a set to see it here.")}</div>`;
+    return `<div class="tree-actions" id="treeActions" role="group" aria-label="Actions for the selected item"></div><div class="tree-wrap"><div class="tree-root-drop" data-drop-folder="" id="treeRoot"><span aria-hidden="true">📄</span> All sets · drop here to move to the top level</div>${rootCount ? `<ul role="tree" id="libraryTree" aria-label="Study library folders and sets" aria-multiselectable="true">${model.map((n, i) => row(n, 1, rootCount, i + 1)).join("")}</ul>` : empty("Nothing to show", filtering() ? "No sets or folders match these filters." : "Create a folder or a set to see it here.")}</div>`;
   }
   const treeEl = () => $("#libraryTree");
   const treeItems = () =>

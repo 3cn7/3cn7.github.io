@@ -2652,3 +2652,124 @@ html.locked #timerPanel {
     text-align: center;
   }
 }
+
+/* Terms: compact rows grouped by status inside one scrolling frame */
+.status-pills .status-pill {
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  min-height: 36px;
+}
+.status-pills .status-pill:hover {
+  filter: brightness(1.1);
+}
+.terms-frame .status-group {
+  border: 1px solid var(--line);
+  border-left: 8px solid var(--status-new-bar);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 0 20px 8px;
+  margin: 12px 0;
+  scroll-margin-top: 8px;
+}
+.terms-frame .status-group.learning {
+  border-left-color: var(--status-learning-bar);
+}
+.terms-frame .status-group.mastered {
+  border-left-color: var(--status-mastered-bar);
+}
+.status-heading {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 -20px;
+  padding: 12px 20px;
+  font-size: 1rem;
+  background: var(--status-new-tint);
+}
+.status-group.learning .status-heading {
+  background: var(--status-learning-tint);
+}
+.status-group.mastered .status-heading {
+  background: var(--status-mastered-tint);
+}
+.status-heading span {
+  font-weight: 400;
+  color: var(--muted);
+}
+.terms-frame .status-list {
+  display: block;
+  max-height: none;
+  overflow: visible;
+}
+.card-row.compact {
+  display: grid;
+  grid-template-columns:
+    minmax(110px, 1fr) minmax(140px, 2fr) minmax(0, 260px)
+    44px auto;
+  gap: 12px;
+  align-items: center;
+  margin: 0;
+  padding: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 52px;
+}
+.card-row.compact .card-star {
+  grid-column: auto;
+  grid-row: auto;
+}
+.status-group h2 + .status-list .card-row.compact:first-child {
+  border-top: 0;
+}
+@media (max-width: 760px) {
+  .card-row.compact {
+    grid-template-columns: 1fr 44px auto;
+  }
+  .card-row.compact .mastered-def,
+  .card-row.compact .mastered-dirs {
+    grid-column: 1 / -1;
+  }
+}
+
+/* One pill search bar */
+.search-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 0 20px;
+  min-height: 52px;
+  background: var(--surface);
+  border: 1px solid var(--color-control-border);
+  border-radius: 999px;
+}
+.search-pill:focus-within {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.search-pill input {
+  flex: 1;
+  min-height: 48px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  outline: none;
+}
+
+.greeting {
+  margin: 0 0 12px;
+  max-width: none;
+  color: var(--ink) !important;
+  font-size: clamp(1.25rem, 2.4vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
