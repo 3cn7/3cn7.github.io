@@ -2291,3 +2291,44 @@ kbd {
   position: relative;
   z-index: 1;
 }
+
+/* Italian letter buttons */
+.accent-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.accent-label {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  margin-right: 4px;
+}
+.accent-key {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 4px 8px;
+  font-size: 1.0625rem;
+}
+.accent-key[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--color-on-primary);
+}
+.accent-editor {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+}
+.app-version {
+  padding: 0 40px 24px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

@@ -256,6 +256,35 @@ export function createLearnSession(
     days: [],
   };
 }
+const RECALL = ["written", "spelling"],
+  RECOGNITION = ["mc", "tf"];
+// With both kinds of question enabled, a round is: roundSize multiple-choice/true-false
+// questions first, then the same terms asked again as typed answers.
+export const dualRound = (session) =>
+  session.config.types.some((t) => RECOGNITION.includes(t)) &&
+  session.config.types.some((t) => RECALL.includes(t));
+const phaseOf = (session) => {
+  session.roundPhase ??= "recognition";
+  session.phaseKeys ??= [];
+  session.phaseDone ??= [];
+  return session.roundPhase;
+};
+/** True once the current round has asked everything it should. */
+export function roundDone(session) {
+  if (!dualRound(session))
+    return session.position - session.roundStart >= session.config.roundSize;
+  return (
+    phaseOf(session) === "recall" &&
+    session.phaseKeys.length > 0 &&
+    session.phaseKeys.every((k) => session.phaseDone.includes(k))
+  );
+}
+/** Start the next round: multiple choice again, typed answers afterwards. */
+export function startRound(session) {
+  session.roundPhase = "recognition";
+  session.phaseKeys = [];
+  session.phaseDone = [];
+}
 export function selectNextQuestion(session, cards) {
   const available = new Map(cards.map((c) => [c.id, c]));
   const rank = new Map(session.cardIds.map((cid, i) => [cid, i]));
@@ -275,15 +304,49 @@ export function selectNextQuestion(session, cards) {
     }
   }
   if (!states.length) return null;
-  let eligible = states.filter((s) => s.nextEligible <= session.position);
+  const dual = dualRound(session);
+  let pool = states;
+  if (dual) {
+    if (roundDone(session)) startRound(session);
+    if (
+      phaseOf(session) === "recognition" &&
+      session.phaseKeys.length >= session.config.roundSize
+    )
+      session.roundPhase = "recall";
+    if (session.roundPhase === "recognition") {
+      pool = states.filter(
+        (s) => !session.phaseKeys.includes(`${s.cardId}:${s.direction}`),
+      );
+      // Nothing new is left for this round: go on to the typed answers.
+      if (!pool.length && session.phaseKeys.length) session.roundPhase = "recall";
+    }
+    if (session.roundPhase === "recall") {
+      const key = session.phaseKeys.find((k) => !session.phaseDone.includes(k)),
+        s = key && session.states[key],
+        card = s && available.get(s.cardId);
+      if (card)
+        return generateQuestion(
+          card,
+          cards,
+          session.config.types.find((t) => RECALL.includes(t)),
+          s.direction,
+          seededRandom(session.seed + session.position),
+          session.config.types,
+        );
+      // Remembered terms were removed: begin a fresh round.
+      startRound(session);
+      pool = states;
+    }
+  }
+  let eligible = pool.filter((s) => s.nextEligible <= session.position);
   if (!eligible.length)
-    eligible = states.filter(
-      (s) => s.nextEligible === Math.min(...states.map((v) => v.nextEligible)),
+    eligible = pool.filter(
+      (s) => s.nextEligible === Math.min(...pool.map((v) => v.nextEligible)),
     );
   const different = eligible.filter((s) => s.cardId !== session.lastCardId);
   if (different.length) eligible = different;
   else {
-    const other = states.filter((s) => s.cardId !== session.lastCardId);
+    const other = pool.filter((s) => s.cardId !== session.lastCardId);
     if (other.length) eligible = other;
   }
   const priority = (s) =>
@@ -310,7 +373,11 @@ export function selectNextQuestion(session, cards) {
     card = available.get(s.cardId),
     types = session.config.types;
   let type;
-  if (s.status === "NOT_STUDIED") type = types.includes("mc") ? "mc" : types[0];
+  if (dual) {
+    const recognition = types.filter((t) => RECOGNITION.includes(t));
+    type = recognition[session.phaseKeys.length % recognition.length];
+  } else if (s.status === "NOT_STUDIED")
+    type = types.includes("mc") ? "mc" : types[0];
   else
     type =
       types.find((t) => ["written", "spelling"].includes(t)) ||
@@ -354,6 +421,14 @@ export function recordAttempt(session, response, { override = false } = {}) {
     session.config,
   );
   session.attempts.push(a);
+  if (dualRound(session)) {
+    phaseOf(session);
+    const key = `${q.cardId}:${q.direction}`;
+    const list = RECOGNITION.includes(q.type)
+      ? session.phaseKeys
+      : session.phaseDone;
+    if (!list.includes(key)) list.push(key);
+  }
   session.feedback = a;
   session.lastCardId = q.cardId;
   session.position++;

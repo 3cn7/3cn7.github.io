@@ -57,7 +57,17 @@ const publicFiles = [
 ];
 const hash = createHash("sha256");
 for (const file of publicFiles) hash.update(await readFile(join(dist, file)));
+const buildHash = hash.digest("hex");
 const sw = await readFile(join(dist, "sw.js"), "utf8");
+const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+const serial = `v${pkg.version} · build ${buildHash.slice(0, 8)}`;
+await writeFile(
+  join(dist, "index.html"),
+  (await readFile(join(dist, "index.html"), "utf8")).replace(
+    "Version __APP_VERSION__",
+    "Version " + serial,
+  ),
+);
 await writeFile(
   join(dist, "sw.js"),
   sw
@@ -65,7 +75,7 @@ await writeFile(
       "__PUBLIC_FILES__",
       JSON.stringify(publicFiles.filter((f) => !f.startsWith("vendor/"))),
     )
-    .replace("__BUILD_VERSION__", hash.digest("hex").slice(0, 16)),
+    .replace("__BUILD_VERSION__", buildHash.slice(0, 16)),
 );
 console.log(
   "Static study app built. Archives, backend code, tests, and local data are excluded.",

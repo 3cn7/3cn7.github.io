@@ -21,7 +21,7 @@ import {
   validateBackup,
   normalize,
 } from "./core.js";
-import { DEFAULT_STUDY } from "./engine.js";
+import { DEFAULT_STUDY, learnComplete } from "./engine.js";
 import {
   $,
   esc,
@@ -43,6 +43,7 @@ import {
 import { createStudyUI } from "./study-ui.js";
 import { createTranscriptUI } from "./transcript-ui.js";
 import { createLibraryUI } from "./library-ui.js";
+import { accentBar, needsAccents } from "./accents.js";
 const store = await new Store().open().catch((error) => {
   $("#view").innerHTML = empty("Local storage could not open", error.message);
   throw error;
@@ -162,12 +163,21 @@ function dashboard() {
       .list("folder")
       .filter((f) => !f.parentId)
       .slice(0, 4);
+  // Only the most recent unfinished card session and the most recent unfinished test: no history.
+  const latest = (rows) =>
+    rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   const sessions = [
-    ...store.list("session").filter((s) => !s.finishedAt),
-    ...store.list("test").filter((t) => !t.submittedAt),
+    latest(
+      store
+        .list("session")
+        .filter(
+          (s) => !s.finishedAt && !(s.mode === "learn" && learnComplete(s)),
+        ),
+    ),
+    latest(store.list("test").filter((t) => !t.submittedAt)),
   ]
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    .slice(0, 3);
+    .filter(Boolean)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const history = store
     .list("test")
     .filter((t) => t.submittedAt)
@@ -232,7 +242,7 @@ function setView() {
         ),
       set.subject || "STUDY SET",
     ) +
-    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered → definition</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div><div id="cardList">${page.map((c, i) => cardRow(c, cardsFor(set.id).indexOf(c) + 1)).join("") || empty("Add your first card", "A term on one side. A definition, translation, or explanation on the other.")}</div>${filtered.length > 40 ? `<div class="pagination">${button("← Previous", "card-prev", cardPage ? "" : "disabled")}<span>${cardPage + 1} / ${Math.ceil(filtered.length / 40)}</span>${button("Next →", "card-next", (cardPage + 1) * 40 >= filtered.length ? "disabled" : "")}</div>` : ""}`
+    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered → definition</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div>${editing && (needsAccents(set.termLanguage) || needsAccents(set.definitionLanguage)) ? `<div class="accent-editor">${accentBar("", "Italian letters for the focused card field")}</div>` : ""}<div id="cardList">${page.map((c, i) => cardRow(c, cardsFor(set.id).indexOf(c) + 1)).join("") || empty("Add your first card", "A term on one side. A definition, translation, or explanation on the other.")}</div>${filtered.length > 40 ? `<div class="pagination">${button("← Previous", "card-prev", cardPage ? "" : "disabled")}<span>${cardPage + 1} / ${Math.ceil(filtered.length / 40)}</span>${button("Next →", "card-next", (cardPage + 1) * 40 >= filtered.length ? "disabled" : "")}</div>` : ""}`
   );
 }
 function cardRow(c, index) {

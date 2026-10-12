@@ -7,6 +7,9 @@ import {
   seededRandom,
   createLearnSession,
   selectNextQuestion,
+  roundDone,
+  startRound,
+  dualRound,
   recordAttempt,
   overrideLearn,
   learnStats,
@@ -20,6 +23,7 @@ import {
 import { gradeAnswer } from "./grading.js";
 import { compareClocks, joinClocks } from "./persistence.js";
 import { dayKey } from "./streak.js";
+import { accentBar, needsAccents, bindAccents } from "./accents.js";
 import {
   $,
   esc,
@@ -37,6 +41,7 @@ import {
 } from "./ui.js";
 export function createStudyUI(ctx) {
   const { store } = ctx;
+  bindAccents();
   let active = null,
     auto = false,
     autoTimer = null,
@@ -243,14 +248,20 @@ export function createStudyUI(ctx) {
       });
     ctx.go((mode === "test" ? "test" : "study") + "/" + active.id);
   }
-  function configure(mode, setIds, overrides = {}, cardIds = null) {
+  function configure(
+    mode,
+    setIds,
+    overrides = {},
+    cardIds = null,
+    { apply = false } = {},
+  ) {
     const p = { ...ctx.prefs(), ...overrides };
     const pool = getEligibleCards(store.records, { setIds, cardIds });
     if (!pool.length) {
       toast("Add at least one complete card before studying.");
       return;
     }
-    const unfinished = unfinishedFor(mode, setIds);
+    const unfinished = apply ? null : unfinishedFor(mode, setIds);
     const dialog = modal(
       mode === "learn"
         ? "Set up Learn"
@@ -262,8 +273,8 @@ export function createStudyUI(ctx) {
           .map((sid) => store.get(sid)?.title)
           .filter(Boolean)
           .join(" + "),
-      )} · ${pool.length} complete terms</p><div class="form-grid">${selectField("Study pool", "filter", filters, p.filter)}${selectField("Direction", "direction", directionPairs, p.direction)}${
-        mode === "learn"
+      )} · ${pool.length} complete terms</p><div class="form-grid">${apply ? "" : selectField("Study pool", "filter", filters, p.filter)}${selectField("Direction", "direction", directionPairs, p.direction)}${
+        mode === "learn" && !apply
           ? selectField(
               "Goal",
               "goal",
@@ -282,9 +293,12 @@ export function createStudyUI(ctx) {
               p.budget,
               "number",
               'min="1" max="10000"',
-            ) +
-            field(
-              "Questions per round",
+            )
+          : ""
+      }${
+        mode === "learn"
+          ? field(
+              "Questions per round (multiple choice first, then the same number typed)",
               "roundSize",
               p.roundSize,
               "number",
@@ -373,11 +387,63 @@ export function createStudyUI(ctx) {
         if (config.goal === "mistakes" && config.filter === "all")
           config.filter = "missed";
         await ctx.savePrefs(config);
-        await start(mode, setIds, config, cardIds);
+        if (apply) await applyChanges(mode, config);
+        else await start(mode, setIds, config, cardIds);
       },
-      { submitLabel: mode === "test" ? "Start test" : "Start studying" },
+      {
+        submitLabel: apply
+          ? "Apply and keep going"
+          : mode === "test"
+            ? "Start test"
+            : "Start studying",
+      },
     );
     return dialog;
+  }
+  // Changing direction, question types or grading in the middle of a session keeps its progress.
+  async function applyChanges(mode, config) {
+    await saving;
+    active.config = { ...active.config, ...config };
+    const dirs =
+      config.direction === "mixed"
+        ? ["forward", "reverse"]
+        : [config.direction || "forward"];
+    if (mode === "flashcards") {
+      const rng = seededRandom(active.seed + active.round);
+      active.directionByCard = Object.fromEntries(
+        active.cardIds.map((cid) => [
+          cid,
+          config.direction === "mixed"
+            ? rng() < 0.5
+              ? "forward"
+              : "reverse"
+            : config.direction,
+        ]),
+      );
+      active.flipped = false;
+    } else {
+      const progress = store.list("learning");
+      for (const card of cards())
+        for (const d of dirs) {
+          const key = `${card.id}:${d}`,
+            have = active.states[key];
+          if (!have || have.contentRevision !== card.contentRevision)
+            active.states[key] = clone(
+              progress.find(
+                (p) =>
+                  p.id === key && p.contentRevision === card.contentRevision,
+              ) || blankMastery(card, d),
+            );
+        }
+      if (!active.feedback && !active.roundSummary && !active.finishedAt) {
+        active.current = selectNextQuestion(active, cards());
+        active.draft = null;
+        active.hint = false;
+      }
+    }
+    await save();
+    ctx.render();
+    toast("Settings applied. Your progress is kept.");
   }
   const sameSets = (a, b) =>
     a.length === b.length && [...a].sort().join() === [...b].sort().join();
@@ -487,10 +553,31 @@ export function createStudyUI(ctx) {
   }
   const hintFor = (q) =>
     `Hint: ${q.correctAnswer.slice(0, 1)}${"·".repeat(Math.min(30, Math.max(0, q.correctAnswer.length - 1)))}`;
+  // Italian letter buttons appear when the typed answer is in Italian (or, in Learn, contains accents).
+  function accents(q, test, target) {
+    const set = store.get(q.setId),
+      language =
+        q.direction === "forward" ? set?.definitionLanguage : set?.termLanguage;
+    return needsAccents(language, test ? "" : q.correctAnswer)
+      ? accentBar(target)
+      : "";
+  }
   function questionForm(q, { test = false, response = "" } = {}) {
     const isChoice = ["mc", "tf"].includes(q.type);
     const spelling = q.type === "spelling";
-    return `<div class="panel question-panel"><div class="row between"><span class="eyebrow">${{ mc: "MULTIPLE CHOICE", tf: "TRUE OR FALSE", written: "WRITTEN ANSWER", spelling: "SPELLING" }[q.type]} · ${q.direction === "forward" ? "TERM → DEFINITION" : "DEFINITION → TERM"}</span>${store.get(q.cardId) ? star(store.get(q.cardId)) : ""}</div><div class="question-prompt">${spelling ? "Listen, then spell the answer." : esc(q.prompt)}</div>${q.type === "tf" ? `<div class="notice">${esc(q.statement)}</div>` : ""}${spelling ? button("♪ Hear answer", "speak-question", "", "primary") : !test && active.config.audio ? button("♪ Hear prompt", "speak-prompt", "", "small") : ""}${isChoice ? `<div class="choices">${q.options.map((choice, i) => `<button class="choice ${String(response) === String(choice) ? "selected" : ""}" data-action="${test ? "test-choice" : "learn-choice"}" data-value="${attr(choice)}" ${test ? "" : `aria-keyshortcuts="${i + 1}${q.type === "tf" ? " " + (choice === "true" ? "T" : "F") : ""}"`} ${!test && active.feedback ? "disabled" : ""}><strong>${i + 1}</strong>${esc(q.type === "tf" ? (choice === "true" ? "True" : "False") : choice)}</button>`).join("")}</div>` : `<form id="${test ? "testAnswerForm" : "learnAnswerForm"}"><label>${test ? "Your answer" : "Type your answer"}<input id="writtenAnswer" name="answer" autocomplete="off" value="${attr(response)}" ${!test && active.feedback ? "disabled" : ""}></label>${test ? "" : `<div class="row" style="margin-top:16px"><button class="primary" type="submit" ${active.feedback ? "disabled" : ""}>Submit answer</button>${button("Don't know", "dont-know", 'type="button"')}${button("Hint", "learn-hint", 'type="button"')}</div><div id="hintText" class="muted">${active.hint ? esc(hintFor(q)) : ""}</div>`}</form>`}${!test && !active.feedback ? `<p class="shortcut-hint">${isChoice ? `Press ${q.type === "tf" ? "1, 2, T or F" : "1–" + q.options.length} to answer · D for Don’t know` : "Press Enter to submit · Alt+H for a hint"} · <button type="button" class="link-button" data-action="shortcuts">All shortcuts</button></p>` : ""}${!test && isChoice ? `<div class="row" style="margin-top:18px">${button("Don't know", "dont-know", "", active.feedback ? "disabled" : "")}</div>` : ""}</div>`;
+    return `<div class="panel question-panel"><div class="row between"><span class="eyebrow">${{ mc: "MULTIPLE CHOICE", tf: "TRUE OR FALSE", written: "WRITTEN ANSWER", spelling: "SPELLING" }[q.type]} · ${q.direction === "forward" ? "TERM → DEFINITION" : "DEFINITION → TERM"}</span>${store.get(q.cardId) ? star(store.get(q.cardId)) : ""}</div><div class="question-prompt">${spelling ? "Listen, then spell the answer." : esc(q.prompt)}</div>${q.type === "tf" ? `<div class="notice">${esc(q.statement)}</div>` : ""}${spelling ? button("♪ Hear answer", "speak-question", "", "primary") : !test && active.config.audio ? button("♪ Hear prompt", "speak-prompt", "", "small") : ""}${isChoice ? `<div class="choices">${q.options.map((choice, i) => `<button class="choice ${String(response) === String(choice) ? "selected" : ""}" data-action="${test ? "test-choice" : "learn-choice"}" data-value="${attr(choice)}" ${test ? "" : `aria-keyshortcuts="${i + 1}${q.type === "tf" ? " " + (choice === "true" ? "T" : "F") : ""}"`} ${!test && active.feedback ? "disabled" : ""}><strong>${i + 1}</strong>${esc(q.type === "tf" ? (choice === "true" ? "True" : "False") : choice)}</button>`).join("")}</div>` : `<form id="${test ? "testAnswerForm" : "learnAnswerForm"}"><label>${test ? "Your answer" : "Type your answer"}<input id="writtenAnswer" name="answer" autocomplete="off" value="${attr(response)}" ${!test && active.feedback ? "disabled" : ""}></label>${!active.feedback || test ? accents(q, test, "#writtenAnswer") : ""}${test ? "" : `<div class="row" style="margin-top:16px"><button class="primary" type="submit" ${active.feedback ? "disabled" : ""}>Submit answer</button>${button("Don't know", "dont-know", 'type="button"')}${button("Hint", "learn-hint", 'type="button"')}</div><div id="hintText" class="muted">${active.hint ? esc(hintFor(q)) : ""}</div>`}</form>`}${!test && !active.feedback ? `<p class="shortcut-hint">${isChoice ? `Press ${q.type === "tf" ? "1, 2, T or F" : "1–" + q.options.length} to answer · D for Don’t know` : "Press Enter to submit · Alt+H for a hint"} · <button type="button" class="link-button" data-action="shortcuts">All shortcuts</button></p>` : ""}${!test && isChoice ? `<div class="row" style="margin-top:18px">${button("Don't know", "dont-know", "", active.feedback ? "disabled" : "")}</div>` : ""}</div>`;
+  }
+  function phaseLabel() {
+    if (!dualRound(active)) return "";
+    const recognition = (active.roundPhase || "recognition") === "recognition",
+      done = recognition
+        ? active.phaseKeys?.length || 0
+        : active.phaseDone?.length || 0,
+      total = recognition
+        ? active.config.roundSize
+        : active.phaseKeys?.length || 0,
+      n = Math.min(total || 1, done + (active.feedback ? 0 : 1));
+    return `<span class="badge">${recognition ? "Multiple choice" : "Typing"} · ${n} of ${total || n}</span>`;
   }
   function learnView() {
     const stats = learnStats(active);
@@ -503,7 +590,7 @@ export function createStudyUI(ctx) {
     if (active.roundSummary) return learnSummary(stats, false);
     const a = active.feedback,
       q = active.current;
-    return `<div class="study-layout">${header("Learn")}<div class="study-metrics"><span>${stats.mastered}/${stats.total} mastered</span><span>${stats.notStudied} not studied</span><span>${stats.learning} learning</span><span>${Math.round(stats.accuracy)}% accuracy</span><span>${stats.streak} answer streak</span><span>Round ${active.round}</span></div><div class="progress" style="margin-bottom:24px"><div style="width:${stats.percent}%"></div></div>${questionForm(q, { response: a ? a.response || "" : active.draft?.answer || "" })}${a ? `<div class="feedback ${a.effectiveCorrect ? "good" : "bad"}" role="status"><h3>${a.effectiveCorrect ? "✓ Correct" : "↻ Let’s revisit this term"}</h3><p>Your answer: ${esc(a.response || "Don't know")}</p><p><strong>Correct answer: ${esc(q.type === "tf" ? (q.correctAnswer === "true" ? "True" : "False") : q.correctAnswer)}</strong></p>${active.config.explanations && q.explanation ? `<p>${esc(q.explanation)}</p>` : ""}${a.override ? "<small>Original grade preserved; you marked this response correct.</small>" : ""}${!a.effectiveCorrect ? button("I was correct", "learn-override", "", "small") : ""}${!a.effectiveCorrect && active.config.retype ? `<form id="retypeForm" style="margin-top:15px"><label>Type the correct answer to reinforce it<input name="answer" autocomplete="off" value="${attr(active.draft?.retype || "")}"></label><button style="margin-top:10px" type="submit">Check retyping</button><span id="retypeStatus" class="muted"></span></form><small>Retyping does not count as an independent recall.</small>` : ""}<div style="margin-top:18px">${button("Continue →", "learn-continue", 'aria-keyshortcuts="Enter"', "primary")}<span class="shortcut-hint inline">or press <kbd>Enter</kbd></span></div></div>` : ""}</div>`;
+    return `<div class="study-layout">${header("Learn")}<div class="study-metrics"><span>${stats.mastered}/${stats.total} mastered</span><span>${stats.notStudied} not studied</span><span>${stats.learning} learning</span><span>${Math.round(stats.accuracy)}% accuracy</span><span>${stats.streak} answer streak</span><span>Round ${active.round}</span>${phaseLabel()}</div><div class="progress" style="margin-bottom:24px"><div style="width:${stats.percent}%"></div></div>${questionForm(q, { response: a ? a.response || "" : active.draft?.answer || "" })}${a ? `<div class="feedback ${a.effectiveCorrect ? "good" : "bad"}" role="status"><h3>${a.effectiveCorrect ? "✓ Correct" : "↻ Let’s revisit this term"}</h3><p>Your answer: ${esc(a.response || "Don't know")}</p><p><strong>Correct answer: ${esc(q.type === "tf" ? (q.correctAnswer === "true" ? "True" : "False") : q.correctAnswer)}</strong></p>${active.config.explanations && q.explanation ? `<p>${esc(q.explanation)}</p>` : ""}${a.override ? "<small>Original grade preserved; you marked this response correct.</small>" : ""}${!a.effectiveCorrect ? button("I was correct", "learn-override", "", "small") : ""}${!a.effectiveCorrect && active.config.retype ? `<form id="retypeForm" style="margin-top:15px"><label>Type the correct answer to reinforce it<input name="answer" autocomplete="off" value="${attr(active.draft?.retype || "")}"></label>${accents(q, false, "#retypeForm input")}<button style="margin-top:10px" type="submit">Check retyping</button><span id="retypeStatus" class="muted"></span></form><small>Retyping does not count as an independent recall.</small>` : ""}<div style="margin-top:18px">${button("Continue →", "learn-continue", 'aria-keyshortcuts="Enter"', "primary")}<span class="shortcut-hint inline">or press <kbd>Enter</kbd></span></div></div>` : ""}</div>`;
   }
   function learnSummary(stats, complete) {
     const round = active.attempts.slice(active.roundStart),
@@ -908,7 +995,9 @@ export function createStudyUI(ctx) {
       // The learner may have navigated elsewhere while the session was being saved.
       if (onStudyRoute()) ctx.go("library");
     } else if (action === "session-settings") {
-      configure(active.mode, active.setIds, active.config, active.cardIds);
+      configure(active.mode, active.setIds, active.config, active.cardIds, {
+        apply: active.mode !== "test",
+      });
     } else if (action === "flip") {
       active.flipped = !active.flipped;
       active.reviewed = [
@@ -1021,8 +1110,7 @@ export function createStudyUI(ctx) {
       active.feedback = null;
       active.current = null;
       if (learnComplete(active)) active.finishedAt = now();
-      else if (active.position - active.roundStart >= active.config.roundSize)
-        active.roundSummary = true;
+      else if (roundDone(active)) active.roundSummary = true;
       else active.current = selectNextQuestion(active, cards());
       await save();
       ctx.render();
@@ -1030,6 +1118,7 @@ export function createStudyUI(ctx) {
       active.round++;
       active.roundStart = active.position;
       active.roundSummary = false;
+      startRound(active);
       active.current = selectNextQuestion(active, cards());
       await save();
       ctx.render();
