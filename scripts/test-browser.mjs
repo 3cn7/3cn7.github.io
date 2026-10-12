@@ -11,6 +11,7 @@ const checks = [
   "browser-library.mjs",
   "browser-file-manager.mjs",
   "browser-continue.mjs",
+  "browser-delete-selected.mjs",
   "browser-study-state.mjs",
   "browser-interface.mjs",
   "browser-model-recovery.mjs",

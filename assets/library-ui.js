@@ -307,7 +307,7 @@ export function createLibraryUI(ctx) {
             })
             .join("")}</div></section>`
         : ""
-    }<div class="row between" style="margin:16px 0"><span class="muted" id="setCount">${plural(sets.length, "set")}${folderId ? " in this folder" : state.nested || filtering() ? "" : " not in a folder"}${state.nested && (folderId || folders.length) ? " including subfolders" : ""}${picked ? ` · ${picked} selected` : ""}${picked && pickedHere !== picked ? ` (${picked - pickedHere} not shown)` : ""}</span><div class="row">${button("Select all", "select-all", "", "small")}${picked ? button("Clear", "clear-selected", "", "small") + button(`Move selected to…`, "move-selected", "", "small") : ""}${["flashcards", "learn", "test"].map((mode) => button(`${mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test"} ${picked ? "selected" : "all"}`, "configure", `data-mode="${mode}" data-source="library"`, "small")).join("")}</div></div>${sets.length ? `<div class="grid" id="setGrid">${sets.map((s) => tile(s, true)).join("")}</div>` : empty("No study sets", filtering() ? "No sets match these filters." : "Create a set or import terms and definitions.", filtering() ? "" : button("Create set", "new-set", "", "primary"))}`;
+    }<div class="row between" style="margin:16px 0"><span class="muted" id="setCount">${plural(sets.length, "set")}${folderId ? " in this folder" : state.nested || filtering() ? "" : " not in a folder"}${state.nested && (folderId || folders.length) ? " including subfolders" : ""}${picked ? ` · ${picked} selected` : ""}${picked && pickedHere !== picked ? ` (${picked - pickedHere} not shown)` : ""}</span><div class="row">${button("Select all", "select-all", "", "small")}${picked ? button("Clear", "clear-selected", "", "small") + button(`Move selected to…`, "move-selected", "", "small") + button("Delete selected…", "delete-selected", "", "small danger") : ""}${["flashcards", "learn", "test"].map((mode) => button(`${mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test"} ${picked ? "selected" : "all"}`, "configure", `data-mode="${mode}" data-source="library"`, "small")).join("")}</div></div>${sets.length ? `<div class="grid" id="setGrid">${sets.map((s) => tile(s, true)).join("")}</div>` : empty("No study sets", filtering() ? "No sets match these filters." : "Create a set or import terms and definitions.", filtering() ? "" : button("Create set", "new-set", "", "primary"))}`;
   }
 
   /* ---------- tree view ---------- */
@@ -655,6 +655,60 @@ export function createLibraryUI(ctx) {
     );
   }
 
+  // Two confirmations: first a summary, then the word DELETE must be typed.
+  function deleteSelected() {
+    const sets = [...state.selected].map((id) => store.get(id)).filter(Boolean);
+    if (!sets.length) return toast("Select the sets to delete first.");
+    const ids = new Set(sets.map((x) => x.id)),
+      terms = cardsFor_all(ids),
+      list = sets
+        .slice(0, 8)
+        .map((x) => `<li>${esc(x.title)}</li>`)
+        .join("");
+    modal(
+      `Delete ${plural(sets.length, "set")}? (step 1 of 2)`,
+      `<p>These sets and their ${plural(terms, "term")} will move to Recently Deleted:</p><ul>${list}${sets.length > 8 ? `<li>…and ${sets.length - 8} more</li>` : ""}</ul><p class="muted">Test attempts and learning history are kept. You can restore them from Recently Deleted.</p>`,
+      true,
+      () => {
+        setTimeout(() => confirmTyped(sets, ids), 0);
+      },
+      { submitLabel: "Continue" },
+    );
+  }
+  const cardsFor_all = (ids) =>
+    store.list("card").filter((c) => ids.has(c.setId)).length;
+  function confirmTyped(sets, ids) {
+    modal(
+      "Type DELETE to confirm (step 2 of 2)",
+      `<p>This moves ${plural(sets.length, "set")} to Recently Deleted.</p><label>Type <strong>DELETE</strong> to confirm<input name="word" autocomplete="off" required></label>`,
+      true,
+      async (fd) => {
+        if (String(fd.get("word")).trim() !== "DELETE")
+          throw new Error("Type DELETE exactly, in capitals, to confirm.");
+        const at = new Date().toISOString();
+        await store.change(`Delete ${sets.length} sets`, (rows) =>
+          rows.map((r) =>
+            !r.deleted &&
+            (ids.has(r.id) || (r.type === "card" && ids.has(r.setId)))
+              ? {
+                  ...r,
+                  deleted: true,
+                  deletedAt: at,
+                  deletedWith: r.type === "card" ? r.setId : r.id,
+                }
+              : r,
+          ),
+        );
+        state.selected.clear();
+        await ctx.render();
+        toast(
+          `Deleted ${plural(sets.length, "set")}. Restore from Recently Deleted.`,
+        );
+      },
+      { submitLabel: "Delete sets" },
+    );
+  }
+
   /* ---------- drag and drop ---------- */
   function canDrop(target) {
     if (!drag) return false;
@@ -858,7 +912,8 @@ export function createLibraryUI(ctx) {
     else if (action === "select-all") {
       librarySets().forEach((s) => state.selected.add(s.id));
       ctx.render();
-    } else if (action === "clear-selected") {
+    } else if (action === "delete-selected") deleteSelected();
+    else if (action === "clear-selected") {
       state.selected.clear();
       state.view === "tree" ? syncSelection() : ctx.render();
     } else return false;
