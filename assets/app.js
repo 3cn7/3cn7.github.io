@@ -121,6 +121,62 @@ function head(title, description = "", actions = "", eyebrow = "") {
 // Mastery goes back to "not studied". Cards, stars, attempts and saved tests are untouched.
 // Unfinished Learn sessions hold their own copy of the mastery of each term, so it is reset
 // there too; otherwise resuming would write the old progress back.
+// Two confirmations, then the history behind the Statistics page is erased.
+function resetStatistics() {
+  const attempts = store.list("attempt").length,
+    tests = store.list("test").filter((t) => t.submittedAt).length,
+    sessions = store.list("session").filter((x) => x.finishedAt).length;
+  modal(
+    "Reset statistics? (step 1 of 2)",
+    `<p>This permanently erases <strong>${attempts}</strong> recorded answers, <strong>${tests}</strong> saved test results and <strong>${sessions}</strong> finished study sessions. The Statistics page and your study streak start again from zero.</p><p class="muted">Your sets, cards, stars and unfinished sessions are kept. This cannot be undone; download a backup first if unsure.</p>${check("Also reset Learn mastery (every term back to not studied)", "mastery")}`,
+    true,
+    (fd) => {
+      const mastery = fd.has("mastery");
+      setTimeout(
+        () =>
+          modal(
+            "Type RESET to confirm (step 2 of 2)",
+            `<p>Erase all statistics${mastery ? " and Learn mastery" : ""}?</p><label>Type <strong>RESET</strong> to confirm<input name="word" autocomplete="off" required></label>`,
+            true,
+            async (fd2) => {
+              if (String(fd2.get("word")).trim() !== "RESET")
+                throw new Error("Type RESET exactly, in capitals, to confirm.");
+              const at = now(),
+                erase = (r) => ({
+                  id: r.id,
+                  type: r.type,
+                  clock: r.clock,
+                  createdAt: r.createdAt,
+                  deleted: true,
+                  erased: true,
+                  deletedAt: at,
+                });
+              await store.change("Reset statistics", (rows) => {
+                const next = rows.map((r) =>
+                  r.deleted
+                    ? r
+                    : r.type === "attempt" ||
+                        (r.type === "test" && r.submittedAt) ||
+                        (r.type === "session" && r.finishedAt)
+                      ? erase(r)
+                      : r.type === "session" || r.type === "test"
+                        ? { ...r, days: [], activeMs: 0 }
+                        : r,
+                );
+                return mastery ? resetLearning(next, () => true) : next;
+              });
+              study.forget();
+              await render();
+              toast("Statistics reset.");
+            },
+            { submitLabel: "Erase statistics" },
+          ),
+        0,
+      );
+    },
+    { submitLabel: "Continue" },
+  );
+}
 function resetLearning(rows, inScope) {
   const reset = (r) => ({
     ...r,
@@ -692,7 +748,7 @@ async function settings() {
         ["dark", "Dark"],
       ],
       theme,
-    )}<button type="submit" class="primary">Save appearance</button></form><section class="panel"><h2>Google Drive</h2><p class="muted">${esc(sync.state)} · Optional synchronization for saved materials.</p><a class="button" href="#sync">Manage sync →</a></section><section class="panel"><details class="model-settings"><summary>Downloaded models</summary>${await transcripts.modelView()}</details></section><section class="panel stack"><h2>Your device storage</h2><p>${usage.count} recordings · ${(usage.bytes / 1024 / 1024).toFixed(1)} MB</p><p class="muted">Keep a portable backup before clearing browser data. Recordings are never uploaded by sync.</p><div class="row">${button("Keep storage on this device", "persist-storage")}${button("Download backup", "backup")}${button("Recently deleted", "trash")}${button("Download migration backup", "migration-backup")}</div><details><summary>Recover an earlier version</summary><p>The first study-only launch saves all prior study records and local preferences in a local migration backup. Download it before rolling back source through Git. It is retained separately from Google Drive sync.</p>${button("Restore pre-redesign study records…", "migration-restore", "", "danger")}</details></section><section class="panel"><h2>Learning progress</h2><p class="muted">Mastery is separate from stars, self-assessment, and your saved test history.</p>${button("Reset Learn progress…", "reset-progress", "", "danger")}</section></div>`
+    )}<button type="submit" class="primary">Save appearance</button></form><section class="panel"><h2>Google Drive</h2><p class="muted">${esc(sync.state)} · Optional synchronization for saved materials.</p><a class="button" href="#sync">Manage sync →</a></section><section class="panel"><details class="model-settings"><summary>Downloaded models</summary>${await transcripts.modelView()}</details></section><section class="panel stack"><h2>Your device storage</h2><p>${usage.count} recordings · ${(usage.bytes / 1024 / 1024).toFixed(1)} MB</p><p class="muted">Keep a portable backup before clearing browser data. Recordings are never uploaded by sync.</p><div class="row">${button("Keep storage on this device", "persist-storage")}${button("Download backup", "backup")}${button("Recently deleted", "trash")}${button("Download migration backup", "migration-backup")}</div><details><summary>Recover an earlier version</summary><p>The first study-only launch saves all prior study records and local preferences in a local migration backup. Download it before rolling back source through Git. It is retained separately from Google Drive sync.</p>${button("Restore pre-redesign study records…", "migration-restore", "", "danger")}</details></section><section class="panel"><h2>Learning progress</h2><p class="muted">Mastery is separate from stars, self-assessment, and your saved test history.</p>${button("Reset Learn progress…", "reset-progress", "", "danger")}</section><section class="panel"><h2>Statistics</h2><p class="muted">The Statistics page and your study streak are built from your answer history, saved test results and finished study sessions. Resetting erases that history. Sets, cards, stars and unfinished sessions stay.</p>${button("Reset statistics…", "reset-stats", "", "danger")}</section></div>`
   );
 }
 function applyTheme() {
@@ -710,6 +766,38 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener(
   applyTheme,
 );
 let renderVersion = 0;
+// Every screen has a Back button that goes to the screen it belongs to.
+function updateBack(parts) {
+  const button = $("#backButton"),
+    to = (hash, name) => ({ hash, name });
+  let target = null;
+  const inFolder = (fid) =>
+    fid && store.get(fid)
+      ? to("folder/" + fid, folderPath(fid))
+      : to("library", "Study Library");
+  if (route === "library") target = to("dashboard", "Dashboard");
+  else if (route === "folder") target = inFolder(store.get(folderId)?.parentId);
+  else if (route === "set") target = inFolder(store.get(setId)?.folderId);
+  else if (route === "study" || route === "test") {
+    const ids = store.get(parts[1])?.setIds || [];
+    target =
+      ids.length === 1 && store.get(ids[0])
+        ? to("set/" + ids[0], store.get(ids[0]).title)
+        : to("library", "Study Library");
+  } else if (route === "transcripts")
+    target = parts[1]
+      ? to("transcripts", "Transcripts")
+      : to("dashboard", "Dashboard");
+  else if (["statistics", "settings"].includes(route))
+    target = to("dashboard", "Dashboard");
+  else if (route === "sync") target = to("settings", "Settings");
+  button.hidden = !target;
+  if (target) {
+    button.textContent = "← " + target.name;
+    button.setAttribute("aria-label", "Back to " + target.name);
+    button.dataset.back = target.hash;
+  }
+}
 async function render() {
   const version = ++renderVersion;
   const parts = location.hash.slice(1).split("/");
@@ -740,6 +828,7 @@ async function render() {
       settings: "Settings",
       sync: "Google Drive",
     }[route] || "Studyroom";
+  updateBack(parts);
   let html;
   if (!["study", "test"].includes(route)) await study.leave();
   if (route === "dashboard") html = dashboard();
@@ -961,6 +1050,10 @@ window.addEventListener("beforeunload", (e) => {
   }
 });
 
+document.addEventListener("click", (e) => {
+  const back = e.target.closest("#backButton");
+  if (back?.dataset.back) go(back.dataset.back);
+});
 document.addEventListener("click", async (e) => {
   const el = e.target.closest("[data-action]");
   if (!el || el.disabled) return;
@@ -1284,6 +1377,7 @@ document.addEventListener("click", async (e) => {
         },
         "Reset mastery",
       );
+    else if (action === "reset-stats") resetStatistics();
     else if (action === "reset-set-progress") {
       const set = store.get(el.dataset.id),
         terms = cardsFor(set.id).length;
@@ -1307,7 +1401,6 @@ document.addEventListener("click", async (e) => {
   }
 });
 sync.addEventListener("status", () => {
-  $("#saveStatus").textContent = sync.state;
   $("#sidebarSync").textContent = sync.state;
 });
 store.addEventListener("change", (e) => {
@@ -1315,7 +1408,7 @@ store.addEventListener("change", (e) => {
     toast("Library updated from another tab.");
     if (!pendingEdits.size && !editing) render();
   }
-  if (!sync.enabled) $("#saveStatus").textContent = "Saved on this device";
+  if (!sync.enabled) $("#sidebarSync").textContent = "Saved on this device";
 });
 window.addEventListener("unhandledrejection", (event) => {
   toast("Something could not finish: " + event.reason?.message);
@@ -1336,7 +1429,7 @@ if (sync.enabled && auth.clientId)
     .catch(() => {});
 await transcripts.prepare();
 await render();
-$("#saveStatus").textContent = sync.state;
+$("#sidebarSync").textContent = sync.state;
 
 const recoveredKeys = Object.keys(localStorage).filter((k) =>
   k.startsWith("studyPlatform.cardDraft."),

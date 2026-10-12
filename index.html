@@ -66,10 +66,12 @@
     </aside>
     <div class="app-shell">
       <header class="topbar">
-        <span id="breadcrumb">Dashboard</span>
+        <div class="topbar-left">
+          <button type="button" id="backButton" class="back-btn" hidden></button
+          ><span id="breadcrumb">Dashboard</span>
+        </div>
         <div class="top-actions">
-          <span id="saveStatus" role="status">Opening library…</span
-          ><a id="modelChip" class="model-chip" href="#settings" hidden></a
+          <a id="modelChip" class="model-chip" href="#settings" hidden></a
           ><button
             id="timerToggle"
             aria-label="Open study timer"

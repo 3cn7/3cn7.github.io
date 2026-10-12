@@ -296,10 +296,18 @@ button:active,
   gap: 12px;
   flex-shrink: 0;
 }
-#saveStatus {
-  font-size: 0.8125rem;
-  color: var(--muted);
-  max-width: 160px;
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.back-btn {
+  flex-shrink: 0;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 #timerMini {
   font-variant-numeric: tabular-nums;
@@ -1555,9 +1563,6 @@ body:has(#timerPanel:not([hidden])) #view {
   }
   #view {
     padding: 32px 28px 80px;
-  }
-  .top-actions #saveStatus {
-    display: none;
   }
   body:has(#timerPanel:not([hidden])) #view {
     padding-right: 28px;

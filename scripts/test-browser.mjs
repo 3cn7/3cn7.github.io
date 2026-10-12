@@ -11,6 +11,7 @@ const checks = [
   "browser-library.mjs",
   "browser-file-manager.mjs",
   "browser-continue.mjs",
+  "browser-stats-back.mjs",
   "browser-learn-retries.mjs",
   "browser-learn-rounds.mjs",
   "browser-folder-click.mjs",

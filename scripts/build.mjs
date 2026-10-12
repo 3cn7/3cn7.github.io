@@ -64,8 +64,8 @@ const serial = `v${pkg.version} · build ${buildHash.slice(0, 8)}`;
 await writeFile(
   join(dist, "index.html"),
   (await readFile(join(dist, "index.html"), "utf8")).replace(
-    "Version __APP_VERSION__",
-    "Version " + serial,
+    "__APP_VERSION__",
+    serial,
   ),
 );
 await writeFile(
