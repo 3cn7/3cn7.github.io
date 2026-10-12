@@ -79,6 +79,8 @@ export class DriveSync extends EventTarget {
       return;
     }
     const work = async () => {
+      // Another device wrote revisions we have not read: listeners can hold the screen while they are applied.
+      let incoming = false;
       try {
         this.status("SYNCING");
         await this.store.refresh();
@@ -97,6 +99,10 @@ export class DriveSync extends EventTarget {
           const page = await (await this.api(url)).json();
           for (const file of page.files || [])
             if (!seen.has(file.id)) {
+              if (!incoming) {
+                incoming = true;
+                this.dispatchEvent(new CustomEvent("incoming"));
+              }
               const payload = validateBackup(
                 await (
                   await this.api(
@@ -198,6 +204,12 @@ export class DriveSync extends EventTarget {
         );
         throw e;
       } finally {
+        if (incoming)
+          this.dispatchEvent(
+            new CustomEvent("incomingEnd", {
+              detail: { ok: this.state !== "SYNC FAILED" },
+            }),
+          );
       }
     };
     this.running = (

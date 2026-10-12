@@ -218,3 +218,55 @@ test("an expired Drive token is renewed silently before asking the learner to re
   );
   await assert.rejects(stuck.api("https://x"), /AUTHENTICATION REQUIRED/);
 });
+
+test("revisions from another device announce themselves, and own revisions do not", async () => {
+  const { set, card } = fixture(),
+    remote = { ...card, term: "from the other device", clock: { a: 1, b: 1 } },
+    store = new FakeStore([set, card]),
+    events = [];
+  let uploaded = [];
+  const sync = new DriveSync(
+    store,
+    () => ({ token: () => "token" }),
+    async (url, init) => {
+      if (String(url).includes("alt=media"))
+        return response(makeBackup([remote]));
+      if (String(url).includes("upload/drive")) {
+        uploaded.push(1);
+        return response({ id: "own-revision" });
+      }
+      return response({ files: [{ id: "remote-revision" }] });
+    },
+  );
+  sync.enabled = true;
+  sync.addEventListener("incoming", () => events.push("incoming"));
+  sync.addEventListener("incomingEnd", (e) =>
+    events.push("end:" + e.detail.ok),
+  );
+  await sync.sync();
+  assert.deepEqual(events, ["incoming", "end:true"]);
+  assert.equal(store.records[1].term, "from the other device");
+  // The same revision again, and the one this device uploaded, are not announced.
+  events.length = 0;
+  await sync.sync();
+  assert.deepEqual(events, []);
+  assert(uploaded.length <= 1);
+});
+test("a failed pull still ends the announcement", async () => {
+  const { set, card } = fixture(),
+    store = new FakeStore([set, card]),
+    events = [];
+  const sync = new DriveSync(
+    store,
+    () => ({ token: () => "token" }),
+    async (url) =>
+      String(url).includes("alt=media")
+        ? response("nope", 500)
+        : response({ files: [{ id: "broken" }] }),
+  );
+  sync.enabled = true;
+  sync.addEventListener("incoming", () => events.push("incoming"));
+  sync.addEventListener("incomingEnd", () => events.push("end"));
+  await assert.rejects(sync.sync());
+  assert.deepEqual(events, ["incoming", "end"]);
+});

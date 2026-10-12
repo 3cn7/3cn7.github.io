@@ -1,6 +1,7 @@
 import { Store } from "./persistence.js";
 import { unlockSite } from "./gate.js";
 import { VERSION } from "./version.js";
+import { watchIncoming } from "./sync-overlay.js";
 import { greeting, timeZone, zoneChoices, TIME_ZONE_KEY } from "./greeting.js";
 import { DriveSync } from "./sync.js";
 import { GoogleAuth } from "./google-auth.js";
@@ -57,6 +58,20 @@ await prepareStudyOnly(store);
 const auth = new GoogleAuth();
 const sync = await new DriveSync(store, () => auth).init();
 sync.conflicts = (await store.meta("driveConflicts")) || [];
+window.studyroomSync = sync; // lets the browser tests simulate another device
+// Revisions from another device hold the screen until they are applied, then the page is refreshed.
+watchIncoming(sync, {
+  done: async (ok) => {
+    if (!pendingEdits.size && !editing) await render();
+    toast(
+      !ok
+        ? "Could not finish updating from Google Drive."
+        : sync.conflicts.length
+          ? "Another device changed some of the same items. Review them under Google Drive."
+          : "Updated from another device.",
+    );
+  },
+});
 createTimer();
 const prefs = () => ({
   ...DEFAULT_STUDY,
