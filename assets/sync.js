@@ -2,7 +2,7 @@ import { makeBackup, validateBackup, id, now } from "./core.js";
 import { mergeRecords } from "./persistence.js";
 // New study data uses immutable revision files. Concurrent devices never overwrite one another's uploads.
 export class DriveSync extends EventTarget {
-  constructor(store, bridge, fetcher = fetch) {
+  constructor(store, bridge, fetcher = (...args) => globalThis.fetch(...args)) {
     super();
     this.store = store;
     this.bridge = bridge;
