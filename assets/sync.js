@@ -43,7 +43,10 @@ export class DriveSync extends EventTarget {
   }
   async api(path, options = {}) {
     const bridge = this.bridge();
-    const token = bridge?.token();
+    // An expired or missing token is renewed quietly before asking the learner to reconnect.
+    let token = bridge?.token();
+    if (!token && bridge?.silent && (await bridge.silent()))
+      token = bridge.token();
     if (!token) throw new Error("AUTHENTICATION REQUIRED");
     const response = await this.fetcher(path, {
       ...options,

@@ -191,3 +191,30 @@ test("Offline synchronization preserves local data without making network calls"
     configurable: true,
   });
 });
+
+test("an expired Drive token is renewed silently before asking the learner to reconnect", async () => {
+  const { DriveSync } = await import("../assets/sync.js");
+  const calls = [];
+  let token = "";
+  const bridge = {
+    token: () => token,
+    silent: async () => ((token = "fresh"), true),
+  };
+  const fetcher = async (url, init) => (
+    calls.push(init.headers.Authorization),
+    new Response("{}")
+  );
+  const sync = new DriveSync(
+    { meta: async () => false, addEventListener() {} },
+    () => bridge,
+    fetcher,
+  );
+  await sync.api("https://www.googleapis.com/drive/v3/files");
+  assert.deepEqual(calls, ["Bearer fresh"]);
+  const stuck = new DriveSync(
+    { meta: async () => false, addEventListener() {} },
+    () => ({ token: () => "", silent: async () => false }),
+    fetcher,
+  );
+  await assert.rejects(stuck.api("https://x"), /AUTHENTICATION REQUIRED/);
+});

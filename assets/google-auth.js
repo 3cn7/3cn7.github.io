@@ -72,6 +72,49 @@ export class GoogleAuth {
     this.expiresAt =
       Date.now() + Math.max(0, Number(response.expires_in) - 60) * 1000;
   }
+  /**
+   * Sign in again without any prompt, using the consent already granted to this app and the
+   * learner's current Google session. Returns false (never throws) when Google needs the learner
+   * to act, for example because they are signed out of Google or consent was withdrawn.
+   */
+  async silent() {
+    if (this.token()) return true;
+    if (!this.clientId || !navigator.onLine) return false;
+    if (this.silentRun) return this.silentRun;
+    this.silentRun = (async () => {
+      try {
+        await this.load();
+        const response = await new Promise((resolve, reject) => {
+          const timer = setTimeout(
+            () => reject(new Error("Silent sign-in timed out.")),
+            10000,
+          );
+          const client = google.accounts.oauth2.initTokenClient({
+            client_id: this.clientId,
+            scope: "https://www.googleapis.com/auth/drive.file",
+            callback: (r) => {
+              clearTimeout(timer);
+              r.error ? reject(new Error(r.error)) : resolve(r);
+            },
+            error_callback: (e) => {
+              clearTimeout(timer);
+              reject(new Error(e.type || "Silent sign-in was blocked."));
+            },
+          });
+          client.requestAccessToken({ prompt: "" });
+        });
+        this.accessToken = response.access_token;
+        this.expiresAt =
+          Date.now() + Math.max(0, Number(response.expires_in) - 60) * 1000;
+        return true;
+      } catch {
+        return false;
+      } finally {
+        this.silentRun = null;
+      }
+    })();
+    return this.silentRun;
+  }
   disconnect() {
     this.accessToken = "";
     this.expiresAt = 0;

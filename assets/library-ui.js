@@ -175,6 +175,33 @@ export function createLibraryUI(ctx) {
         .filter((c) => sets.some((s) => s.id === c.setId)).length;
     return { sets: sets.length, terms };
   };
+  const fieldOf = (kind) => (kind === "folder" ? "parentId" : "folderId");
+  const nounOf = (kind, n = 1) =>
+    ({ set: "set", folder: "folder", transcript: "transcript" })[kind] +
+    (n === 1 ? "" : "s");
+  const transcriptFolder = (t) =>
+    t.folderId && store.get(t.folderId) ? t.folderId : "";
+  // Transcripts follow the same scope rules as sets; subject and starred filters do not apply to them.
+  function libraryTranscripts(folderId = state.folderId) {
+    if (state.subject || state.starred) return [];
+    const deep = state.nested || filtering(),
+      folders = folderId
+        ? deep
+          ? descendantFolders(store.records, folderId)
+          : new Set([folderId])
+        : deep
+          ? null
+          : new Set([""]),
+      q = normalize(state.query);
+    return store
+      .list("transcript")
+      .filter(
+        (t) =>
+          (!folders || folders.has(transcriptFolder(t))) &&
+          (!q || normalize(t.title + " " + (t.rawText || "")).includes(q)),
+      )
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }
   const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
   /* ---------- shared markup ---------- */
@@ -307,7 +334,12 @@ export function createLibraryUI(ctx) {
             })
             .join("")}</div></section>`
         : ""
-    }<div class="row between" style="margin:16px 0"><span class="muted" id="setCount">${plural(sets.length, "set")}${folderId ? " in this folder" : state.nested || filtering() ? "" : " not in a folder"}${state.nested && (folderId || folders.length) ? " including subfolders" : ""}${picked ? ` · ${picked} selected` : ""}${picked && pickedHere !== picked ? ` (${picked - pickedHere} not shown)` : ""}</span><div class="row">${button("Select all", "select-all", "", "small")}${picked ? button("Clear", "clear-selected", "", "small") + button(`Move selected to…`, "move-selected", "", "small") + button("Delete selected…", "delete-selected", "", "small danger") : ""}${["flashcards", "learn", "test"].map((mode) => button(`${mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test"} ${picked ? "selected" : "all"}`, "configure", `data-mode="${mode}" data-source="library"`, "small")).join("")}</div></div>${sets.length ? `<div class="grid" id="setGrid">${sets.map((s) => tile(s, true)).join("")}</div>` : empty("No study sets", filtering() ? "No sets match these filters." : "Create a set or import terms and definitions.", filtering() ? "" : button("Create set", "new-set", "", "primary"))}`;
+    }${(() => {
+      const list = libraryTranscripts(folderId);
+      return list.length
+        ? `<section aria-labelledby="transcriptHeading"><h2 id="transcriptHeading" class="section-title">Transcripts</h2><div class="transcript-rows">${list.map((t) => `<article class="transcript-row" data-transcript-id="${attr(t.id)}" draggable="true" data-drag-transcript="${attr(t.id)}"><span aria-hidden="true">🎙️</span><a class="transcript-name" href="#transcripts/${attr(t.id)}">${esc(t.title)}</a><small>${date(t.updatedAt)}</small>${button("➡️ Move", "move-transcript", `data-id="${attr(t.id)}" aria-label="Move transcript ${attr(t.title)} to a folder…"`, "small")}</article>`).join("")}</div></section>`
+        : "";
+    })()}<div class="row between" style="margin:16px 0"><span class="muted" id="setCount">${plural(sets.length, "set")}${folderId ? " in this folder" : state.nested || filtering() ? "" : " not in a folder"}${state.nested && (folderId || folders.length) ? " including subfolders" : ""}${picked ? ` · ${picked} selected` : ""}${picked && pickedHere !== picked ? ` (${picked - pickedHere} not shown)` : ""}</span><div class="row">${button("Select all", "select-all", "", "small")}${picked ? button("Clear", "clear-selected", "", "small") + button(`Move selected to…`, "move-selected", "", "small") + button("Delete selected…", "delete-selected", "", "small danger") : ""}${["flashcards", "learn", "test"].map((mode) => button(`${mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test"} ${picked ? "selected" : "all"}`, "configure", `data-mode="${mode}" data-source="library"`, "small")).join("")}</div></div>${sets.length ? `<div class="grid" id="setGrid">${sets.map((s) => tile(s, true)).join("")}</div>` : empty("No study sets", filtering() ? "No sets match these filters." : "Create a set or import terms and definitions.", filtering() ? "" : button("Create set", "new-set", "", "primary"))}`;
   }
 
   /* ---------- tree view ---------- */
@@ -323,6 +355,12 @@ export function createLibraryUI(ctx) {
       if (!setsIn.has(key)) setsIn.set(key, []);
       setsIn.get(key).push(s);
     }
+    const trIn = new Map();
+    for (const t of libraryTranscripts(null)) {
+      const key = transcriptFolder(t);
+      if (!trIn.has(key)) trIn.set(key, []);
+      trIn.get(key).push(t);
+    }
     for (const f of folders) {
       const key = f.parentId && store.get(f.parentId) ? f.parentId : "";
       if (!kids.has(key)) kids.set(key, []);
@@ -337,6 +375,7 @@ export function createLibraryUI(ctx) {
         !filtering() ||
         (q && normalize(f.name).includes(q)) ||
         (setsIn.get(f.id) || []).length > 0 ||
+        (trIn.get(f.id) || []).length > 0 ||
         (kids.get(f.id) || []).some(worth);
       keep.set(f.id, result);
       return result;
@@ -351,6 +390,9 @@ export function createLibraryUI(ctx) {
       ...(setsIn.get(parent) || [])
         .sort(byTitle)
         .map((s) => ({ kind: "set", item: s })),
+      ...(trIn.get(parent) || [])
+        .sort((a, b) => a.title.localeCompare(b.title))
+        .map((t) => ({ kind: "transcript", item: t })),
     ];
     return build("");
   }
@@ -415,8 +457,10 @@ export function createLibraryUI(ctx) {
               const sum = folderSummary(id);
               return `${plural(sum.sets, "set")} · ${plural(sum.terms, "term")}`;
             })()
-          : `${plural(counts(id).terms, "term")}${item.subject ? " · " + esc(item.subject) : ""}`;
-      return `<li role="treeitem" aria-level="${level}" aria-setsize="${size}" aria-posinset="${pos}" ${isFolder ? `aria-expanded="${isOpen}"` : `aria-selected="${picked}"`} tabindex="${tab ? 0 : -1}" data-kind="${node.kind}" data-id="${attr(id)}" data-label="${attr(label)}"${state.folderId === id && isFolder ? ' aria-current="location"' : ""}><div class="tree-row${picked ? " is-selected" : ""}${current ? " is-current" : ""}${isFolder && state.folderId === id ? " is-location" : ""}" draggable="true" data-drag-${node.kind}="${attr(id)}"${isFolder ? ` data-drop-folder="${attr(id)}"` : ""}><span class="tree-toggle" aria-hidden="true">${isFolder ? (isOpen ? "▾" : "▸") : ""}</span><span class="tree-icon" aria-hidden="true">${isFolder ? "📁" : "📄"}</span><span class="tree-label">${esc(label)}</span><span class="tree-meta">${isFolder ? esc(meta) : meta}</span></div>${isFolder ? `<ul role="group" ${isOpen ? "" : "hidden"}>${node.children.map((c, i) => row(c, level + 1, node.children.length, i + 1)).join("")}</ul>` : ""}</li>`;
+          : node.kind === "transcript"
+            ? "Transcript"
+            : `${plural(counts(id).terms, "term")}${item.subject ? " · " + esc(item.subject) : ""}`;
+      return `<li role="treeitem" aria-level="${level}" aria-setsize="${size}" aria-posinset="${pos}" ${isFolder ? `aria-expanded="${isOpen}"` : `aria-selected="${picked}"`} tabindex="${tab ? 0 : -1}" data-kind="${node.kind}" data-id="${attr(id)}" data-label="${attr(label)}"${state.folderId === id && isFolder ? ' aria-current="location"' : ""}><div class="tree-row${picked ? " is-selected" : ""}${current ? " is-current" : ""}${isFolder && state.folderId === id ? " is-location" : ""}" draggable="true" data-drag-${node.kind}="${attr(id)}"${isFolder ? ` data-drop-folder="${attr(id)}"` : ""}><span class="tree-toggle" aria-hidden="true">${isFolder ? (isOpen ? "▾" : "▸") : ""}</span><span class="tree-icon" aria-hidden="true">${isFolder ? "📁" : node.kind === "transcript" ? "🎙️" : "📄"}</span><span class="tree-label">${esc(label)}</span><span class="tree-meta">${isFolder ? esc(meta) : meta}</span></div>${isFolder ? `<ul role="group" ${isOpen ? "" : "hidden"}>${node.children.map((c, i) => row(c, level + 1, node.children.length, i + 1)).join("")}</ul>` : ""}</li>`;
     };
     const rootCount = model.length;
     return `<p class="muted library-hint" id="libraryHint">Tree keys: <kbd>↑</kbd> <kbd>↓</kbd> move, <kbd>→</kbd> <kbd>←</kbd> open or close a folder, <kbd>Enter</kbd> open a set or toggle a folder, <kbd>Space</kbd> select a set, <kbd>Shift</kbd>+<kbd>M</kbd> move, or type a name. Drag rows onto a folder to move them.</p><div class="tree-actions" id="treeActions" role="group" aria-label="Actions for the selected item"></div><div class="tree-wrap"><div class="tree-root-drop" data-drop-folder="" id="treeRoot"><span aria-hidden="true">📄</span> All sets · drop here to move to the top level</div>${rootCount ? `<ul role="tree" id="libraryTree" aria-label="Study library folders and sets" aria-multiselectable="true">${model.map((n, i) => row(n, 1, rootCount, i + 1)).join("")}</ul>` : empty("Nothing to show", filtering() ? "No sets or folders match these filters." : "Create a folder or a set to see it here.")}</div>`;
@@ -470,9 +514,9 @@ export function createLibraryUI(ctx) {
     const one = items.length === 1 ? items[0] : null,
       record = one && store.get(one.id);
     const name = one
-      ? `${one.kind === "folder" ? "Folder" : "Set"}: ${record.name || record.title}`
+      ? `${one.kind === "folder" ? "Folder" : one.kind === "transcript" ? "Transcript" : "Set"}: ${record.name || record.title}`
       : `${items.length} sets selected`;
-    bar.innerHTML = `<strong class="tree-selection">${esc(name)}</strong>${one ? button(one.kind === "folder" ? "Open folder" : "Open set", "tree-open", `data-kind="${one.kind}" data-id="${attr(one.id)}"`, "small primary") : ""}${button(items.length > 1 ? `Move ${items.length} sets to…` : "Move to…", "move-items", "", "small")}${one?.kind === "folder" ? button("Edit folder", "edit-folder", `data-id="${attr(one.id)}"`, "small") : ""}${state.selected.size ? button("Clear selection", "clear-selected", "", "small") : ""}`;
+    bar.innerHTML = `<strong class="tree-selection">${esc(name)}</strong>${one ? button(one.kind === "folder" ? "Open folder" : one.kind === "transcript" ? "Open transcript" : "Open set", "tree-open", `data-kind="${one.kind}" data-id="${attr(one.id)}"`, "small primary") : ""}${button(items.length > 1 ? `Move ${items.length} sets to…` : "Move to…", "move-items", "", "small")}${one?.kind === "folder" ? button("Edit folder", "edit-folder", `data-id="${attr(one.id)}"`, "small") : ""}${state.selected.size ? button("Clear selection", "clear-selected", "", "small") : ""}`;
   }
   function setExpanded(li, expanded) {
     if (li.dataset.kind !== "folder") return;
@@ -525,10 +569,14 @@ export function createLibraryUI(ctx) {
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (folder) setExpanded(li, !expanded);
-      else ctx.go("set/" + li.dataset.id);
+      else
+        ctx.go(
+          (li.dataset.kind === "transcript" ? "transcripts/" : "set/") +
+            li.dataset.id,
+        );
     } else if (e.key === " ") {
       e.preventDefault();
-      if (!folder) {
+      if (li.dataset.kind === "set") {
         const id = li.dataset.id;
         state.selected.has(id)
           ? state.selected.delete(id)
@@ -567,10 +615,7 @@ export function createLibraryUI(ctx) {
     const wanted = new Set(ids);
     const moving = [...wanted].filter((id) => {
       const r = store.get(id);
-      return (
-        r &&
-        ((kind === "set" ? r.folderId : r.parentId) || "") !== (target || "")
-      );
+      return r && (r[fieldOf(kind)] || "") !== (target || "");
     });
     if (!moving.length) {
       toast(`Already in ${destinationName(target)}.`);
@@ -583,14 +628,12 @@ export function createLibraryUI(ctx) {
       what =
         moving.length === 1
           ? `“${first.title || first.name}”`
-          : `${moving.length} ${kind === "set" ? "sets" : "folders"}`;
+          : `${moving.length} ${nounOf(kind, moving.length)}`;
     const moved = new Set(moving);
-    await store.change(`Move ${kind === "set" ? "set" : "folder"}`, (rows) =>
+    await store.change(`Move ${nounOf(kind)}`, (rows) =>
       rows.map((r) =>
         moved.has(r.id) && !r.deleted
-          ? kind === "set"
-            ? { ...r, folderId: target || null }
-            : { ...r, parentId: target || null }
+          ? { ...r, [fieldOf(kind)]: target || null }
           : r,
       ),
     );
@@ -639,14 +682,14 @@ export function createLibraryUI(ctx) {
             ids.flatMap((id) => [...descendantFolders(store.records, id)]),
           )
         : null;
-    const where = (kind === "set" ? first.folderId : first.parentId) || "";
+    const where = first[fieldOf(kind)] || "";
     const name =
       ids.length === 1
         ? `“${first.title || first.name}”`
-        : `${ids.length} ${kind === "set" ? "sets" : "folders"}`;
+        : `${ids.length} ${nounOf(kind, ids.length)}`;
     modal(
       `Move ${name}`,
-      `<p class="muted">Choose the folder to move ${ids.length === 1 ? "it" : "them"} to. Cards, progress and history stay with ${kind === "set" ? "each set" : "the sets"}.</p>${selectField("Destination folder", "destination", folderOptions(exclude), where)}`,
+      `<p class="muted">Choose the folder to move ${ids.length === 1 ? "it" : "them"} to. ${kind === "transcript" ? "The text and audio stay as they are." : `Cards, progress and history stay with ${kind === "set" ? "each set" : "the sets"}.`}</p>${selectField("Destination folder", "destination", folderOptions(exclude), where)}`,
       true,
       async (fd) => {
         await moveItems(kind, ids, fd.get("destination") || "");
@@ -712,7 +755,7 @@ export function createLibraryUI(ctx) {
   /* ---------- drag and drop ---------- */
   function canDrop(target) {
     if (!drag) return false;
-    if (drag.kind === "set")
+    if (drag.kind !== "folder")
       return drag.ids.some((id) => (store.get(id)?.folderId || "") !== target);
     return drag.ids.every((id) => {
       const f = store.get(id);
@@ -741,10 +784,19 @@ export function createLibraryUI(ctx) {
     setTimeout(() => ghost.remove());
   }
   document.addEventListener("dragstart", (e) => {
-    const source = e.target.closest?.("[data-drag-set],[data-drag-folder]");
+    const source = e.target.closest?.(
+      "[data-drag-set],[data-drag-folder],[data-drag-transcript]",
+    );
     if (!source || !$("#view").contains(source)) return;
-    const kind = source.dataset.dragSet ? "set" : "folder",
-      id = source.dataset.dragSet || source.dataset.dragFolder;
+    const kind = source.dataset.dragSet
+        ? "set"
+        : source.dataset.dragTranscript
+          ? "transcript"
+          : "folder",
+      id =
+        source.dataset.dragSet ||
+        source.dataset.dragTranscript ||
+        source.dataset.dragFolder;
     // Dragging a selected set moves the whole selection, like a file manager.
     const ids =
       kind === "set" && state.selected.has(id) && state.selected.size > 1
@@ -759,7 +811,7 @@ export function createLibraryUI(ctx) {
       ids.forEach((moving) =>
         document
           .querySelectorAll(
-            `[data-drag-set="${CSS.escape(moving)}"],[data-drag-folder="${CSS.escape(moving)}"]`,
+            `[data-drag-set="${CSS.escape(moving)}"],[data-drag-folder="${CSS.escape(moving)}"],[data-drag-transcript="${CSS.escape(moving)}"]`,
           )
           .forEach((n) => n.classList.add("is-dragging")),
       ),
@@ -880,9 +932,12 @@ export function createLibraryUI(ctx) {
       treeEl().ondblclick = (e) => {
         const li = e.target.closest?.('[role="treeitem"]');
         if (!li || e.target.closest(".tree-toggle")) return;
-        li.dataset.kind === "set"
-          ? ctx.go("set/" + li.dataset.id)
-          : ctx.go("folder/" + li.dataset.id);
+        li.dataset.kind === "folder"
+          ? ctx.go("folder/" + li.dataset.id)
+          : ctx.go(
+              (li.dataset.kind === "transcript" ? "transcripts/" : "set/") +
+                li.dataset.id,
+            );
       };
       syncActions();
     }
@@ -898,7 +953,9 @@ export function createLibraryUI(ctx) {
           `[data-action="library-view"][data-view="${state.view}"]`,
         )
         ?.focus();
-    } else if (action === "move-set")
+    } else if (action === "move-transcript")
+      moveDialog([{ kind: "transcript", id: el.dataset.id }]);
+    else if (action === "move-set")
       moveDialog([{ kind: "set", id: el.dataset.id }]);
     else if (action === "move-folder")
       moveDialog([{ kind: "folder", id: el.dataset.id }]);
@@ -907,7 +964,11 @@ export function createLibraryUI(ctx) {
     else if (action === "move-items") moveDialog(targets());
     else if (action === "tree-open")
       ctx.go(
-        (el.dataset.kind === "folder" ? "folder/" : "set/") + el.dataset.id,
+        (el.dataset.kind === "folder"
+          ? "folder/"
+          : el.dataset.kind === "transcript"
+            ? "transcripts/"
+            : "set/") + el.dataset.id,
       );
     else if (action === "select-all") {
       librarySets().forEach((s) => state.selected.add(s.id));

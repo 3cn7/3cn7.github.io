@@ -2249,3 +2249,26 @@ kbd {
   position: relative;
   z-index: 1;
 }
+
+.transcript-rows {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.transcript-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  cursor: grab;
+}
+.transcript-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}

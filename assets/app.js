@@ -1280,9 +1280,15 @@ if ("serviceWorker" in navigator)
     .register("./sw.js")
     .catch((e) => console.warn("Offline cache unavailable:", e.message));
 setInterval(() => {
-  if (sync.enabled && navigator.onLine && auth.token() && !sync.running)
+  if (sync.enabled && navigator.onLine && !sync.running)
     sync.sync().catch(() => {});
 }, 60000);
+// Whenever the site opens with Drive sync on, sign in again automatically and sync.
+if (sync.enabled && auth.clientId)
+  sync
+    .sync()
+    .then(() => render())
+    .catch(() => {});
 await transcripts.prepare();
 await render();
 $("#saveStatus").textContent = sync.state;
