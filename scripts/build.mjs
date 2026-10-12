@@ -55,12 +55,20 @@ const publicFiles = [
   "vendor/ort-wasm-simd-threaded.jsep.mjs",
   "vendor/ort-wasm-simd-threaded.jsep.wasm",
 ];
+// The version label is derived from every file except itself, then written next to the source
+// (so it is also right when the repository is served as it is) and into dist.
 const hash = createHash("sha256");
-for (const file of publicFiles) hash.update(await readFile(join(dist, file)));
-const buildHash = hash.digest("hex");
-const sw = await readFile(join(dist, "sw.js"), "utf8");
+for (const file of publicFiles.filter((f) => f !== "assets/version.js"))
+  hash.update(await readFile(join(dist, file)));
 const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
-const serial = `v${pkg.version} · build ${buildHash.slice(0, 8)}`;
+const serial = `v${pkg.version} · build ${hash.digest("hex").slice(0, 8)}`;
+const versionModule = `export const VERSION = ${JSON.stringify(serial)};\n`;
+await writeFile(join(root, "assets", "version.js"), versionModule);
+await writeFile(join(dist, "assets", "version.js"), versionModule);
+const all = createHash("sha256");
+for (const file of publicFiles) all.update(await readFile(join(dist, file)));
+const buildHash = all.digest("hex");
+const sw = await readFile(join(dist, "sw.js"), "utf8");
 await writeFile(
   join(dist, "index.html"),
   (await readFile(join(dist, "index.html"), "utf8")).replace(

@@ -1,5 +1,6 @@
 import { Store } from "./persistence.js";
 import { unlockSite } from "./gate.js";
+import { VERSION } from "./version.js";
 import { DriveSync } from "./sync.js";
 import { GoogleAuth } from "./google-auth.js";
 import { prepareStudyOnly } from "./migration.js";
@@ -46,6 +47,7 @@ import { createTranscriptUI } from "./transcript-ui.js";
 import { createLibraryUI } from "./library-ui.js";
 import { accentBar, needsAccents } from "./accents.js";
 await unlockSite();
+$("#appVersion").textContent = "Version " + VERSION;
 const store = await new Store().open().catch((error) => {
   $("#view").innerHTML = empty("Local storage could not open", error.message);
   throw error;
@@ -124,6 +126,55 @@ function head(title, description = "", actions = "", eyebrow = "") {
 // Unfinished Learn sessions hold their own copy of the mastery of each term, so it is reset
 // there too; otherwise resuming would write the old progress back.
 // Two confirmations, then the history behind the Statistics page is erased.
+// Permanently erases everything in Recently Deleted, including transcript recordings.
+function emptyBin() {
+  const doomed = store.records.filter(
+    (r) =>
+      r.deleted &&
+      !r.erased &&
+      ["set", "folder", "card", "transcript"].includes(r.type),
+  );
+  if (!doomed.length) return toast("The bin is already empty.");
+  const kinds = (type) => doomed.filter((r) => r.type === type).length,
+    recordings = doomed.filter((r) => r.type === "transcript" && r.audioId);
+  confirmAction(
+    "Empty the bin?",
+    `This permanently erases ${kinds("set")} set${kinds("set") === 1 ? "" : "s"}, ${kinds("folder")} folder${kinds("folder") === 1 ? "" : "s"}, ${kinds("card")} card${kinds("card") === 1 ? "" : "s"} and ${kinds("transcript")} transcript${kinds("transcript") === 1 ? "" : "s"}${recordings.length ? `, and deletes ${recordings.length} recording${recordings.length === 1 ? "" : "s"} from this device` : ""}. Your study history is kept. This cannot be undone.`,
+    async () => {
+      for (const r of recordings) await store.deleteAudio(r.audioId);
+      const ids = new Set(doomed.map((r) => r.id)),
+        at = now();
+      await store.change(
+        "Empty bin",
+        (rows) =>
+          rows.map((r) =>
+            ids.has(r.id)
+              ? {
+                  id: r.id,
+                  type: r.type,
+                  clock: r.clock,
+                  createdAt: r.createdAt,
+                  deleted: true,
+                  erased: true,
+                  deletedAt: at,
+                  ...(r.type === "set"
+                    ? { title: "Erased set" }
+                    : r.type === "card"
+                      ? { setId: r.setId, term: "", definition: "" }
+                      : r.type === "folder"
+                        ? { name: "Erased folder", parentId: null }
+                        : { title: "Erased transcript" }),
+                }
+              : r,
+          ),
+        { undo: false },
+      );
+      await render();
+      toast("The bin is empty.");
+    },
+    "Empty bin",
+  );
+}
 function resetStatistics() {
   const attempts = store.list("attempt").length,
     tests = store.list("test").filter((t) => t.submittedAt).length,
@@ -300,7 +351,7 @@ function setView() {
         ),
       set.subject || "STUDY SET",
     ) +
-    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered → definition</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div>${editing && (needsAccents(set.termLanguage) || needsAccents(set.definitionLanguage)) ? `<div class="accent-editor">${accentBar("", "Italian letters for the focused card field")}</div>` : ""}${termOverview(set)}<div id="cardList">${page.map((c, i) => cardRow(c, cardsFor(set.id).indexOf(c) + 1)).join("") || empty("Add your first card", "A term on one side. A definition, translation, or explanation on the other.")}</div>${filtered.length > 40 ? `<div class="pagination">${button("← Previous", "card-prev", cardPage ? "" : "disabled")}<span>${cardPage + 1} / ${Math.ceil(filtered.length / 40)}</span>${button("Next →", "card-next", (cardPage + 1) * 40 >= filtered.length ? "disabled" : "")}</div>` : ""}`
+    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered → definition</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div>${editing && (needsAccents(set.termLanguage) || needsAccents(set.definitionLanguage)) ? `<div class="accent-editor">${accentBar("", "Italian letters for the focused card field")}</div>` : ""}<div class="terms-frame" id="termsFrame" tabindex="0" role="region" aria-label="Terms in this set">${termOverview(set)}<div id="cardList">${page.map((c, i) => cardRow(c, cardsFor(set.id).indexOf(c) + 1)).join("") || empty("Add your first card", "A term on one side. A definition, translation, or explanation on the other.")}</div>${filtered.length > 40 ? `<div class="pagination">${button("← Previous", "card-prev", cardPage ? "" : "disabled")}<span>${cardPage + 1} / ${Math.ceil(filtered.length / 40)}</span>${button("Next →", "card-next", (cardPage + 1) * 40 >= filtered.length ? "disabled" : "")}</div>` : ""}</div>`
   );
 }
 // Every term of the set grouped as Not studied, Learning or Mastered (a term is only Mastered when
@@ -612,7 +663,7 @@ function trash() {
   );
   modal(
     "Recently Deleted",
-    `<p>Deleted content stays here until you explicitly erase it. Study history is retained.</p><div class="stack">${deleted.map((r) => `<div class="row between"><span>${esc(r.title || r.name || r.term || r.id)} <small>(${esc(r.type)}${r.type === "transcript" && r.audioId ? " with recording" : ""})</small></span>${button("Restore", "restore-record", `data-id="${attr(r.id)}"`, "small")}${button("Permanently erase", "erase-record", `data-id="${attr(r.id)}"`, "small danger")}</div>`).join("") || '<p class="muted">Nothing deleted.</p>'}</div>`,
+    `<p>Deleted content stays here until you explicitly erase it. Study history is retained.</p>${deleted.length ? `<div class="row">${button("Empty bin…", "empty-bin", "", "small danger")}<small class="muted">${deleted.length} item${deleted.length === 1 ? "" : "s"} in the bin</small></div>` : ""}<div class="stack">${deleted.map((r) => `<div class="row between"><span>${esc(r.title || r.name || r.term || r.id)} <small>(${esc(r.type)}${r.type === "transcript" && r.audioId ? " with recording" : ""})</small></span>${button("Restore", "restore-record", `data-id="${attr(r.id)}"`, "small")}${button("Permanently erase", "erase-record", `data-id="${attr(r.id)}"`, "small danger")}</div>`).join("") || '<p class="muted">Nothing deleted.</p>'}</div>`,
     false,
   );
 }
@@ -787,6 +838,42 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener(
   applyTheme,
 );
 let renderVersion = 0;
+// The sidebar can shrink to its emojis. It folds itself away inside a set and while practising,
+// and the learner's own choice is remembered for every other screen.
+const NAV_KEY = "studyPlatform.navCollapsed";
+let navPref = localStorage.getItem(NAV_KEY) === "1",
+  navTemp = null,
+  navWasAuto = "";
+function applyNav() {
+  const auto = ["set", "study", "test"].includes(route);
+  // A manual choice inside a set or a practice only lasts until the next kind of screen.
+  if (route !== navWasAuto) navTemp = null;
+  navWasAuto = route;
+  const collapsed = auto ? (navTemp ?? true) : navPref;
+  document.documentElement.classList.toggle("nav-collapsed", collapsed);
+  const toggle = $("#navToggle");
+  toggle.textContent = collapsed ? "➡️" : "⬅️";
+  toggle.setAttribute("aria-expanded", String(!collapsed));
+  const label = collapsed ? "Expand the sidebar" : "Collapse the sidebar";
+  toggle.setAttribute("aria-label", label);
+  toggle.title = label;
+  document.querySelectorAll("[data-nav]").forEach((a) => {
+    a.title = a.querySelector(".nav-label").textContent;
+  });
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#navToggle")) return;
+  const collapsed =
+    document.documentElement.classList.contains("nav-collapsed");
+  if (["set", "study", "test"].includes(route)) navTemp = !collapsed;
+  else {
+    navPref = !collapsed;
+    try {
+      localStorage.setItem(NAV_KEY, navPref ? "1" : "0");
+    } catch {}
+  }
+  applyNav();
+});
 // Every screen has a Back button that goes to the screen it belongs to.
 function updateBack(parts) {
   const button = $("#backButton"),
@@ -850,6 +937,7 @@ async function render() {
       sync: "Google Drive",
     }[route] || "Studyroom";
   updateBack(parts);
+  applyNav();
   let html;
   if (!["study", "test"].includes(route)) await study.leave();
   if (route === "dashboard") html = dashboard();
@@ -1402,6 +1490,7 @@ document.addEventListener("click", async (e) => {
         },
         "Reset mastery",
       );
+    else if (action === "empty-bin") emptyBin();
     else if (action === "reset-stats") resetStatistics();
     else if (action === "reset-set-progress") {
       const set = store.get(el.dataset.id),

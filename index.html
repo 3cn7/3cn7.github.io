@@ -24,6 +24,12 @@
     </script>
     <script>
       try {
+        if (localStorage.getItem("studyPlatform.navCollapsed") === "1")
+          document.documentElement.classList.add("nav-collapsed");
+      } catch {}
+    </script>
+    <script>
+      try {
         const p = localStorage.getItem("studyPlatform.theme") || "system";
         document.documentElement.dataset.theme =
           p === "system"
@@ -52,21 +58,37 @@
             /></svg></span
         ><span>studyroom</span></a
       >
-      <nav aria-label="Main navigation">
+      <button
+        type="button"
+        id="navToggle"
+        class="nav-toggle"
+        aria-expanded="true"
+        aria-controls="mainNav"
+        aria-label="Collapse the sidebar"
+        title="Collapse the sidebar"
+      >
+        ⬅️
+      </button>
+      <nav aria-label="Main navigation" id="mainNav">
         <a href="#dashboard" data-nav="dashboard"
-          ><span aria-hidden="true">🏠</span>Dashboard</a
+          ><span aria-hidden="true">🏠</span
+          ><span class="nav-label">Dashboard</span></a
         >
         <a href="#library" data-nav="library"
-          ><span aria-hidden="true">📚</span>Study Library</a
+          ><span aria-hidden="true">📚</span
+          ><span class="nav-label">Study Library</span></a
         >
         <a href="#transcripts" data-nav="transcripts"
-          ><span aria-hidden="true">🎙️</span>Transcripts</a
+          ><span aria-hidden="true">🎙️</span
+          ><span class="nav-label">Transcripts</span></a
         >
         <a href="#statistics" data-nav="statistics"
-          ><span aria-hidden="true">📊</span>Statistics</a
+          ><span aria-hidden="true">📊</span
+          ><span class="nav-label">Statistics</span></a
         >
         <a href="#settings" data-nav="settings"
-          ><span aria-hidden="true">⚙️</span>Settings</a
+          ><span aria-hidden="true">⚙️</span
+          ><span class="nav-label">Settings</span></a
         >
       </nav>
       <div class="sidebar-note">
