@@ -10,6 +10,7 @@ const checks = [
   "browser-codecs.mjs",
   "browser-library.mjs",
   "browser-file-manager.mjs",
+  "browser-continue.mjs",
   "browser-study-state.mjs",
   "browser-interface.mjs",
   "browser-model-recovery.mjs",

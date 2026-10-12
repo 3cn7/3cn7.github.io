@@ -10,6 +10,7 @@ import {
   getEligibleCards,
   normalize,
 } from "./core.js";
+import { learnComplete } from "./engine.js";
 import {
   $,
   esc,
@@ -177,10 +178,32 @@ export function createLibraryUI(ctx) {
   const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
   /* ---------- shared markup ---------- */
+  // The most recent unfinished Flashcards/Learn session or test that includes this set.
+  function unfinishedFor(setId) {
+    return [...store.list("session"), ...store.list("test")]
+      .filter(
+        (s) =>
+          s.setIds?.includes(setId) &&
+          (s.type === "test"
+            ? !s.submittedAt
+            : !s.finishedAt && !(s.mode === "learn" && learnComplete(s))),
+      )
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  }
   function tile(set, selectable = false) {
     const c = counts(set.id),
       picked = state.selected.has(set.id);
-    return `<article class="set-tile${picked ? " is-selected" : ""}" data-set-id="${attr(set.id)}"${selectable ? ` draggable="true" data-drag-set="${attr(set.id)}"` : ""}><div class="row between"><span class="row"><span class="tag">${esc(set.subject || "Study set")}</span></span><div class="row">${selectable ? `<label class="check"><input type="checkbox" data-select-set="${attr(set.id)}" ${picked ? "checked" : ""} aria-label="Select ${attr(set.title)}"></label>` : ""}<button class="icon-btn" data-action="pin" data-id="${attr(set.id)}" aria-label="${set.pinned ? "Unpin" : "Pin"} ${attr(set.title)}">${set.pinned ? "📌" : "📍"}</button></div></div><a class="set-title" href="#set/${attr(set.id)}">${esc(set.title)}</a><div class="tile-meta"><span>${c.terms} terms</span><span>★ ${c.starred}</span></div><small class="tile-folder">${esc(folderPath(set.folderId))}</small><div class="progress" role="progressbar" aria-valuenow="${Math.round(c.percent)}" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress"><div style="width:${c.percent}%"></div></div><div class="tile-meta"><span>${c.mastered} mastered</span><span>Studied ${date(set.lastStudiedAt)}</span></div><div class="row tile-actions"><a class="button primary" href="#set/${attr(set.id)}">Open set →</a>${selectable ? button("➡️ Move", "move-set", `data-id="${attr(set.id)}" aria-label="Move ${attr(set.title)} to a folder…" title="Move to a folder"`, "small") : ""}<details class="context-menu"><summary>Study options</summary><div>${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`)).join("")}</div></details></div></article>`;
+    return `<article class="set-tile${picked ? " is-selected" : ""}" data-set-id="${attr(set.id)}"${selectable ? ` draggable="true" data-drag-set="${attr(set.id)}"` : ""}><div class="row between"><span class="row"><span class="tag">${esc(set.subject || "Study set")}</span></span><div class="row">${selectable ? `<label class="check"><input type="checkbox" data-select-set="${attr(set.id)}" ${picked ? "checked" : ""} aria-label="Select ${attr(set.title)}"></label>` : ""}<button class="icon-btn" data-action="pin" data-id="${attr(set.id)}" aria-label="${set.pinned ? "Unpin" : "Pin"} ${attr(set.title)}">${set.pinned ? "📌" : "📍"}</button></div></div><a class="set-title" href="#set/${attr(set.id)}">${esc(set.title)}</a><div class="tile-meta"><span>${c.terms} terms</span><span>★ ${c.starred}</span></div><small class="tile-folder">${esc(folderPath(set.folderId))}</small><div class="progress" role="progressbar" aria-valuenow="${Math.round(c.percent)}" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress"><div style="width:${c.percent}%"></div></div><div class="tile-meta"><span>${c.mastered} mastered</span><span>Studied ${date(set.lastStudiedAt)}</span></div><div class="row tile-actions">${(() => {
+      const u = unfinishedFor(set.id);
+      return u
+        ? button(
+            "▶ Continue where I left off",
+            u.type === "test" ? "resume-test" : "resume-session",
+            `data-id="${attr(u.id)}"`,
+            "primary",
+          )
+        : "";
+    })()}<a class="button${unfinishedFor(set.id) ? "" : " primary"}" href="#set/${attr(set.id)}">Open set →</a>${selectable ? button("➡️ Move", "move-set", `data-id="${attr(set.id)}" aria-label="Move ${attr(set.title)} to a folder…" title="Move to a folder"`, "small") : ""}<details class="context-menu"><summary>Study options</summary><div>${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`)).join("")}</div></details></div></article>`;
   }
   function searchResults() {
     const sets = librarySets(),
