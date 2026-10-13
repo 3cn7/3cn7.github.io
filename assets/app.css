@@ -2856,7 +2856,7 @@ dialog.sync-overlay p {
   box-shadow: 0 10px 28px #0003;
   transform: rotate(0);
   transform-origin: 0 100%;
-  animation: sync-spread 1.1s cubic-bezier(0.3, 0.7, 0.3, 1) infinite alternate;
+  animation: sync-spread 1.4s infinite;
 }
 .sync-card small {
   font-size: 8px;
@@ -2879,7 +2879,6 @@ dialog.sync-overlay p {
   font-size: 23px;
 }
 .sync-card.c1 {
-  /* The first card stays put; the others fan out from it. */
   --spread: translate(0, 0) rotate(-5deg);
   z-index: 1;
 }
@@ -2888,17 +2887,28 @@ dialog.sync-overlay p {
   z-index: 2;
 }
 .sync-card.c3 {
+  /* The bottom right card is the anchor: it never moves, the others fan out of it to the left. */
   --spread: translate(196px, 0) rotate(15deg);
   z-index: 3;
+  animation: none;
+  transform: var(--spread);
 }
+/* Spreads, rests, fades and starts again from the stack; it never folds back. */
 @keyframes sync-spread {
   0%,
-  12% {
-    transform: translate(0, 0) rotate(0);
+  8% {
+    transform: translate(196px, 0) rotate(15deg);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.25, 0.8, 0.3, 1);
   }
-  88%,
+  52%,
+  84% {
+    transform: var(--spread);
+    opacity: 1;
+  }
   100% {
     transform: var(--spread);
+    opacity: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {

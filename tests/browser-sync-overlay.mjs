@@ -42,15 +42,24 @@ assert.match(
   /^rgb\(\d+, \d+, \d+\)$/,
   "an opaque colour, not translucent",
 );
-// The cards spread: they are at different places a moment later.
-const x = () =>
-  page.locator(".sync-card.c1").evaluate((c) => c.getBoundingClientRect().left);
-const a = await x();
-await page.waitForTimeout(1100);
-assert.notEqual(
-  Math.round(a),
-  Math.round(await x()),
-  "the cards are animating",
+// The cards fan out of the bottom right one: it stays, the others travel away from it to the left.
+const left = (n) =>
+  page
+    .locator(".sync-card.c" + n)
+    .evaluate((c) => c.getBoundingClientRect().left);
+const seen = [[], [], []];
+for (let i = 0; i < 12; i++) {
+  for (const n of [0, 1, 2]) seen[n].push(await left(n + 1));
+  await page.waitForTimeout(120);
+}
+const range = (xs) => Math.max(...xs) - Math.min(...xs);
+assert(range(seen[2]) < 2, "the bottom right card stays where it is");
+assert(range(seen[0]) > 100, "the first card travels away from it");
+assert(range(seen[1]) > 50, "the second card travels away from it");
+assert(range(seen[0]) > range(seen[1]), "the farthest card travels farthest");
+assert(
+  seen[0].every((x, i) => x <= seen[2][i] + 1),
+  "the others stay to its left",
 );
 // Nothing underneath can be used, by mouse or keyboard.
 assert.equal(
