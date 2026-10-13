@@ -60,7 +60,7 @@ const sync = await new DriveSync(store, () => auth).init();
 sync.conflicts = (await store.meta("driveConflicts")) || [];
 window.studyroomSync = sync; // lets the browser tests simulate another device
 // Revisions from another device hold the screen until they are applied, then the page is refreshed.
-watchIncoming(sync, {
+const syncOverlay = watchIncoming(sync, {
   done: async (ok) => {
     if (!pendingEdits.size && !editing) await render();
     toast(
@@ -72,6 +72,14 @@ watchIncoming(sync, {
     );
   },
 });
+// Opening the site with Drive sync on: hold the screen until the first sync is done.
+if (sync.enabled && auth.clientId && navigator.onLine) {
+  syncOverlay.show("Checking Google Drive for changes…");
+  sync
+    .sync()
+    .catch(() => {})
+    .finally(() => syncOverlay.hide(true, false));
+}
 createTimer();
 const prefs = () => ({
   ...DEFAULT_STUDY,
@@ -1603,16 +1611,20 @@ if ("serviceWorker" in navigator)
   navigator.serviceWorker
     .register("./sw.js")
     .catch((e) => console.warn("Offline cache unavailable:", e.message));
-setInterval(() => {
+// Every hour, look in Drive for revisions from other devices. If there are any, the screen is held
+// while they are applied (see watchIncoming). A tab that was asleep checks as soon as it wakes.
+const DRIVE_CHECK_MS = 60 * 60 * 1000;
+let lastDriveCheck = Date.now();
+function checkDrive() {
+  lastDriveCheck = Date.now();
   if (sync.enabled && navigator.onLine && !sync.running)
     sync.sync().catch(() => {});
-}, 60000);
-// Whenever the site opens with Drive sync on, sign in again automatically and sync.
-if (sync.enabled && auth.clientId)
-  sync
-    .sync()
-    .then(() => render())
-    .catch(() => {});
+}
+setInterval(checkDrive, DRIVE_CHECK_MS);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && Date.now() - lastDriveCheck >= DRIVE_CHECK_MS)
+    checkDrive();
+});
 await transcripts.prepare();
 await render();
 $("#sidebarSync").textContent = sync.state;

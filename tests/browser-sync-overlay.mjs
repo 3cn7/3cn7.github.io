@@ -21,7 +21,7 @@ await page.evaluate(() =>
 const overlay = page.locator("dialog.sync-overlay");
 await overlay.waitFor();
 assert.equal(await overlay.evaluate((d) => d.open), true);
-assert.match(await overlay.innerText(), /Updating from another device/);
+assert.match(await overlay.innerText(), /Syncing/);
 assert.equal(
   await page.locator(".sync-card").count(),
   3,

@@ -2837,13 +2837,13 @@ dialog.sync-overlay p {
 }
 .sync-stage {
   position: relative;
-  width: 240px;
+  width: 372px;
   height: 200px;
 }
 .sync-card {
   position: absolute;
   top: 24px;
-  left: 32px;
+  left: 0;
   width: 176px;
   height: 138px;
   padding: 20px;
@@ -2855,7 +2855,8 @@ dialog.sync-overlay p {
   border-radius: 18px;
   box-shadow: 0 10px 28px #0003;
   transform: rotate(0);
-  animation: sync-spread 2.2s ease-in-out infinite alternate;
+  transform-origin: 0 100%;
+  animation: sync-spread 1.1s cubic-bezier(0.3, 0.7, 0.3, 1) infinite alternate;
 }
 .sync-card small {
   font-size: 8px;
@@ -2878,15 +2879,16 @@ dialog.sync-overlay p {
   font-size: 23px;
 }
 .sync-card.c1 {
-  --spread: translate(-92px, 6px) rotate(-16deg);
+  /* The first card stays put; the others fan out from it. */
+  --spread: translate(0, 0) rotate(-5deg);
   z-index: 1;
 }
 .sync-card.c2 {
-  --spread: translate(0, -16px) rotate(2deg);
+  --spread: translate(98px, -8px) rotate(5deg);
   z-index: 2;
 }
 .sync-card.c3 {
-  --spread: translate(92px, 6px) rotate(16deg);
+  --spread: translate(196px, 0) rotate(15deg);
   z-index: 3;
 }
 @keyframes sync-spread {
