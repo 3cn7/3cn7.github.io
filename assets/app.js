@@ -24,6 +24,8 @@ import {
   makeBackup,
   validateBackup,
   normalize,
+  masteredTerms,
+  termStatus,
 } from "./core.js";
 import { DEFAULT_STUDY, learnComplete } from "./engine.js";
 import {
@@ -289,7 +291,7 @@ function resetLearning(rows, inScope) {
 function dashboard() {
   const sets = store.list("set"),
     cards = getEligibleCards(store.records),
-    mastered = getEligibleCards(store.records, { filter: "mastered" });
+    mastered = masteredTerms(store.records);
   const recent = [...sets]
     .filter((s) => s.lastStudiedAt)
     .sort((a, b) => b.lastStudiedAt.localeCompare(a.lastStudiedAt))
@@ -327,7 +329,7 @@ function dashboard() {
     head("Dashboard") +
     transcripts.offer() +
     `<section class="hero panel">${streakCard()}<div class="hero-art" aria-hidden="true"><div class="art-back"></div><div class="art-card"><small>ITALIAN</small><strong>ciao</strong><span>hello</span><i>✦</i></div></div></section>
- <div class="metrics">${metric(sets.length, "Study sets", "📁")}${metric(cards.length, "Flashcards", "📄")}${metric(mastered.length, "Mastered · term → definition", "✓")}${metric(store.list("transcript").length, "Transcripts", "🎙️")}</div>
+ <div class="metrics">${metric(sets.length, "Study sets", "📁")}${metric(cards.length, "Flashcards", "📄")}${metric(mastered.length, "Mastered terms", "✓")}${metric(store.list("transcript").length, "Transcripts", "🎙️")}</div>
  ${sessions.length ? `<section class="panel stack"><h2>Pick up where you left off</h2>${sessions.map((s) => `<div class="resume-row"><div><strong>${esc(s.setIds.map((id) => store.get(id)?.title || "Study set").join(" + "))}</strong><small>${esc(study.describe(s))} · started ${date(s.startedAt)}</small></div>${button(s.type === "test" ? "Resume test" : "Resume", "resume-" + (s.type === "test" ? "test" : "session"), `data-id="${attr(s.id)}"`, "primary")}${button("Discard", "discard-" + (s.type === "test" ? "test" : "session"), `data-id="${attr(s.id)}"`, "small danger")}</div>`).join("")}</section>` : ""}
  <div class="section-line"><h2>Recently studied</h2><a href="#library">View library →</a></div>${recent.length ? `<div class="grid">${recent.map((s) => tile(s)).join("")}</div>` : empty("No recent study sessions", "Create a set to start practicing.", button("Create a study set", "new-set", "", "primary"))}
  ${pinned.length ? `<div class="section-line"><h2>Pinned sets</h2></div><div class="grid">${pinned.map((s) => tile(s)).join("")}</div>` : ""}
@@ -377,7 +379,7 @@ function setView() {
         ),
       set.subject || "STUDY SET",
     ) +
-    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${studyStarred(set, c.starred)}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered → definition</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing ? "" : button(picking ? "Done selecting" : "☑️ Select terms", "toggle-pick", `aria-pressed="${picking}"`, picking ? "primary" : "")}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div>${editing && (needsAccents(set.termLanguage) || needsAccents(set.definitionLanguage)) ? `<div class="accent-editor">${accentBar("", "Italian letters for the focused card field")}</div>` : ""}${statusPills(set, filtered)}${pickBar()}${termsFrame(set, filtered)}`
+    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${studyStarred(set, c.starred)}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing ? "" : button(picking ? "Done selecting" : "☑️ Select terms", "toggle-pick", `aria-pressed="${picking}"`, picking ? "primary" : "")}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div>${editing && (needsAccents(set.termLanguage) || needsAccents(set.definitionLanguage)) ? `<div class="accent-editor">${accentBar("", "Italian letters for the focused card field")}</div>` : ""}${statusPills(set, filtered)}${pickBar()}${termsFrame(set, filtered)}`
   );
 }
 // "Study starred" opens the usual set-up with the pool already set to the starred terms.
@@ -436,18 +438,13 @@ function termGroups(set, cards) {
   const progress = store.list("learning"),
     groups = { NOT_STUDIED: [], LEARNING: [], MASTERED: [] };
   for (const c of cards) {
-    const states = progress.filter(
-      (m) => m.cardId === c.id && m.contentRevision === c.contentRevision,
+    const touched = progress.filter(
+      (m) =>
+        m.cardId === c.id &&
+        m.contentRevision === c.contentRevision &&
+        (m.attempts > 0 || m.status !== "NOT_STUDIED"),
     );
-    const touched = states.filter(
-      (m) => m.attempts > 0 || m.status !== "NOT_STUDIED",
-    );
-    const status = !touched.length
-      ? "NOT_STUDIED"
-      : touched.every((m) => m.status === "MASTERED")
-        ? "MASTERED"
-        : "LEARNING";
-    groups[status].push([c, touched]);
+    groups[termStatus(c, progress)].push([c, touched]);
   }
   return groups;
 }
@@ -815,11 +812,10 @@ function statistics() {
     subject: statsSubject,
     filter: "learning",
   }).length;
-  const mastery = getEligibleCards(store.records, {
+  const mastery = masteredTerms(store.records, {
     setIds: statsSet ? [statsSet] : [],
     folderId: statsFolder || null,
     subject: statsSubject,
-    filter: "mastered",
   }).length;
   return (
     head(
@@ -839,7 +835,7 @@ function statistics() {
         ].map((s) => [s, s]),
       ],
       statsSubject,
-    )}</select><label>From<input type="date" id="statsFrom" value="${attr(statsFrom)}"></label><label>To<input type="date" id="statsTo" value="${attr(statsTo)}"></label></div><div class="metrics">${metric(pool.length, "Eligible terms")}${metric(pool.filter((c) => c.starred).length, "Starred terms")}${metric(mastery, "Learn mastered → definition")}${metric(attempts.length ? Math.round((correct / attempts.length) * 100) + "%" : "—", "Learn accuracy")}</div><div class="metrics">${metric(new Set(pool.map((c) => c.setId)).size, "Sets in this selection")}${metric(learning, "Still learning → definition")}${metric(notStudied, "Not studied → definition")}${metric(testResults.length ? Math.round((testResults.filter((r) => r.effectiveCorrect).length / testResults.length) * 100) + "%" : "—", "Test accuracy")}</div><div class="two-col"><div class="panel"><h2>Test performance</h2><p>${testResults.length ? Math.round((testResults.filter((r) => r.effectiveCorrect).length / testResults.length) * 100) + "% across " + testResults.length + " questions" : "No test results in this range."}</p><div class="table-wrap"><table><thead><tr><th>Date / set</th><th>Score</th><th>Time</th><th></th></tr></thead><tbody>${tests
+    )}</select><label>From<input type="date" id="statsFrom" value="${attr(statsFrom)}"></label><label>To<input type="date" id="statsTo" value="${attr(statsTo)}"></label></div><div class="metrics">${metric(pool.length, "Eligible terms")}${metric(pool.filter((c) => c.starred).length, "Starred terms")}${metric(mastery, "Learn mastered terms")}${metric(attempts.length ? Math.round((correct / attempts.length) * 100) + "%" : "—", "Learn accuracy")}</div><div class="metrics">${metric(new Set(pool.map((c) => c.setId)).size, "Sets in this selection")}${metric(learning, "Still learning → definition")}${metric(notStudied, "Not studied → definition")}${metric(testResults.length ? Math.round((testResults.filter((r) => r.effectiveCorrect).length / testResults.length) * 100) + "%" : "—", "Test accuracy")}</div><div class="two-col"><div class="panel"><h2>Test performance</h2><p>${testResults.length ? Math.round((testResults.filter((r) => r.effectiveCorrect).length / testResults.length) * 100) + "% across " + testResults.length + " questions" : "No test results in this range."}</p><div class="table-wrap"><table><thead><tr><th>Date / set</th><th>Score</th><th>Time</th><th></th></tr></thead><tbody>${tests
       .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
       .map(
         (t) =>

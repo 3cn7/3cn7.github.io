@@ -14,6 +14,7 @@ const checks = [
   "browser-sync-startup.mjs",
   "browser-midway-settings.mjs",
   "browser-pick-terms.mjs",
+  "browser-complete-tile.mjs",
   "browser-sync-overlay.mjs",
   "browser-search-terms.mjs",
   "browser-nav-bin.mjs",

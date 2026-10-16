@@ -220,6 +220,28 @@ export function getEligibleCards(
         a.id.localeCompare(b.id),
     );
 }
+// Where a term stands across every direction it has been studied in: never answered, still
+// being learned, or mastered (every studied direction mastered). One answer for the whole term,
+// so mastering a set in either direction, or in both, counts as mastered.
+export function termStatus(card, learning) {
+  const touched = learning.filter(
+    (m) =>
+      m.cardId === card.id &&
+      m.contentRevision === card.contentRevision &&
+      (m.attempts > 0 || m.status !== "NOT_STUDIED"),
+  );
+  return !touched.length
+    ? "NOT_STUDIED"
+    : touched.every((m) => m.status === "MASTERED")
+      ? "MASTERED"
+      : "LEARNING";
+}
+export function masteredTerms(records, options = {}) {
+  const learning = records.filter((r) => r.type === "learning" && !r.deleted);
+  return getEligibleCards(records, { ...options, filter: "all" }).filter(
+    (c) => termStatus(c, learning) === "MASTERED",
+  );
+}
 export function parseDelimited(text, separator = ",") {
   if (!separator || separator.length !== 1)
     throw new Error("Choose a single character separator.");

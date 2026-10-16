@@ -8,6 +8,7 @@ import {
   descendantFolders,
   validateFolderMove,
   getEligibleCards,
+  masteredTerms,
   normalize,
 } from "./core.js";
 import { learnComplete } from "./engine.js";
@@ -135,10 +136,7 @@ export function createLibraryUI(ctx) {
   function counts(sid) {
     const cards = cardsFor(sid),
       eligible = getEligibleCards(store.records, { setIds: [sid] }),
-      mastered = getEligibleCards(store.records, {
-        setIds: [sid],
-        filter: "mastered",
-      }).length;
+      mastered = masteredTerms(store.records, { setIds: [sid] }).length;
     return {
       cards,
       modifiedAt: cards.reduce(
@@ -149,6 +147,7 @@ export function createLibraryUI(ctx) {
       starred: cards.filter((c) => c.starred).length,
       mastered,
       percent: eligible.length ? (mastered / eligible.length) * 100 : 0,
+      complete: eligible.length > 0 && mastered === eligible.length,
     };
   }
   const filtering = () => !!normalize(state.query);
@@ -269,7 +268,7 @@ export function createLibraryUI(ctx) {
   function tile(set, selectable = false) {
     const c = counts(set.id),
       picked = state.selected.has(set.id);
-    return `<article class="set-tile${picked ? " is-selected" : ""}" data-set-id="${attr(set.id)}"${selectable ? ` draggable="true" data-drag-set="${attr(set.id)}"` : ""}><div class="row between"><span class="row"><span class="tag">${esc(set.subject || "Study set")}</span></span><div class="row">${selectable ? `<label class="check"><input type="checkbox" data-select-set="${attr(set.id)}" ${picked ? "checked" : ""} aria-label="Select ${attr(set.title)}"></label>` : ""}<button class="icon-btn" data-action="pin" data-id="${attr(set.id)}" aria-label="${set.pinned ? "Unpin" : "Pin"} ${attr(set.title)}">${set.pinned ? "📌" : "📍"}</button></div></div><a class="set-title" href="#set/${attr(set.id)}">${esc(set.title)}</a><div class="tile-meta"><span>${c.terms} terms</span><span>★ ${c.starred}</span></div><small class="tile-folder">${esc(folderPath(set.folderId))}</small><div class="progress" role="progressbar" aria-valuenow="${Math.round(c.percent)}" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress"><div style="width:${c.percent}%"></div></div><div class="tile-meta"><span>${c.mastered} mastered</span><span>Studied ${date(set.lastStudiedAt)}</span></div><div class="row tile-actions">${(() => {
+    return `<article class="set-tile${picked ? " is-selected" : ""}${c.complete ? " is-complete" : ""}" data-set-id="${attr(set.id)}"${selectable ? ` draggable="true" data-drag-set="${attr(set.id)}"` : ""}><div class="row between"><span class="row"><span class="tag">${esc(set.subject || "Study set")}</span></span><div class="row">${selectable ? `<label class="check"><input type="checkbox" data-select-set="${attr(set.id)}" ${picked ? "checked" : ""} aria-label="Select ${attr(set.title)}"></label>` : ""}<button class="icon-btn" data-action="pin" data-id="${attr(set.id)}" aria-label="${set.pinned ? "Unpin" : "Pin"} ${attr(set.title)}">${set.pinned ? "📌" : "📍"}</button></div></div><a class="set-title" href="#set/${attr(set.id)}">${esc(set.title)}</a><div class="tile-meta"><span>${c.terms} terms</span><span>★ ${c.starred}</span></div><small class="tile-folder">${esc(folderPath(set.folderId))}</small><div class="progress${c.complete ? " complete" : ""}" role="progressbar" aria-valuenow="${Math.round(c.percent)}" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress"><div style="width:${c.percent}%"></div></div><div class="tile-meta">${c.complete ? '<span class="complete-badge">✅ All terms mastered</span>' : `<span>${c.mastered} mastered</span>`}<span>Studied ${date(set.lastStudiedAt)}</span></div><div class="row tile-actions">${(() => {
       const u = unfinishedFor(set.id);
       return u
         ? button(

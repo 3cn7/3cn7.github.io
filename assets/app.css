@@ -3013,3 +3013,15 @@ mark.diff {
     grid-row: span 2;
   }
 }
+/* A set whose terms are all mastered */
+.progress.complete > div {
+  background: var(--green);
+}
+.set-tile.is-complete {
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px var(--green) inset;
+}
+.complete-badge {
+  color: var(--green);
+  font-weight: 700;
+}
