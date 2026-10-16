@@ -11,7 +11,7 @@ export const DEFAULT_STUDY = Object.freeze({
   filter: "all",
   direction: "forward",
   types: ["mc", "written"],
-  grading: "strict",
+  grading: "moderate",
   requireArticles: true,
   tolerateAccents: false,
   shuffle: true,
@@ -434,6 +434,22 @@ function retryQuestion(session, item, cards, available) {
   if (format === "mc" && RECALL.includes(q.type)) q.fallback = true;
   return q;
 }
+// A round is planned ahead of time, so when the direction is changed in the middle of it the
+// questions still waiting move to a direction that is now selected. Progress is kept.
+function retarget(session) {
+  const dirs = directions(session.config),
+    fix = (key) => {
+      const [cardId, direction] = key.split(":");
+      return dirs.includes(direction) ? key : `${cardId}:${dirs[0]}`;
+    };
+  session.phaseKeys = session.phaseKeys.map(fix);
+  session.phaseDone = session.phaseDone.map(fix);
+  for (const e of session.retryQueue) e.key = fix(e.key);
+  for (const item of session.plan.slice(session.planIndex))
+    item.key = fix(item.key);
+  for (const item of session.opening.slice(session.openingIndex))
+    item.key = fix(item.key);
+}
 export function selectNextQuestion(session, cards) {
   const available = new Map(cards.map((c) => [c.id, c]));
   const rank = new Map(session.cardIds.map((cid, i) => [cid, i]));
@@ -457,6 +473,7 @@ export function selectNextQuestion(session, cards) {
   let pool = states;
   if (dual) {
     phaseOf(session);
+    retarget(session);
     if (roundDone(session)) startRound(session);
     for (let guard = 0; guard < 500; guard++) {
       if (session.roundPhase === "opening") {

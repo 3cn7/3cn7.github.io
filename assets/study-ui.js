@@ -20,7 +20,7 @@ import {
   retakeTest,
   blankMastery,
 } from "./engine.js";
-import { gradeAnswer } from "./grading.js";
+import { gradeAnswer, markDifferences } from "./grading.js";
 import { compareClocks, joinClocks } from "./persistence.js";
 import { dayKey } from "./streak.js";
 import { accentBar, needsAccents, bindAccents } from "./accents.js";
@@ -311,9 +311,12 @@ export function createStudyUI(ctx) {
               "Answer grading",
               "grading",
               [
-                ["strict", "Strict"],
-                ["moderate", "Moderate · conservative typos"],
-                ["relaxed", "Relaxed · approved alternatives"],
+                ["strict", "Strict · word for word"],
+                ["moderate", "Moderate · ignores (parentheses) and capitals"],
+                [
+                  "relaxed",
+                  "Relaxed · also ignores accents, one misspelled word is okay",
+                ],
               ],
               p.grading,
             )
@@ -583,6 +586,32 @@ export function createStudyUI(ctx) {
     return `<span class="badge">${recognition ? "Multiple choice" : "Typing"} · ${n} of ${total || n}</span>`;
   }
   // Tells the learner where a missed question will come back.
+  // A typed response with its mistakes marked, next to the answer with what was missing marked.
+  const marked = (segments) =>
+    segments
+      .map((x) =>
+        x.bad ? `<mark class="diff">${esc(x.text)}</mark>` : esc(x.text),
+      )
+      .join("");
+  function answerLines(
+    response,
+    q,
+    { strong = false, empty = "Don't know" } = {},
+  ) {
+    const text = String(response ?? ""),
+      typed = q.type === "written" || q.type === "spelling",
+      diff =
+        typed && text.trim() ? markDifferences(text, q, active.config) : null,
+      right =
+        q.type === "tf"
+          ? q.correctAnswer === "true"
+            ? "True"
+            : "False"
+          : q.correctAnswer,
+      mine = diff?.differs ? marked(diff.response) : esc(text || empty),
+      theirs = diff?.differs ? marked(diff.answer) : esc(right);
+    return `<p class="answer-line">Your answer: <span class="typed">${mine}</span></p><p class="answer-line">${strong ? "<strong>" : ""}Correct answer: <span class="typed fix">${theirs}</span>${strong ? "</strong>" : ""}</p>`;
+  }
   function comesBack(a) {
     const e = active.retryQueue?.find((x) => x.attemptId === a.id);
     if (!e || a.effectiveCorrect) return "";
@@ -604,7 +633,7 @@ export function createStudyUI(ctx) {
     if (active.roundSummary) return learnSummary(stats, false);
     const a = active.feedback,
       q = active.current;
-    return `<div class="study-layout">${header("Learn")}<div class="study-metrics"><span>${stats.mastered}/${stats.total} mastered</span><span>${stats.notStudied} not studied</span><span>${stats.learning} learning</span><span>${Math.round(stats.accuracy)}% accuracy</span><span>${stats.streak} answer streak</span><span>Round ${active.round}</span>${phaseLabel()}</div><div class="progress" style="margin-bottom:24px"><div style="width:${stats.percent}%"></div></div>${questionForm(q, { response: a ? a.response || "" : active.draft?.answer || "" })}${a ? `<div class="feedback ${a.effectiveCorrect ? "good" : "bad"}" role="status"><h3>${a.effectiveCorrect ? "✓ Correct" : "↻ Let’s revisit this term"}</h3><p>Your answer: ${esc(a.response || "Don't know")}</p><p><strong>Correct answer: ${esc(q.type === "tf" ? (q.correctAnswer === "true" ? "True" : "False") : q.correctAnswer)}</strong></p>${active.config.explanations && q.explanation ? `<p>${esc(q.explanation)}</p>` : ""}${comesBack(a)}${a.override ? "<small>Original grade preserved; you marked this response correct.</small>" : ""}${!a.effectiveCorrect ? button("I was correct", "learn-override", "", "small") : ""}${!a.effectiveCorrect && active.config.retype ? `<form id="retypeForm" style="margin-top:15px"><label>Type the correct answer to reinforce it<input name="answer" autocomplete="off" value="${attr(active.draft?.retype || "")}"></label>${accents(q, false, "#retypeForm input")}<button style="margin-top:10px" type="submit">Check retyping</button><span id="retypeStatus" class="muted"></span></form><small>Retyping does not count as an independent recall.</small>` : ""}<div style="margin-top:18px">${button("Continue →", "learn-continue", 'aria-keyshortcuts="Enter"', "primary")}<span class="shortcut-hint inline">or press <kbd>Enter</kbd></span></div></div>` : ""}</div>`;
+    return `<div class="study-layout">${header("Learn")}<div class="study-metrics"><span>${stats.mastered}/${stats.total} mastered</span><span>${stats.notStudied} not studied</span><span>${stats.learning} learning</span><span>${Math.round(stats.accuracy)}% accuracy</span><span>${stats.streak} answer streak</span><span>Round ${active.round}</span>${phaseLabel()}</div><div class="progress" style="margin-bottom:24px"><div style="width:${stats.percent}%"></div></div>${questionForm(q, { response: a ? a.response || "" : active.draft?.answer || "" })}${a ? `<div class="feedback ${a.effectiveCorrect ? "good" : "bad"}" role="status"><h3>${a.effectiveCorrect ? "✓ Correct" : "↻ Let’s revisit this term"}</h3>${answerLines(a.response, q, { strong: true })}${active.config.explanations && q.explanation ? `<p>${esc(q.explanation)}</p>` : ""}${comesBack(a)}${a.override ? "<small>Original grade preserved; you marked this response correct.</small>" : ""}${!a.effectiveCorrect ? button("I was correct", "learn-override", "", "small") : ""}${!a.effectiveCorrect && active.config.retype ? `<form id="retypeForm" style="margin-top:15px"><label>Type the correct answer to reinforce it<input name="answer" autocomplete="off" value="${attr(active.draft?.retype || "")}"></label>${accents(q, false, "#retypeForm input")}<button style="margin-top:10px" type="submit">Check retyping</button><span id="retypeStatus" class="muted"></span></form><small>Retyping does not count as an independent recall.</small>` : ""}<div style="margin-top:18px">${button("Continue →", "learn-continue", 'aria-keyshortcuts="Enter"', "primary")}<span class="shortcut-hint inline">or press <kbd>Enter</kbd></span></div></div>` : ""}</div>`;
   }
   function learnSummary(stats, complete) {
     const round = active.attempts.slice(active.roundStart),
@@ -654,7 +683,11 @@ export function createStudyUI(ctx) {
     return `<div class="study-layout">${header("Test results")}<div class="panel" style="text-align:center"><div class="eyebrow">YOUR RESULTS</div><div class="score">${Math.round(score.percent)}%</div><p>${score.earned} / ${score.total} correct · ${score.total - score.earned} incorrect · ${score.unanswered} unanswered · ${duration(active.durationMs)}</p>${active.submittedBy === "timer" ? '<p class="muted">The time limit ended, so the answers you had recorded were submitted automatically.</p>' : ""}<div class="row" style="justify-content:center">${button("Review mistakes", "test-mistakes", "", "primary")}${button("Star all incorrect", "star-incorrect")}${button("Retake same test", "retake-test")}${button("Generate new test", "new-test")}</div></div><div class="toolbar"><h2 style="margin:0">Question review</h2><select id="resultFilter" aria-label="Filter test results">${["all", "correct", "incorrect", "unanswered"].map((v) => `<option ${resultFilter === v ? "selected" : ""} value="${v}">${v[0].toUpperCase() + v.slice(1)} questions</option>`).join("")}</select></div>${rows
       .map((r) => {
         const q = active.questions.find((q) => q.id === r.questionId);
-        return `<article class="review-row"><div class="row between"><span class="badge ${r.effectiveCorrect ? "success" : "error"}">${r.effectiveCorrect ? "✓ Correct" : r.unanswered ? "Unanswered" : "Incorrect"} · ${esc(q.type)}</span>${store.get(q.cardId) ? star(store.get(q.cardId)) : "<small>Card removed from library</small>"}</div><h3 style="margin-top:15px">${esc(q.prompt)}</h3>${q.type === "tf" ? `<p>${esc(q.statement)}</p>` : ""}<p class="answer">Your answer: ${esc(q.type === "tf" ? (r.response === "true" ? "True" : r.response === "false" ? "False" : "Unanswered") : r.response || "Unanswered")}</p><p>Correct answer: ${esc(q.type === "tf" ? (q.correctAnswer === "true" ? "True" : "False") : q.correctAnswer)}</p>${active.config.explanations && q.explanation ? `<p class="muted">${esc(q.explanation)}</p>` : ""}${r.override ? "<small>Grade overridden; original response and grade are preserved.</small>" : ""}${!r.effectiveCorrect && q.type === "written" ? button("I was correct", "test-override", `data-question="${attr(q.id)}"`, "small") : ""}</article>`;
+        return `<article class="review-row"><div class="row between"><span class="badge ${r.effectiveCorrect ? "success" : "error"}">${r.effectiveCorrect ? "✓ Correct" : r.unanswered ? "Unanswered" : "Incorrect"} · ${esc(q.type)}</span>${store.get(q.cardId) ? star(store.get(q.cardId)) : "<small>Card removed from library</small>"}</div><h3 style="margin-top:15px">${esc(q.prompt)}</h3>${q.type === "tf" ? `<p>${esc(q.statement)}</p>` : ""}${
+          q.type === "written" || q.type === "spelling"
+            ? answerLines(r.response, q, { empty: "Unanswered" })
+            : `<p class="answer">Your answer: ${esc(q.type === "tf" ? (r.response === "true" ? "True" : r.response === "false" ? "False" : "Unanswered") : r.response || "Unanswered")}</p><p>Correct answer: ${esc(q.type === "tf" ? (q.correctAnswer === "true" ? "True" : "False") : q.correctAnswer)}</p>`
+        }${active.config.explanations && q.explanation ? `<p class="muted">${esc(q.explanation)}</p>` : ""}${r.override ? "<small>Grade overridden; original response and grade are preserved.</small>" : ""}${!r.effectiveCorrect && q.type === "written" ? button("I was correct", "test-override", `data-question="${attr(q.id)}"`, "small") : ""}</article>`;
       })
       .join("")}</div>`;
   }
@@ -862,7 +895,7 @@ export function createStudyUI(ctx) {
         const result = gradeAnswer(
           new FormData(rf).get("answer"),
           { ...active.current, type: "written", acceptedAnswers: [] },
-          { grading: "strict" },
+          { grading: "moderate" },
         );
         active.correctivePassed = result.correct;
         $("#retypeStatus").textContent = result.correct

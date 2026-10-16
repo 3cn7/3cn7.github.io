@@ -12,6 +12,7 @@ const checks = [
   "browser-file-manager.mjs",
   "browser-continue.mjs",
   "browser-sync-startup.mjs",
+  "browser-midway-settings.mjs",
   "browser-sync-overlay.mjs",
   "browser-search-terms.mjs",
   "browser-nav-bin.mjs",

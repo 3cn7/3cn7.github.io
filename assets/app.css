@@ -2917,3 +2917,41 @@ dialog.sync-overlay p {
     transform: var(--spread);
   }
 }
+
+/* Mistakes in typed answers: what was wrong in the response, and what it should have had. */
+mark.diff {
+  padding: 1px 3px;
+  margin: 0 1px;
+  color: #8c1d33;
+  background: #ffc9d3;
+  border-radius: 3px;
+  text-decoration: underline wavy var(--red);
+  text-underline-offset: 3px;
+  font-weight: 700;
+}
+.typed.fix mark.diff {
+  color: #0f5c3b;
+  background: #bdeccf;
+  text-decoration: underline var(--green);
+}
+.answer-line {
+  overflow-wrap: anywhere;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) mark.diff {
+    background: #5a1f2c;
+    color: #ffb4c0;
+  }
+  :root:not([data-theme="light"]) .typed.fix mark.diff {
+    background: #1b4d37;
+    color: #9de3be;
+  }
+}
+:root[data-theme="dark"] mark.diff {
+  background: #5a1f2c;
+  color: #ffb4c0;
+}
+:root[data-theme="dark"] .typed.fix mark.diff {
+  background: #1b4d37;
+  color: #9de3be;
+}
