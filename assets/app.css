@@ -2955,3 +2955,61 @@ mark.diff {
   background: #1b4d37;
   color: #9de3be;
 }
+
+/* Selecting terms inside a set */
+.pick-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  background: var(--tint);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.pick-bar strong {
+  margin-right: auto;
+}
+.pick-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.status-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pick-box {
+  width: 20px;
+  height: 20px;
+  margin-right: 4px;
+  accent-color: var(--primary);
+}
+.card-row[data-pickable] {
+  cursor: pointer;
+}
+.card-row.is-picked {
+  background: var(--tint);
+}
+.study-starred > div {
+  min-width: 150px;
+}
+.card-row.compact[data-pickable] {
+  grid-template-columns:
+    28px minmax(110px, 1fr) minmax(140px, 2fr) minmax(0, 260px)
+    44px auto;
+}
+@media (max-width: 760px) {
+  .card-row.compact[data-pickable] {
+    grid-template-columns: 28px 1fr 44px auto;
+  }
+  .card-row.compact[data-pickable] .pick-box {
+    grid-row: span 2;
+  }
+}

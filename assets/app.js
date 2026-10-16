@@ -105,6 +105,9 @@ let route = "",
   cardQuery = "",
   editing = false,
   editingSet = null,
+  picking = false,
+  pickedCards = new Set(),
+  pickingSet = null,
   statsSet = "",
   statsFolder = "",
   statsSubject = "",
@@ -374,8 +377,50 @@ function setView() {
         ),
       set.subject || "STUDY SET",
     ) +
-    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered → definition</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div>${editing && (needsAccents(set.termLanguage) || needsAccents(set.definitionLanguage)) ? `<div class="accent-editor">${accentBar("", "Italian letters for the focused card field")}</div>` : ""}${statusPills(set, filtered)}${termsFrame(set, filtered)}`
+    `<div class="row">${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}"`, mode === "learn" ? "primary" : "")).join("")}${studyStarred(set, c.starred)}${button("Import cards", "import-cards", `data-id="${attr(set.id)}"`)}<details class="context-menu"><summary>More set actions</summary><div>${button("Export", "export-set", `data-id="${attr(set.id)}"`)}${button("Duplicate", "duplicate-set", `data-id="${attr(set.id)}"`)}${button("Reset Learn progress", "reset-set-progress", `data-id="${attr(set.id)}"`, "danger")}${button("Delete set", "delete-set", `data-id="${attr(set.id)}"`, "danger")}</div></details></div><div class="study-metrics" style="justify-content:start"><span>${c.terms} terms</span><span>★ ${c.starred} starred</span><span>${c.mastered} mastered → definition</span><span>Modified ${date(c.modifiedAt)}</span></div><div class="toolbar"><input id="cardSearch" type="search" value="${attr(cardQuery)}" placeholder="Search this set…" aria-label="Search cards">${button("+ Add card", "add-card", `data-id="${attr(set.id)}"`, "primary")}${button("Bulk edit", "bulk-edit", `data-id="${attr(set.id)}"`)}${editing ? "" : button(picking ? "Done selecting" : "☑️ Select terms", "toggle-pick", `aria-pressed="${picking}"`, picking ? "primary" : "")}${editing || store.canUndo(cardScope(set.id)) ? button("↩️ Undo", "undo-card", `aria-label="Undo last card change${store.canUndo(cardScope(set.id)) ? ": " + attr(store.undo.at(-1).label) : ""}" title="Undo the last card change in this set" ${store.canUndo(cardScope(set.id)) ? "" : "disabled"}`) : ""}</div>${editing && (needsAccents(set.termLanguage) || needsAccents(set.definitionLanguage)) ? `<div class="accent-editor">${accentBar("", "Italian letters for the focused card field")}</div>` : ""}${statusPills(set, filtered)}${pickBar()}${termsFrame(set, filtered)}`
   );
+}
+// "Study starred" opens the usual set-up with the pool already set to the starred terms.
+function studyStarred(set, count) {
+  if (!count)
+    return button(
+      "★ Study starred",
+      "no-starred",
+      'title="Star some terms first" disabled',
+    );
+  return `<details class="context-menu study-starred"><summary>★ Study starred (${count})</summary><div>${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "configure", `data-mode="${mode}" data-sets="${attr(set.id)}" data-filter="starred"`)).join("")}</div></details>`;
+}
+// Selecting terms: pick single terms or a whole progress section, then study or star them.
+const pickedIn = (cards) => cards.filter((c) => pickedCards.has(c.id));
+function pickBar() {
+  if (!picking || editing) return "";
+  const n = pickedCards.size,
+    off = n ? "" : "disabled";
+  return `<div class="pick-bar" id="pickBar" role="region" aria-label="Selected terms"><strong id="pickCount" aria-live="polite">${n} selected</strong>${["flashcards", "learn", "test"].map((mode) => button(mode === "flashcards" ? "Flashcards" : mode === "learn" ? "Learn" : "Test", "study-picked", `data-mode="${mode}" ${off}`, mode === "learn" ? "primary small" : "small")).join("")}${button("★ Star", "star-picked", `data-starred="1" ${off}`, "small")}${button("☆ Unstar", "star-picked", `data-starred="0" ${off}`, "small")}${button("Clear", "clear-picked", off, "small")}</div>`;
+}
+// Brings the counter, buttons, section boxes and row boxes in line without redrawing the page.
+function refreshPick() {
+  const bar = $("#pickBar");
+  if (bar) bar.outerHTML = pickBar();
+  document
+    .querySelectorAll("input[data-pick]")
+    .forEach((box) => (box.checked = pickedCards.has(box.dataset.pick)));
+  document.querySelectorAll("input[data-pick-group]").forEach((box) => {
+    const ids = [
+        ...document.querySelectorAll(
+          `#group-${box.dataset.pickGroup} input[data-pick]`,
+        ),
+      ].map((x) => x.dataset.pick),
+      n = ids.filter((id) => pickedCards.has(id)).length;
+    box.checked = !!ids.length && n === ids.length;
+    box.indeterminate = n > 0 && n < ids.length;
+    box.disabled = !ids.length;
+  });
+  document
+    .querySelectorAll(".card-row[data-pickable]")
+    .forEach((row) =>
+      row.classList.toggle("is-picked", pickedCards.has(row.dataset.pickable)),
+    );
 }
 // Every term of the set grouped as Not studied, Learning or Mastered.
 //  - Not studied: never answered in any direction.
@@ -450,12 +495,12 @@ function termsFrame(set, cards) {
   return frame(
     STATUS_GROUPS.map(
       ([key, label]) =>
-        `<section class="status-group ${statusClass(key)}" id="group-${statusClass(key)}" tabindex="-1" aria-label="${label}"><h2 class="status-heading">${label} <span>${groups[key].length}</span></h2>${
+        `<section class="status-group ${statusClass(key)}" id="group-${statusClass(key)}" tabindex="-1" aria-label="${label}"><h2 class="status-heading">${label} <span>${groups[key].length}</span>${picking ? `<label class="pick-all"><input type="checkbox" data-pick-group="${statusClass(key)}" ${groups[key].length ? "" : "disabled"} aria-label="Select every term under ${label}"> Select all</label>` : ""}</h2>${
           groups[key].length
             ? `<div class="status-list">${groups[key]
                 .map(
                   ([c, touched]) =>
-                    `<article class="card-row compact" id="card-${attr(c.id)}"><span class="mastered-term">${esc(c.term)}</span><span class="mastered-def">${esc(c.definition)}</span><span class="mastered-dirs">${touched.map(chip).join("")}${c.provenance?.transcriptId ? `<a class="button small" href="#transcripts/${attr(c.provenance.transcriptId)}${Number.isFinite(c.provenance.timestamp) ? "/" + c.provenance.timestamp : ""}">Source transcript${Number.isFinite(c.provenance.timestamp) ? " · " + duration(c.provenance.timestamp * 1000) : ""}</a>` : ""}</span><div class="card-star">${star(c)}</div>${button("Edit", "edit-card", `data-id="${attr(c.id)}" aria-label="Edit ${attr(c.term)}"`, "small")}</article>`,
+                    `<article class="card-row compact${picking && pickedCards.has(c.id) ? " is-picked" : ""}" id="card-${attr(c.id)}"${picking ? ` data-pickable="${attr(c.id)}"` : ""}>${picking ? `<input type="checkbox" class="pick-box" data-pick="${attr(c.id)}" ${pickedCards.has(c.id) ? "checked" : ""} aria-label="Select ${attr(c.term)}">` : ""}<span class="mastered-term">${esc(c.term)}</span><span class="mastered-def">${esc(c.definition)}</span><span class="mastered-dirs">${touched.map(chip).join("")}${c.provenance?.transcriptId ? `<a class="button small" href="#transcripts/${attr(c.provenance.transcriptId)}${Number.isFinite(c.provenance.timestamp) ? "/" + c.provenance.timestamp : ""}">Source transcript${Number.isFinite(c.provenance.timestamp) ? " · " + duration(c.provenance.timestamp * 1000) : ""}</a>` : ""}</span><div class="card-star">${star(c)}</div>${button("Edit", "edit-card", `data-id="${attr(c.id)}" aria-label="Edit ${attr(c.term)}"`, "small")}</article>`,
                 )
                 .join("")}</div>`
             : '<p class="muted status-empty">No terms here.</p>'
@@ -976,6 +1021,11 @@ async function render() {
   setId = route === "set" ? parts[1] : setId;
   // Edit mode belongs to the set it was switched on for.
   if (route === "set" && editing && parts[1] !== editingSet) editing = false;
+  if (route !== "set" || parts[1] !== pickingSet) {
+    picking = false;
+    pickedCards.clear();
+    pickingSet = route === "set" ? parts[1] : null;
+  }
   document
     .querySelectorAll("[data-nav]")
     .forEach((a) =>
@@ -1224,6 +1274,30 @@ window.addEventListener("beforeunload", (e) => {
   }
 });
 
+// Selecting terms: the boxes, the "Select all" of each section and a click anywhere on a row.
+document.addEventListener("change", (e) => {
+  const one = e.target.closest?.("input[data-pick]"),
+    group = e.target.closest?.("input[data-pick-group]");
+  if (one) {
+    if (one.checked) pickedCards.add(one.dataset.pick);
+    else pickedCards.delete(one.dataset.pick);
+  } else if (group) {
+    for (const box of document.querySelectorAll(
+      `#group-${group.dataset.pickGroup} input[data-pick]`,
+    ))
+      if (group.checked) pickedCards.add(box.dataset.pick);
+      else pickedCards.delete(box.dataset.pick);
+  } else return;
+  refreshPick();
+});
+document.addEventListener("click", (e) => {
+  const row = e.target.closest?.(".card-row[data-pickable]");
+  if (!row || e.target.closest("button, a, input, label")) return;
+  const id = row.dataset.pickable;
+  if (pickedCards.has(id)) pickedCards.delete(id);
+  else pickedCards.add(id);
+  refreshPick();
+});
 document.addEventListener("click", (e) => {
   const back = e.target.closest("#backButton");
   if (back?.dataset.back) go(back.dataset.back);
@@ -1285,6 +1359,31 @@ document.addEventListener("click", async (e) => {
     else if (action === "pin") {
       await store.update(el.dataset.id, (s) => ({ ...s, pinned: !s.pinned }));
       render();
+    } else if (action === "toggle-pick") {
+      picking = !picking;
+      pickingSet = setId;
+      pickedCards.clear();
+      render();
+    } else if (action === "clear-picked") {
+      pickedCards.clear();
+      refreshPick();
+    } else if (action === "study-picked") {
+      if (pickedCards.size)
+        study.configure(el.dataset.mode, [setId], { filter: "all" }, [
+          ...pickedCards,
+        ]);
+    } else if (action === "star-picked") {
+      const starred = el.dataset.starred === "1",
+        ids = new Set(pickedCards);
+      await store.change(
+        starred ? "Star selected terms" : "Unstar selected terms",
+        (rows) => rows.map((r) => (ids.has(r.id) ? { ...r, starred } : r)),
+        { scope: cardScope(setId) },
+      );
+      toast(
+        `${ids.size} ${ids.size === 1 ? "term" : "terms"} ${starred ? "starred" : "unstarred"}.`,
+      );
+      await render();
     } else if (action === "toggle-edit") {
       editing = !editing;
       editingSet = setId;
